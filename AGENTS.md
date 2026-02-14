@@ -180,7 +180,7 @@ try {
 
 ## Project-Specific Notes
 
-- Goal (from `README.md`): scrape LinkedIn internship postings and export structured JSON, then encode to TOON.
+- Goal (from `README.md`): scrape LinkedIn internship postings and export structured JSON.
 - Entry file `index.ts` is currently a placeholder.
 
 ## Agent Workflow

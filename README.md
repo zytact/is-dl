@@ -1,6 +1,6 @@
 # is-dl
 
-LinkedIn Internship Scraper - Extract job postings from LinkedIn and export to JSON and TOON format.
+LinkedIn Internship Scraper - Extract job postings from LinkedIn and export to JSON.
 
 ## Installation
 
@@ -63,10 +63,9 @@ bun run index.ts -k "machine learning" -l "United States" --limit 20 --job-type 
 
 ## Output
 
-The scraper generates two files in the output directory:
+The scraper generates a JSON file in the output directory:
 
 - `linkedin-jobs.<timestamp>.json` - Job data in JSON format
-- `linkedin-jobs.<timestamp>.toon` - Job data in TOON format (optimized for LLM context)
 
 ### Output Structure
 
@@ -100,25 +99,7 @@ The scraper generates two files in the output directory:
 
 ## Goal
 
-Going through LinkedIn is a mess. It is filled with trash posts and wastes time. The goal of this project is to find internships on LinkedIn based on search keywords. Then the task is to get all the data, namely, position title, how long ago it was posted, location, description, requirements, company, job type etc in a json. Then using toon library, we will encode it into the new TOON format (Token-Oriented Object Notation) that will help preserve context better if we feed it to an LLM later (LLM not included in this project).
-
-### TOON Format Example
-
-```javascript
-import { encode } from '@toon-format/toon'
-
-const data = {
-  users: [
-    { id: 1, name: 'Alice', role: 'admin' },
-    { id: 2, name: 'Bob', role: 'user' }
-  ]
-}
-
-console.log(encode(data))
-// users[2]{id,name,role}:
-//   1,Alice,admin
-//   2,Bob,user
-```
+Going through LinkedIn is a mess. It is filled with trash posts and wastes time. The goal of this project is to find internships on LinkedIn based on search keywords. Then the task is to get all the data, namely, position title, how long ago it was posted, location, description, requirements, company, job type etc in a json.
 
 ## Development
 

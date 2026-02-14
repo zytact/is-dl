@@ -15,7 +15,6 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@toon-format/toon": "^2.1.0",
     "playwright": "^1.58.0"
   }
 }

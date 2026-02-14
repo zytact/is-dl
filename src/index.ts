@@ -157,12 +157,11 @@ async function main() {
     };
 
     // Write output files
-    const { jsonPath, toonPath } = await writeOutput(output, options.outDir);
+    const { jsonPath } = await writeOutput(output, options.outDir);
 
     console.log('\nScraping completed successfully!');
     console.log(`Total jobs scraped: ${jobs.length}`);
     console.log(`JSON: ${jsonPath}`);
-    console.log(`TOON: ${toonPath}`);
   } finally {
     // Close browser and save session
     await closeBrowser(session);
