@@ -1,0 +1,37 @@
+Job list
+#main_content_panel > div.panel_container.ng-tns-c2330979904-5.ng-star-inserted > div
+
+Job card
+#main_content_panel > div.panel_container.ng-tns-c2330979904-5.ng-star-inserted > div > app-competition-listing:nth-child(3)
+
+Job link examples
+#i_1635475_1
+#i_1636751_1
+
+======Job page======
+Company name
+#tabs-home > div.d-flex > div.desktop_views > div.title > h2 > a
+
+Eligibilty
+#app-main-container > app-public-competition > section > div.container-un.top_vector.p_0 > div > div.bg_box > div.eligibility_sect.withBdr > div.items
+
+Details div
+#tab-detail
+
+Details
+#tab-detail > div.position-relative > div.blue_un-border-before.comp-detail.un_editor_text_live
+
+Deadline
+#tab-dates > div > app-dates-and-contacts > div > ul > li > div.cptn > strong
+
+Internship duration
+#tab-prize > app-prizes > div > div:nth-child(1) > div.cptn > p > span
+
+Minimum stipend
+#tab-prize > app-prizes > div > div:nth-child(2) > div.cptn > p:nth-child(2)
+
+Maximum stipend
+#tab-prize > app-prizes > div > div:nth-child(2) > div.cptn > p:nth-child(3)
+
+Internship Type
+#tab-prize > app-prizes > div > div:nth-child(4) > div.cptn > p:nth-child(2)
