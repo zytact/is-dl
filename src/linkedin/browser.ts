@@ -14,8 +14,9 @@ export interface BrowserSession {
 export async function launchBrowser(
   headless: boolean = true,
   debug: boolean = false,
+  onLog: (msg: string) => void = console.log,
 ): Promise<BrowserSession> {
-  console.log('Launching browser...');
+  onLog('Launching browser...');
 
   const browser = await chromium.launch({
     headless,
@@ -36,36 +37,37 @@ export async function launchBrowser(
   const page = await context.newPage();
 
   if (debug) {
-    page.on('console', (msg) => console.log(`[Browser] ${msg.text()}`));
+    page.on('console', (msg) => onLog(`[Browser] ${msg.text()}`));
   }
 
   if (!hasSession) {
-    console.log('\nNo session found. Opening LinkedIn login page...');
+    onLog('\nNo session found. Opening LinkedIn login page...');
     await page.goto('https://www.linkedin.com/login', {
       waitUntil: 'domcontentloaded',
     });
-    console.log(
-      '\nPlease log in manually in the browser window that just opened.',
-    );
-    console.log('After logging in, press Enter to continue...');
+    onLog('\nPlease log in manually in the browser window that just opened.');
+    onLog('After logging in, press Enter to continue...');
 
     await waitForEnter();
 
     // Save session state
     await context.storageState({ path: SESSION_FILE });
-    console.log(`Session saved to ${SESSION_FILE}`);
+    onLog(`Session saved to ${SESSION_FILE}`);
   } else {
-    console.log('Existing session found, reusing authentication.');
+    onLog('Existing session found, reusing authentication.');
   }
 
   return { browser, context, page };
 }
 
-export async function closeBrowser(session: BrowserSession): Promise<void> {
+export async function closeBrowser(
+  session: BrowserSession,
+  onLog: (msg: string) => void = console.log,
+): Promise<void> {
   // Save session state before closing
   await session.context.storageState({ path: SESSION_FILE });
   await session.browser.close();
-  console.log('Browser closed and session saved.');
+  onLog('Browser closed and session saved.');
 }
 
 function waitForEnter(): Promise<void> {

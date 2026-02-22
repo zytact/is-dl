@@ -5,11 +5,15 @@
   "private": true,
   "scripts": {
     "lint": "biome check",
-    "format": "biome format --write"
+    "format": "biome format --write",
+    "dev:ui": "cd ui && bun run dev --host",
+    "dev:api": "lsof -i :3000 | grep LISTEN | awk '{print $2}' | xargs -r kill -9 || true; bun run src/server.ts",
+    "dev": "concurrently \"bun run dev:api\" \"bun run dev:ui\""
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.13",
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "concurrently": "^9.2.1"
   },
   "peerDependencies": {
     "typescript": "^5"

@@ -1,0 +1,175 @@
+import {
+  closeBrowser,
+  ensureOutDir,
+  launchBrowser,
+} from './linkedin/browser.ts';
+import { extractJobDetailsFromView } from './linkedin/job.ts';
+import {
+  clickJobCard,
+  getJobCardCount,
+  getPaginationInfo,
+  goToNextPage,
+} from './linkedin/search.ts';
+import { buildSearchUrl } from './linkedin/search-url.ts';
+import { writeOutput } from './output.ts';
+import type { JobListing, ScraperOutput, SearchOptions } from './types.ts';
+
+export async function runScraper(
+  options: SearchOptions,
+  onLog: (msg: string) => void = console.log,
+): Promise<string> {
+  onLog('LinkedIn Internship Scraper\n');
+
+  onLog('Search configuration:');
+  onLog(`  Keywords: ${options.keywords}`);
+  onLog(`  Location: ${options.location || 'Any'}`);
+  onLog(`  Limit: ${options.limit}`);
+  onLog(`  Remote only: ${options.remoteOnly ? 'Yes' : 'No'}`);
+  onLog(`  Output directory: ${options.outDir}\n`);
+
+  // Ensure output directory exists
+  await ensureOutDir(options.outDir);
+
+  // Launch browser
+  const session = await launchBrowser(options.headless, options.debug, onLog);
+  let finalJsonPath = '';
+
+  try {
+    // Build search URL
+    const searchUrl = buildSearchUrl(options);
+    onLog(`\nNavigating to: ${searchUrl}\n`);
+
+    await session.page.goto(searchUrl, {
+      waitUntil: 'domcontentloaded',
+      timeout: 30000,
+    });
+
+    // Wait a bit for dynamic content to load
+    await session.page.waitForTimeout(3000);
+
+    if (options.debug) {
+      await session.page.screenshot({ path: 'debug-initial-page.png' });
+      onLog('Screenshot saved to debug-initial-page.png');
+    }
+
+    // Get pagination info
+    const paginationInfo = await getPaginationInfo(session.page, options.debug);
+    if (paginationInfo) {
+      onLog(
+        `Pagination: Page ${paginationInfo.current} of ${paginationInfo.total}`,
+      );
+    }
+
+    // Extract details for jobs across multiple pages
+    const jobs: JobListing[] = [];
+    let currentPage = 1;
+    let totalProcessed = 0;
+
+    while (totalProcessed < options.limit) {
+      onLog(`\n=== Processing Page ${currentPage} ===\n`);
+
+      // Get the count of available job cards on current page
+      const jobCount = await getJobCardCount(
+        session.page,
+        options.limit - totalProcessed,
+        options.debug,
+      );
+
+      onLog(`Found ${jobCount} jobs on page ${currentPage}`);
+
+      if (jobCount === 0) {
+        onLog('No more jobs found.');
+        break;
+      }
+
+      // Process jobs on current page
+      for (let i = 0; i < jobCount && totalProcessed < options.limit; i++) {
+        totalProcessed++;
+        onLog(
+          `[${totalProcessed}/${options.limit}] Processing job ${i + 1} on page ${currentPage}...`,
+        );
+
+        try {
+          // Click on the job card to load its details
+          await clickJobCard(session.page, i, options.debug);
+
+          // Extract details from the loaded view
+          const jobDetails = await extractJobDetailsFromView(
+            session.page,
+            i,
+            options.debug,
+          );
+          jobs.push(jobDetails);
+
+          if (options.debug) {
+            onLog(
+              `  Title: ${jobDetails.title}, Company: ${jobDetails.companyName}`,
+            );
+          }
+
+          // Rate limiting: wait between requests
+          const delay = 1000 + Math.random() * 2000; // 1-3 seconds
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        } catch (error) {
+          const errMsg = error instanceof Error ? error.message : String(error);
+          onLog(`Error processing job ${i + 1}: ${errMsg}`);
+          console.error(`Error processing job ${i + 1}:`, errMsg);
+        }
+      }
+
+      // Check if we need to go to next page
+      if (totalProcessed < options.limit) {
+        onLog('\nAttempting to navigate to next page...');
+        const hasNextPage = await goToNextPage(session.page, options.debug);
+
+        if (!hasNextPage) {
+          onLog('No more pages available.');
+          break;
+        }
+
+        currentPage++;
+        // Wait for new page to fully load
+        await session.page.waitForTimeout(2000);
+      } else {
+        break;
+      }
+    }
+
+    onLog(`\nSuccessfully extracted ${jobs.length} jobs.\n`);
+
+    // Prepare output data
+    const output: ScraperOutput = {
+      meta: {
+        query: options.keywords,
+        location: options.location,
+        filters: {
+          experienceLevel: options.experienceLevel,
+          remoteOnly: options.remoteOnly,
+          postedWithin: options.postedWithin,
+          jobType: options.jobType,
+        },
+        scrapedAt: new Date().toISOString(),
+        source: 'linkedin',
+        count: jobs.length,
+      },
+      jobs,
+    };
+
+    // Write output files
+    const { jsonPath } = await writeOutput(output, options.outDir);
+    finalJsonPath = jsonPath;
+
+    onLog('\nScraping completed successfully!');
+    onLog(`Total jobs scraped: ${jobs.length}`);
+    onLog(`JSON: ${jsonPath}`);
+  } catch (err) {
+    const errorStr = err instanceof Error ? err.message : String(err);
+    onLog(`\nFATAL ERROR: ${errorStr}`);
+    throw err;
+  } finally {
+    // Close browser and save session
+    await closeBrowser(session, onLog);
+  }
+
+  return finalJsonPath;
+}
