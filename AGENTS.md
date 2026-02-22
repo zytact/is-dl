@@ -153,7 +153,7 @@ bun test --watch
 
 ## 4. Agent Workflow Rules
 
-1. **Verify Your Work:** Always run the appropriate format, lint, and typecheck commands after making substantial changes. Do not leave the codebase with build errors.
+1. **Verify Your Work:** Always run the appropriate format, lint, and typecheck commands after making substantial changes. Do not leave the codebase with build errors. Do not try to workaround them. Always go for the long-term proper solution.
 2. **Context is King:** Before creating new functions or components, use `glob` and `grep` to ensure similar utilities don't already exist.
 3. **Patience with UI:** When dealing with Playwright selectors, confirm the page structure before writing heavy extraction logic.
 4. **Existing Editor Rules:** Note that there are currently no `.cursorrules`, `.cursor/rules/`, or `.github/copilot-instructions.md` applied in this repository. Use this `AGENTS.md` file as the definitive source of truth for repository behavior.
