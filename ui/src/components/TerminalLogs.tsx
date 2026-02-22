@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import type { RefCallback } from 'react';
 
 interface TerminalLogsProps {
   logs: string[];
@@ -6,13 +6,11 @@ interface TerminalLogsProps {
 }
 
 export function TerminalLogs({ logs, isScraping }: TerminalLogsProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  const scrollToBottom: RefCallback<HTMLDivElement> = (el) => {
+    if (el) {
+      el.scrollTop = el.scrollHeight;
     }
-  }, [logs]);
+  };
 
   return (
     <div className="flex-1 bg-brand-panel brutal-border relative flex flex-col overflow-hidden group">
@@ -27,12 +25,12 @@ export function TerminalLogs({ logs, isScraping }: TerminalLogsProps) {
           STDOUT
         </span>
         <span className="text-[10px] text-brand-muted uppercase">
-          TTY1 // NODE_ENV=production
+          TTY1 {/* NODE_ENV=production */}
         </span>
       </div>
 
       <div
-        ref={scrollRef}
+        ref={scrollToBottom}
         className="flex-1 p-4 overflow-y-auto scrollbar-cyber font-mono text-sm leading-relaxed whitespace-pre-wrap selection:bg-brand-cyan selection:text-brand-dark"
       >
         {logs.length === 0 ? (
@@ -50,7 +48,7 @@ export function TerminalLogs({ logs, isScraping }: TerminalLogsProps) {
 
             return (
               <div
-                key={i}
+                key={`log-${i}-${log.slice(0, 20)}`}
                 className={`mb-1 typewriter-text ${
                   isError
                     ? 'text-brand-error'

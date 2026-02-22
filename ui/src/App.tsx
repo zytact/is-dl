@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Activity, Square, Terminal } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ResultsDashboard } from './components/ResultsDashboard';
-import { ScraperForm } from './components/ScraperForm';
+import { ScraperForm, type ScraperFormData } from './components/ScraperForm';
 import { TerminalLogs } from './components/TerminalLogs';
 
 export default function App() {
@@ -57,7 +57,7 @@ export default function App() {
     };
   }, []);
 
-  const handleStartScrape = async (data: any) => {
+  const handleStartScrape = async (data: ScraperFormData) => {
     console.log('Starting scrape with:', data);
     setLogs([]); // Clear logs when explicitly starting
     setLogs(['[SYSTEM] Initializing extraction sequence...']);
@@ -101,23 +101,23 @@ export default function App() {
             <Activity className="text-brand-dark w-8 h-8" />
           </div>
           <div>
-            <h1 className="text-4xl text-brand-text mb-[-4px]">
-              IS-DL <span className="text-brand-accent">v2.0</span>
-            </h1>
+            <h1 className="text-4xl text-brand-text mb-[-4px]">IS-DL</h1>
             <p className="text-brand-muted font-mono text-sm tracking-widest uppercase">
-              Intelligent Scraper // Data Link
+              Intelligent Scraper {/* Data Link */}
             </p>
           </div>
         </div>
 
         <div className="flex gap-1">
           <button
+            type="button"
             onClick={() => setActiveTab('scraper')}
             className={`brutal-btn !border-brand-border !text-brand-text hover:!bg-brand-border px-8 ${activeTab === 'scraper' ? '!bg-brand-text !text-brand-dark' : ''}`}
           >
             Terminal
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('results')}
             className={`brutal-btn !border-brand-border !text-brand-text hover:!bg-brand-border px-8 ${activeTab === 'results' ? '!bg-brand-cyan !text-brand-dark !border-brand-cyan' : ''}`}
           >
@@ -153,6 +153,7 @@ export default function App() {
                   <div className="flex gap-3">
                     {isScraping ? (
                       <button
+                        type="button"
                         onClick={handleStopScrape}
                         className="brutal-btn !border-brand-error !text-brand-error hover:!bg-brand-error hover:!text-brand-dark flex items-center gap-2 text-sm !py-1"
                       >
@@ -194,7 +195,7 @@ export default function App() {
           </span>
           <span>NET: SECURE</span>
         </div>
-        <div>BUN + REACT + VITE // DEPLOYED SECURELY</div>
+        <div>BUN + REACT + VITE {/* DEPLOYED SECURELY */}</div>
       </footer>
     </div>
   );

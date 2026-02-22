@@ -1,15 +1,34 @@
 import { AlertTriangle, Database, Download, FileJson } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+interface ApiFileEntry {
+  filename: string;
+  meta?: {
+    location?: string;
+    scrapedAt?: string;
+  };
+  count: number;
+}
+
+interface ResultEntry {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  date: string;
+  link: string;
+  count: number;
+}
+
 export function ResultsDashboard() {
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<ResultEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch('http://localhost:3000/api/results')
       .then((res) => res.json())
-      .then((data) => {
-        const parsed = (data.results || []).map((file: any) => ({
+      .then((data: { results?: ApiFileEntry[] }) => {
+        const parsed = (data.results || []).map((file) => ({
           id: file.filename,
           title: file.filename,
           company: 'Multiple',
@@ -42,7 +61,10 @@ export function ResultsDashboard() {
             <span className="w-2 h-2 bg-brand-ok inline-block rounded-full animate-pulse"></span>
             LATEST: jobs_export_2024-05-12.json
           </div>
-          <button className="brutal-btn !px-4 !py-1 !border-brand-ok !text-brand-ok hover:!bg-brand-ok flex items-center gap-2 text-sm">
+          <button
+            type="button"
+            className="brutal-btn !px-4 !py-1 !border-brand-ok !text-brand-ok hover:!bg-brand-ok flex items-center gap-2 text-sm"
+          >
             <Download className="w-4 h-4" /> EXPORT
           </button>
         </div>

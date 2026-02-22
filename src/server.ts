@@ -16,7 +16,7 @@ const addLog = (msg: string) => {
   for (const controller of sseControllers) {
     try {
       controller(sseMsg);
-    } catch (e) {
+    } catch (_e) {
       // ignore broken pipes
     }
   }
@@ -28,7 +28,7 @@ const notifyStatus = (status: boolean) => {
   for (const controller of sseControllers) {
     try {
       controller(sseMsg);
-    } catch (e) {
+    } catch (_e) {
       // ignore broken pipes
     }
   }
@@ -91,22 +91,31 @@ serve({
       }
 
       try {
-        const body = (await req.json()) as Record<string, any>;
+        const body = (await req.json()) as Record<string, unknown>;
         const options: SearchOptions = {
-          keywords: body.keywords || '',
-          location: body.location || '',
-          limit: Number(body.limit) || 50,
+          keywords: typeof body.keywords === 'string' ? body.keywords : '',
+          location: typeof body.location === 'string' ? body.location : '',
+          limit:
+            typeof body.limit === 'number'
+              ? body.limit
+              : Number(body.limit) || 50,
           outDir: './out',
-          headless: body.headless ?? true,
-          debug: body.debug ?? false,
-          remoteOnly: body.remoteOnly ?? false,
-          experienceLevel: body.experienceLevel
-            ? body.experienceLevel.split(',').map((s: string) => s.trim())
-            : undefined,
-          jobType: body.jobType
-            ? body.jobType.split(',').map((s: string) => s.trim())
-            : undefined,
-          postedWithin: body.postedWithin || undefined,
+          headless: typeof body.headless === 'boolean' ? body.headless : true,
+          debug: typeof body.debug === 'boolean' ? body.debug : false,
+          remoteOnly:
+            typeof body.remoteOnly === 'boolean' ? body.remoteOnly : false,
+          experienceLevel:
+            typeof body.experienceLevel === 'string' && body.experienceLevel
+              ? body.experienceLevel.split(',').map((s) => s.trim())
+              : undefined,
+          jobType:
+            typeof body.jobType === 'string' && body.jobType
+              ? body.jobType.split(',').map((s) => s.trim())
+              : undefined,
+          postedWithin:
+            typeof body.postedWithin === 'string'
+              ? body.postedWithin || undefined
+              : undefined,
         };
 
         if (!options.keywords) {
@@ -140,7 +149,7 @@ serve({
           JSON.stringify({ success: true, message: 'Scraper started' }),
           { headers: { 'Access-Control-Allow-Origin': '*' } },
         );
-      } catch (err) {
+      } catch (_err) {
         return new Response(JSON.stringify({ error: 'Invalid request body' }), {
           status: 400,
           headers: { 'Access-Control-Allow-Origin': '*' },
@@ -166,7 +175,7 @@ serve({
               meta: data.meta || {},
               count: data.jobs?.length || 0,
             });
-          } catch (e) {
+          } catch (_e) {
             // Ignore malformed JSON files
           }
         }
@@ -180,7 +189,7 @@ serve({
         return new Response(JSON.stringify({ results }), {
           headers: { 'Access-Control-Allow-Origin': '*' },
         });
-      } catch (err) {
+      } catch (_err) {
         return new Response(JSON.stringify({ results: [] }), {
           headers: { 'Access-Control-Allow-Origin': '*' },
         });
@@ -205,7 +214,7 @@ serve({
             'Access-Control-Allow-Origin': '*',
           },
         });
-      } catch (e) {
+      } catch (_e) {
         return new Response('Not found', {
           status: 404,
           headers: { 'Access-Control-Allow-Origin': '*' },
@@ -223,7 +232,7 @@ serve({
 async function ensureDir(path: string) {
   try {
     await readdir(path);
-  } catch (e) {
+  } catch (_e) {
     import('node:fs/promises').then((fs) =>
       fs.mkdir(path, { recursive: true }),
     );

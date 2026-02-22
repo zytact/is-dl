@@ -8,12 +8,22 @@
     "format": "biome format --write",
     "dev:ui": "cd ui && bun run dev --host",
     "dev:api": "lsof -i :3000 | grep LISTEN | awk '{print $2}' | xargs -r kill -9 || true; bun run src/server.ts",
-    "dev": "concurrently \"bun run dev:api\" \"bun run dev:ui\""
+    "dev": "concurrently \"bun run dev:api\" \"bun run dev:ui\"",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{js,ts,jsx,tsx}": [
+      "biome check",
+      "biome format --write"
+    ],
+    "*.{json,css}": "biome format --write"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.13",
     "@types/bun": "latest",
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7"
   },
   "peerDependencies": {
     "typescript": "^5"

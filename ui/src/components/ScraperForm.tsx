@@ -1,8 +1,19 @@
 import { Play } from 'lucide-react';
 import { useState } from 'react';
 
+export interface ScraperFormData {
+  keywords: string;
+  location: string;
+  limit: number;
+  experienceLevel: string;
+  jobType: string;
+  remoteOnly: boolean;
+  postedWithin: string;
+  headless: boolean;
+}
+
 interface ScraperFormProps {
-  onStart: (data: any) => void;
+  onStart: (data: ScraperFormData) => void;
   isScraping: boolean;
 }
 

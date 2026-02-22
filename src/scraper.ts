@@ -17,6 +17,7 @@ import type { JobListing, ScraperOutput, SearchOptions } from './types.ts';
 export async function runScraper(
   options: SearchOptions,
   onLog: (msg: string) => void = console.log,
+  _signal?: AbortSignal,
 ): Promise<string> {
   onLog('LinkedIn Internship Scraper\n');
 
