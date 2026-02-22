@@ -1,198 +1,159 @@
-# Agent Notes (is-dl)
+# AGENTS.md
 
-This repo is a Bun + TypeScript project. Use Bun for running scripts, and Biome for formatting/linting.
+Welcome to the `is-dl` project. This guide provides essential instructions and context for AI coding agents operating within this repository.
 
-## Quick Commands
+The project structure is split into two main parts:
 
-### Install
+1. **Backend (`/src`)**: A scraping API built with Bun, TypeScript, and Playwright.
+2. **Frontend (`/ui`)**: A React web interface built with Vite, Tailwind CSS v4, and Framer Motion.
+
+---
+
+## 1. Available Commands
+
+Please execute these commands from the **root directory** unless stated otherwise.
+
+### Installation & Setup
 
 ```bash
+# Install root (backend) dependencies
 bun install
+
+# Install frontend dependencies
+cd ui && bun install
 ```
 
-### Run
+### Development Servers
 
 ```bash
-bun run index.ts
+# Starts both the backend API and frontend Vite server concurrently
+bun run dev
+
+# Starts only the frontend UI
+bun run dev:ui
+
+# Starts only the backend API (clears port 3000 if occupied)
+bun run dev:api
 ```
 
-### Lint / Format (Biome)
+### Linting & Formatting
+
+**Backend (Biome):**
 
 ```bash
-# lint (no write)
+# Lint the codebase (check-only)
 bun run lint
 
-# format (writes files)
+# Auto-format codebase
 bun run format
 
-# both (check + auto-fix where possible)
+# Lint and auto-fix standard issues
 bunx biome check --write
 ```
 
-Notes:
-- Biome config lives in `biome.json`.
-- Import organization is enabled (Biome assist).
-
-### Typecheck
-
-There is no dedicated script yet; use TypeScript directly:
+**Frontend (ESLint):**
 
 ```bash
-# typecheck only (no emit)
-bunx tsc -p tsconfig.json --noEmit
+cd ui
+
+# Lint frontend React code
+bun run lint
 ```
 
-If `bunx tsc` fails, ensure `typescript` is installed (it is a peer dependency).
-
-### Tests
-
-No test suite is currently configured in `package.json`.
-
-If/when tests are added, prefer Bun's test runner:
+### Typechecking
 
 ```bash
-# run all tests
+# Typecheck backend
+bunx tsc --noEmit
+
+# Typecheck frontend
+cd ui && bunx tsc -b
+```
+
+### Testing (Bun Test)
+
+Currently, no test suite is configured. However, when tests are added, they should use Bun's fast native test runner.
+
+```bash
+# Run all tests in the project
 bun test
 
-# run a single test file
-bun test path/to/foo.test.ts
+# Run a specific test file
+bun test src/services/scraper.test.ts
 
-# run tests matching a name/pattern
-bun test -t "my test name"
+# Run tests matching a specific name/pattern
+bun test -t "should correctly parse LinkedIn data"
 
-# watch mode
+# Run tests in watch mode (useful during iterative development)
 bun test --watch
 ```
 
-## Repo Conventions
+---
 
-### Runtime and Module System
+## 2. Code Style Guidelines
 
-- Runtime: Bun.
-- ESM: `package.json` sets `"type": "module"`.
-- Entry point: `index.ts`.
-- TS config: `tsconfig.json` uses strict mode and bundler resolution.
+### General TypeScript Conventions
 
-### Formatting (Biome)
+- **Strictness:** Maintain `strict: true`. Avoid type assertions (`as Type`) unless absolutely necessary.
+- **Typing Boundaries:** Use `unknown` for untrusted or external data (like scraping results or API requests). Validate explicitly before casting.
+- **Types vs Interfaces:** Prefer `type` aliases for complex unions or intersections. Use `interface` for declarative object shapes.
+- **Mutability:** Prefer `readonly` arrays (`readonly string[]`) and objects. Do not mutate shared objects.
+- **Imports/Exports:** Use ESM imports. Prefer explicit named imports over default imports. Keep imports at the top of the file. Let Biome organize your imports automatically.
 
-Follow Biome; do not hand-format around it.
+### Formatting & Naming
 
-- Indentation: spaces.
-- Quotes: single quotes in JS/TS (`biome.json` -> `quoteStyle: 'single'`).
-- Imports: let Biome organize them; do not fight the sorter.
-- Prefer running `bun run format` after making edits.
+- **Backend Formatting:** Let Biome handle the formatting. Do not override Biome's choices manually.
+- **Frontend Formatting:** Follow the configured ESLint and Vite plugins.
+- **File Naming:** Use `kebab-case.ts` or `kebab-case.tsx` for all files (e.g., `job-parser.ts`, `data-table.tsx`).
+- **Variables & Functions:** Use `camelCase`.
+- **Classes & Types:** Use `PascalCase`.
+- **Constants:** Use `SCREAMING_SNAKE_CASE` for global or module-level constants only.
+- **Booleans:** Prefix boolean variables with `is`, `has`, `should`, or `can` (e.g., `isLoading`, `hasError`).
 
-### Linting (Biome)
+### Architecture & Control Flow
 
-- `bun run lint` runs `biome check` with recommended rules.
-- Fixes: use `bunx biome check --write` for auto-fixable issues.
-- Keep the codebase warning-free before sending changes for review.
-
-### TypeScript Rules (tsconfig)
-
-This project is intentionally strict:
-
-- `strict: true`.
-- `noUncheckedIndexedAccess: true`: handle possibly-undefined index access.
-- `noImplicitOverride: true`: use `override` when overriding.
-- `noFallthroughCasesInSwitch: true`: use `break`/`return` explicitly.
-- `allowImportingTsExtensions: true`: `.ts` extensions are allowed if needed.
-- `verbatimModuleSyntax: true`: keep imports/exports semantically correct.
-
-Practical implications:
-- When indexing into objects/arrays, guard or use safe defaults.
-- Prefer narrowing over assertions; avoid `as` unless justified.
-
-## Code Style Guidelines
-
-### Imports
-
-- Use ESM imports (`import ... from '...'`).
-- Keep imports at the top of the file.
-- Prefer explicit named imports over deep default imports when available.
-- Avoid unused imports; run Biome organize imports.
-- Type-only imports: use `import type { Foo } from '...'` when appropriate.
-
-### Naming
-
-- Files: `kebab-case` for multi-word filenames unless the folder already uses a different convention.
-- Variables/functions: `camelCase`.
-- Classes/types/interfaces: `PascalCase`.
-- Constants: `SCREAMING_SNAKE_CASE` only for true module-level constants.
-- Booleans: use `is/has/can/should` prefixes (`isReady`, `hasNext`).
-- Avoid abbreviations unless they are domain-standard.
-
-### Types
-
-- Prefer `unknown` over `any` at boundaries (network, parsing, user input).
-- Prefer `type` aliases for unions/intersections; use `interface` when extension/merging is desired.
-- Prefer `readonly` data where helpful; avoid mutating shared objects.
-- Prefer `Record<string, T>` only when keys are truly arbitrary.
-- Prefer `satisfies` for validating object shapes without widening.
-
-### Control Flow
-
-- Prefer early returns to reduce nesting.
-- Use `switch` only when it improves readability; keep cases exhaustive.
-- Use `for..of` for async/await loops; avoid `forEach(async () => ...)`.
+- **Early Returns:** Prefer early returns to reduce nesting (Guard Clauses).
+- **Switch Statements:** Use them when it improves readability over `if/else`, and ensure all cases are exhaustive (or include a default).
+- **Loops:** Prefer `for..of` loops when awaiting async operations sequentially.
+- **Async/Await:** Avoid raw `.then()` chaining. Use `await Promise.all(...)` when operations can run in parallel.
 
 ### Error Handling
 
-- Throw `Error` objects (or subclasses) rather than strings.
-- Add context to errors at boundaries (e.g., include operation + key ids).
-- When catching, either:
-  - handle the error fully, or
-  - rethrow with context, preserving the original as `cause`.
+- **Never throw strings.** Always throw standard `Error` objects or custom subclasses.
+- **Contextualize Errors:** When catching errors at system boundaries (e.g., Playwright network failures), wrap them to provide context, preserving the original error with the `cause` property:
+    ```ts
+    try {
+        await page.goto(url);
+    } catch (error) {
+        throw new Error(`Failed to load LinkedIn page for URL: ${url}`, {
+            cause: error,
+        });
+    }
+    ```
+- **Expected Failures:** For expected domain failures (like a missing DOM element during scraping), consider returning a `Result` type (e.g., `{ success: false, reason: 'Selector not found' }`) rather than throwing an exception.
 
-Example:
+---
 
-```ts
-try {
-  await doThing();
-} catch (err) {
-  throw new Error('doThing failed for jobId=123', { cause: err });
-}
-```
+## 3. Project-Specific Directives
 
-### Logging
+### Backend (Bun + Playwright)
 
-- Prefer structured logs when possible (objects), but keep them readable.
-- Do not log secrets/tokens/cookies/credentials.
-- Avoid noisy logs in library-like code paths; gate with a flag if needed.
+- **Scraping Stability:** Web scraping is brittle. Build resilient CSS selectors. Use Playwright's auto-waiting features (`page.locator()`) rather than arbitrary `page.waitForTimeout()` calls.
+- **Data Parsing:** Isolate DOM traversal logic from data transformation logic. Extract parsing into pure, testable functions.
 
-### Async and I/O
+### Frontend (React + Tailwind)
 
-- Prefer `await` over raw promise chaining.
-- When doing multiple independent awaits, use `await Promise.all([...])`.
-- Be explicit about retries/timeouts for network operations.
+- **Component Design:** Use functional components with hooks. Keep components small and focused.
+- **Styling:** Utilize Tailwind CSS v4. When conditional class names are required, use `clsx` and `tailwind-merge` (typically wrapped in a `cn()` utility).
+- **State Management:** Keep state as localized as possible. Use React Context only when prop-drilling becomes overly cumbersome.
+- **Animations:** Use `motion` (can be installed with `bun install motion`) formerly `framer-motion` for complex UI transitions.
+- **Icons:** Use `lucide-react` for iconography.
 
-### Data Parsing / Validation
+---
 
-- Treat external data as untrusted.
-- Parse + validate once at the boundary, then pass typed data internally.
-- Prefer small parsing helpers that return `Result`-like objects or throw.
+## 4. Agent Workflow Rules
 
-### JSON Output
-
-- Keep output schemas stable; document changes.
-- Prefer explicit field names and consistent casing.
-- Avoid `undefined` in JSON; normalize to `null` or omit consistently.
-
-## Project-Specific Notes
-
-- Goal (from `README.md`): scrape LinkedIn internship postings and export structured JSON.
-- Entry file `index.ts` is currently a placeholder.
-
-## Agent Workflow
-
-When making changes:
-
-1. Keep edits small and focused; prefer incremental improvements.
-2. Run `bun run format` and `bun run lint`.
-3. If you add types/non-trivial logic, also run `bunx tsc -p tsconfig.json --noEmit`.
-4. If you add tests, ensure single-test instructions in this file stay accurate.
-
-## Editor/Agent Rules
-
-- No Cursor rules found (no `.cursor/rules/` and no `.cursorrules`).
-- No GitHub Copilot rules found (no `.github/copilot-instructions.md`).
+1. **Verify Your Work:** Always run the appropriate format, lint, and typecheck commands after making substantial changes. Do not leave the codebase with build errors.
+2. **Context is King:** Before creating new functions or components, use `glob` and `grep` to ensure similar utilities don't already exist.
+3. **Patience with UI:** When dealing with Playwright selectors, confirm the page structure before writing heavy extraction logic.
+4. **Existing Editor Rules:** Note that there are currently no `.cursorrules`, `.cursor/rules/`, or `.github/copilot-instructions.md` applied in this repository. Use this `AGENTS.md` file as the definitive source of truth for repository behavior.
