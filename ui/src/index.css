@@ -10,9 +10,9 @@
   --color-brand-muted: #888888;
   --color-brand-ok: #00ff41;
   --color-brand-error: #ff003c;
-  
-  --font-display: 'Rajdhani', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+
+  --font-display: "Rajdhani", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 }
 
 @layer base {
@@ -22,11 +22,14 @@
 
   body {
     @apply bg-brand-dark text-brand-text font-mono antialiased overflow-x-hidden relative;
-    background-image: 
+    background-image:
       radial-gradient(circle at 50% 0%, #1a1a1a 0%, transparent 70%),
       linear-gradient(to right, #ffffff05 1px, transparent 1px),
       linear-gradient(to bottom, #ffffff05 1px, transparent 1px);
-    background-size: 100% 100%, 30px 30px, 30px 30px;
+    background-size:
+      100% 100%,
+      30px 30px,
+      30px 30px;
     background-attachment: fixed;
     margin: 0;
   }
@@ -65,7 +68,12 @@
     z-index: 49;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-display tracking-tight uppercase font-bold;
   }
 }
@@ -74,7 +82,7 @@
   .brutal-shadow {
     box-shadow: 4px 4px 0px var(--color-brand-accent);
   }
-  
+
   .brutal-shadow-cyan {
     box-shadow: 4px 4px 0px var(--color-brand-cyan);
   }
@@ -82,7 +90,7 @@
   .brutal-shadow-ok {
     box-shadow: 4px 4px 0px var(--color-brand-ok);
   }
-  
+
   .brutal-border {
     @apply border border-brand-border;
   }
@@ -97,7 +105,7 @@
   .brutal-btn {
     @apply font-display tracking-wider uppercase font-bold px-6 py-2 border-2 border-brand-accent bg-transparent text-brand-accent transition-all duration-150 active:translate-x-[4px] active:translate-y-[4px] active:shadow-none hover:bg-brand-accent hover:text-brand-dark cursor-pointer;
   }
-  
+
   .brutal-btn.primary {
     box-shadow: 4px 4px 0px var(--color-brand-accent);
   }
@@ -119,15 +127,33 @@
 
 /* Custom Animations */
 @keyframes flicker {
-  0% { opacity: 0.9; }
-  5% { opacity: 0.4; }
-  10% { opacity: 0.9; }
-  15% { opacity: 0.1; }
-  20% { opacity: 0.9; }
-  50% { opacity: 0.9; }
-  55% { opacity: 0.5; }
-  60% { opacity: 0.9; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 0.9;
+  }
+  5% {
+    opacity: 0.4;
+  }
+  10% {
+    opacity: 0.9;
+  }
+  15% {
+    opacity: 0.1;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 0.9;
+  }
+  55% {
+    opacity: 0.5;
+  }
+  60% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .animate-flicker {
@@ -135,8 +161,12 @@
 }
 
 @keyframes type-in {
-  from { width: 0; }
-  to { width: 100%; }
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
 }
 
 .typewriter-text {
