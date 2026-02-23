@@ -145,26 +145,24 @@ export default function App() {
                 />
               </div>
               <div className="flex-1 border-l border-brand-border pl-6 flex flex-col h-full">
-                <div className="flex justify-between items-center border-b border-brand-border pb-2 mb-4">
+                <div className="flex items-center gap-4 border-b border-brand-border pb-2 mb-4">
                   <h2 className="text-xl flex items-center gap-2">
                     <Terminal className="w-5 h-5 text-brand-cyan" />
                     Console Output
                   </h2>
-                  <div className="flex gap-3">
-                    {isScraping ? (
-                      <button
-                        type="button"
-                        onClick={handleStopScrape}
-                        className="brutal-btn !border-brand-error !text-brand-error hover:!bg-brand-error hover:!text-brand-dark flex items-center gap-2 text-sm !py-1"
-                      >
-                        <Square className="w-4 h-4" /> ABORT
-                      </button>
-                    ) : (
-                      <div className="text-brand-muted text-sm uppercase px-2 py-1 border border-brand-border">
-                        IDLE
-                      </div>
-                    )}
-                  </div>
+                  {isScraping ? (
+                    <button
+                      type="button"
+                      onClick={handleStopScrape}
+                      className="brutal-btn !border-brand-error !text-brand-error hover:!bg-brand-error hover:!text-brand-dark flex items-center gap-2 text-sm !py-1"
+                    >
+                      <Square className="w-4 h-4" /> ABORT
+                    </button>
+                  ) : (
+                    <div className="text-brand-muted text-sm uppercase px-2 py-1 border border-brand-border">
+                      IDLE
+                    </div>
+                  )}
                 </div>
                 <TerminalLogs logs={logs} isScraping={isScraping} />
               </div>
