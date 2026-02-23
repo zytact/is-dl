@@ -4,14 +4,13 @@ import { serve } from 'bun';
 import { runScraper } from './scraper.ts';
 import type { SearchOptions } from './types.ts';
 
-// Store logs for current or last scrape
 let currentLogs: string[] = [];
 let isScraping = false;
+let scrapeAbortController: AbortController | null = null;
 const sseControllers: Set<(data: string) => void> = new Set();
 
 const addLog = (msg: string) => {
   currentLogs.push(msg);
-  // Broadcast to all SSE clients
   const sseMsg = `data: ${JSON.stringify({ type: 'log', message: msg })}\n\n`;
   for (const controller of sseControllers) {
     try {
@@ -49,7 +48,6 @@ serve({
       });
     }
 
-    // GET /api/logs -> SSE Stream
     if (url.pathname === '/api/logs' && req.method === 'GET') {
       const stream = new ReadableStream({
         start(controller) {
@@ -58,9 +56,7 @@ serve({
 
           sseControllers.add(send);
 
-          // Send initial state
           send(`data: ${JSON.stringify({ type: 'status', isScraping })}\n\n`);
-          // Send existing logs
           for (const log of currentLogs) {
             send(`data: ${JSON.stringify({ type: 'log', message: log })}\n\n`);
           }
@@ -81,7 +77,6 @@ serve({
       });
     }
 
-    // POST /api/scrape
     if (url.pathname === '/api/scrape' && req.method === 'POST') {
       if (isScraping) {
         return new Response(
@@ -128,21 +123,32 @@ serve({
           );
         }
 
-        // Run async without blocking response
         currentLogs = [];
         notifyStatus(true);
 
-        runScraper(options, (msg) => {
-          console.log(`[API] ${msg}`);
-          addLog(msg);
-        })
+        scrapeAbortController = new AbortController();
+        const signal = scrapeAbortController.signal;
+
+        runScraper(
+          options,
+          (msg) => {
+            console.log(`[API] ${msg}`);
+            addLog(msg);
+          },
+          signal,
+        )
           .then((outPath) => {
             addLog(`\n--- SCRAPE FINISHED: ${outPath} ---`);
             notifyStatus(false);
+            scrapeAbortController = null;
           })
-          .catch((err) => {
-            addLog(`\n--- SCRAPE FAILED: ${err.message} ---`);
+          .catch(() => {
+            const msg = signal.aborted
+              ? '\n--- SCRAPE ABORTED ---'
+              : '\n--- SCRAPE FAILED ---';
+            addLog(msg);
             notifyStatus(false);
+            scrapeAbortController = null;
           });
 
         return new Response(
@@ -157,14 +163,28 @@ serve({
       }
     }
 
-    // GET /api/results
+    if (url.pathname === '/api/abort' && req.method === 'POST') {
+      if (!scrapeAbortController || !isScraping) {
+        return new Response(
+          JSON.stringify({ error: 'No active scrape to abort' }),
+          { status: 409, headers: { 'Access-Control-Allow-Origin': '*' } },
+        );
+      }
+
+      addLog('[SYSTEM] Abort requested.');
+      scrapeAbortController.abort();
+      return new Response(
+        JSON.stringify({ success: true, message: 'Abort signaled' }),
+        { headers: { 'Access-Control-Allow-Origin': '*' } },
+      );
+    }
+
     if (url.pathname === '/api/results' && req.method === 'GET') {
       try {
         await ensureDir('./out');
         const files = await readdir('./out');
         const jsonFiles = files.filter((f) => f.endsWith('.json'));
 
-        // Let's read them to get metadata
         const results = [];
         for (const file of jsonFiles) {
           try {
@@ -180,7 +200,6 @@ serve({
           }
         }
 
-        // Sort newest first
         results.sort(
           (a, b) =>
             b.meta.scrapedAt?.localeCompare(a.meta.scrapedAt || '') || 0,
@@ -196,7 +215,6 @@ serve({
       }
     }
 
-    // GET /api/results/:filename
     if (url.pathname.startsWith('/api/results/') && req.method === 'GET') {
       const filename = url.pathname.split('/').pop();
       if (!filename || !filename.endsWith('.json')) {
