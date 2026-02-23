@@ -1,14 +1,18 @@
 {
   "name": "is-dl",
-  "module": "src/index.ts",
-  "type": "module",
   "private": true,
+  "packageManager": "bun@1.3.9",
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
-    "lint": "biome check",
-    "format": "biome format --write",
-    "dev:ui": "cd ui && bun run dev --host",
-    "dev:api": "lsof -i :3000 | grep LISTEN | awk '{print $2}' | xargs -r kill -9 || true; bun run src/server.ts",
-    "dev": "concurrently \"bun run dev:api\" \"bun run dev:ui\"",
+    "dev": "turbo run dev",
+    "dev:api": "turbo run dev --filter=@repo/api",
+    "dev:web": "turbo run dev --filter=@repo/web",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "format": "turbo run format",
+    "typecheck": "turbo run typecheck",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -21,14 +25,9 @@
   "devDependencies": {
     "@biomejs/biome": "2.3.13",
     "@types/bun": "latest",
-    "concurrently": "^9.2.1",
     "husky": "^9.1.7",
-    "lint-staged": "^16.2.7"
-  },
-  "peerDependencies": {
+    "lint-staged": "^16.2.7",
+    "turbo": "^2.4.4",
     "typescript": "^5"
-  },
-  "dependencies": {
-    "playwright": "^1.58.0"
   }
 }
