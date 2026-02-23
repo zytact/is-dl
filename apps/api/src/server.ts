@@ -1,5 +1,8 @@
+import { createReadStream } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { PassThrough, Readable } from 'node:stream';
+import archiver from 'archiver';
 import { serve } from 'bun';
 import { runScraper } from './scraper.ts';
 import type { SearchOptions } from './types.ts';
@@ -42,7 +45,7 @@ serve({
       return new Response(null, {
         headers: {
           'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
           'Access-Control-Allow-Headers': 'Content-Type',
         },
       });
@@ -210,6 +213,81 @@ serve({
         });
       } catch (_err) {
         return new Response(JSON.stringify({ results: [] }), {
+          headers: { 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+    }
+
+    if (url.pathname === '/api/results/export' && req.method === 'GET') {
+      try {
+        await ensureDir('./out');
+        const files = await readdir('./out');
+        const jsonFiles = files.filter((f) => f.endsWith('.json'));
+
+        if (jsonFiles.length === 0) {
+          return new Response('No results to export', {
+            status: 404,
+            headers: { 'Access-Control-Allow-Origin': '*' },
+          });
+        }
+
+        const archive = archiver('zip', { zlib: { level: 9 } });
+        const passThrough = new PassThrough();
+
+        archive.on('error', (err) => {
+          console.error('Zip export failed', err);
+        });
+
+        archive.pipe(passThrough);
+
+        for (const file of jsonFiles) {
+          const filePath = join('./out', file);
+          archive.append(createReadStream(filePath), { name: file });
+        }
+
+        void archive.finalize();
+
+        return new Response(Readable.toWeb(passThrough), {
+          headers: {
+            'Content-Type': 'application/zip',
+            'Content-Disposition': 'attachment; filename="results-export.zip"',
+            'Access-Control-Allow-Origin': '*',
+          },
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Export failed';
+        return new Response(message, {
+          status: 500,
+          headers: { 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+    }
+
+    if (url.pathname.startsWith('/api/results/') && req.method === 'DELETE') {
+      const rawName = url.pathname.split('/').pop();
+      const decodedName = rawName ? decodeURIComponent(rawName) : null;
+      const filename = decodedName ? decodedName.split('/').pop() : null;
+      if (!filename || !filename.endsWith('.json')) {
+        return new Response('Invalid filename', {
+          status: 400,
+          headers: { 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      try {
+        const { unlink } = await import('node:fs/promises');
+        await unlink(join('./out', filename));
+        return new Response(JSON.stringify({ success: true }), {
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to delete';
+        const status = message.includes('no such file') ? 404 : 500;
+        return new Response(message, {
+          status,
           headers: { 'Access-Control-Allow-Origin': '*' },
         });
       }
