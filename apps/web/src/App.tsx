@@ -84,12 +84,26 @@ export default function App() {
     }
   };
 
-  const handleStopScrape = () => {
-    setIsScraping(false);
-    setLogs((prev) => [
-      ...prev,
-      '[SYSTEM] WARNING: Backend abort not fully supported yet.',
-    ]);
+  const handleStopScrape = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/api/abort', {
+        method: 'POST',
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        setLogs((prev) => [
+          ...prev,
+          `[ERROR] Failed to abort: ${result.error || response.statusText}`,
+        ]);
+      } else {
+        setLogs((prev) => [...prev, '[SYSTEM] Abort signal sent to backend.']);
+      }
+    } catch (err) {
+      setLogs((prev) => [
+        ...prev,
+        `[ERROR] Network failure during abort: ${err instanceof Error ? err.message : String(err)}`,
+      ]);
+    }
   };
 
   return (
