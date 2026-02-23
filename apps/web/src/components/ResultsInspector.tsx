@@ -4,11 +4,13 @@ import {
   ChevronRight,
   Database,
   ExternalLink,
+  FileJson,
   Globe,
   MapPin,
   Search,
   Server,
   Terminal,
+  Trash2,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useState } from 'react';
@@ -45,13 +47,21 @@ interface ResultsData {
 interface ResultsInspectorProps {
   filename: string;
   onBack: () => void;
+  onDeleted: () => void;
 }
 
-export function ResultsInspector({ filename, onBack }: ResultsInspectorProps) {
+export function ResultsInspector({
+  filename,
+  onBack,
+  onDeleted,
+}: ResultsInspectorProps) {
   const [data, setData] = useState<ResultsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -105,6 +115,31 @@ export function ResultsInspector({ filename, onBack }: ResultsInspectorProps) {
     );
   }
 
+  const handleDeleteRequest = () => {
+    setConfirmDelete((current) => !current);
+  };
+
+  const handleDeleteConfirm = async () => {
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch(`http://localhost:3000/api/results/${filename}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) {
+        const message = await res.text();
+        throw new Error(message || 'Failed to delete');
+      }
+      setConfirmDelete(false);
+      onDeleted();
+    } catch (err) {
+      console.error('Failed to purge dataset', err);
+      setDeleteError('Delete failed. Check API logs or refresh.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const { meta, jobs } = data;
 
   return (
@@ -149,11 +184,75 @@ export function ResultsInspector({ filename, onBack }: ResultsInspectorProps) {
             <span className="w-2 h-2 bg-brand-cyan inline-block rounded-none animate-pulse" />
             RECORDS: {jobs.length}
           </div>
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              className="text-brand-muted hover:text-brand-accent transition-colors flex items-center justify-center hover:scale-110 transform"
+              onClick={() =>
+                window.open(
+                  `http://localhost:3000/api/results/${filename}`,
+                  '_blank',
+                )
+              }
+              title="View Raw JSON"
+            >
+              <FileJson className="w-5 h-5" />
+            </button>
+            <button
+              type="button"
+              className={`transition-all duration-200 flex items-center justify-center h-8 min-w-[32px] ${
+                isDeleting
+                  ? 'border border-brand-error text-brand-error'
+                  : 'border border-transparent text-brand-muted hover:text-brand-error hover:border-brand-error/50'
+              }`}
+              onClick={handleDeleteRequest}
+              title="Purge Record"
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <div className="w-4 h-4 border-2 border-brand-error border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Trash2 className="w-5 h-5 hover:scale-110 transform transition-transform" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Main Content: Master Detail Split */}
       <div className="flex-1 flex min-h-0 relative overflow-hidden">
+        <AnimatePresence>
+          {confirmDelete && (
+            <motion.div
+              initial={{ opacity: 0, y: -6, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.98 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="absolute right-6 top-4 bg-brand-dark border border-brand-error/60 text-brand-text font-mono text-xs uppercase tracking-widest px-3 py-2 flex items-center gap-3 brutal-shadow z-30"
+            >
+              <span className="text-brand-error">Confirm purge?</span>
+              <button
+                type="button"
+                className="border border-brand-border px-2 py-1 text-brand-muted hover:text-brand-text hover:border-brand-text transition-colors"
+                onClick={() => setConfirmDelete(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="border border-brand-error bg-brand-error/10 px-2 py-1 text-brand-error hover:bg-brand-error hover:text-brand-dark transition-colors"
+                onClick={handleDeleteConfirm}
+              >
+                Purge
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        {deleteError && (
+          <div className="absolute right-6 top-20 border border-brand-error bg-brand-error/10 text-brand-error px-4 py-2 text-xs font-mono uppercase tracking-widest z-30">
+            {deleteError}
+          </div>
+        )}
         {/* Left: Job List */}
         <div className="w-[35%] min-w-[300px] border-r border-brand-border flex flex-col h-full bg-[#0a0a0a]">
           <div className="p-3 border-b border-brand-border text-xs text-brand-muted font-mono tracking-widest bg-brand-dark flex justify-between items-center shrink-0">
