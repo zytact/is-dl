@@ -113,7 +113,7 @@ export function ResultsInspector({ filename, onBack }: ResultsInspectorProps) {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.98 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="flex-1 flex flex-col h-full bg-brand-panel brutal-border relative overflow-hidden"
+      className="flex-1 flex flex-col h-full min-h-0 bg-brand-panel brutal-border relative overflow-hidden"
     >
       {/* Header */}
       <div className="flex justify-between items-center bg-brand-dark border-b border-brand-border px-4 py-3 shrink-0">
@@ -153,14 +153,14 @@ export function ResultsInspector({ filename, onBack }: ResultsInspectorProps) {
       </div>
 
       {/* Main Content: Master Detail Split */}
-      <div className="flex-1 flex min-h-0 relative">
+      <div className="flex-1 flex min-h-0 relative overflow-hidden">
         {/* Left: Job List */}
         <div className="w-[35%] min-w-[300px] border-r border-brand-border flex flex-col h-full bg-[#0a0a0a]">
           <div className="p-3 border-b border-brand-border text-xs text-brand-muted font-mono tracking-widest bg-brand-dark flex justify-between items-center shrink-0">
             <span>INDEXED_ENTITIES</span>
             <span className="text-brand-text">{jobs.length} FOUND</span>
           </div>
-          <div className="flex-1 overflow-y-auto scrollbar-cyber p-2 flex flex-col gap-2">
+          <div className="flex-1 overflow-y-auto min-h-0 scrollbar-cyber p-2 flex flex-col gap-2">
             {jobs.map((job) => {
               const isActive = selectedJob?.jobId === job.jobId;
               return (
@@ -168,7 +168,7 @@ export function ResultsInspector({ filename, onBack }: ResultsInspectorProps) {
                   key={job.jobId}
                   type="button"
                   onClick={() => setSelectedJob(job)}
-                  className={`w-full text-left p-3 border font-mono transition-all duration-200 relative group overflow-hidden ${
+                  className={`w-full text-left p-3 border font-mono transition-all duration-200 relative group overflow-hidden shrink-0 ${
                     isActive
                       ? 'border-brand-cyan bg-brand-cyan/5 text-brand-text brutal-shadow-cyan z-10'
                       : 'border-brand-border bg-brand-panel text-brand-muted hover:border-brand-muted hover:bg-[#151515]'
@@ -219,7 +219,7 @@ export function ResultsInspector({ filename, onBack }: ResultsInspectorProps) {
         </div>
 
         {/* Right: Job Detail */}
-        <div className="flex-1 bg-brand-panel h-full overflow-hidden flex flex-col relative">
+        <div className="flex-1 bg-brand-panel h-full overflow-hidden flex flex-col relative min-w-0">
           <AnimatePresence mode="wait">
             {selectedJob ? (
               <motion.div
@@ -228,10 +228,10 @@ export function ResultsInspector({ filename, onBack }: ResultsInspectorProps) {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.2 }}
-                className="flex-1 flex flex-col h-full overflow-y-auto scrollbar-cyber"
+                className="flex-1 flex flex-col h-full overflow-y-auto min-h-0 scrollbar-cyber"
               >
                 {/* Detail Header */}
-                <div className="p-8 border-b border-brand-border relative bg-[#0a0a0a] overflow-hidden">
+                <div className="p-8 border-b border-brand-border relative bg-[#0a0a0a] overflow-hidden shrink-0">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-brand-cyan/5 rounded-full blur-3xl pointer-events-none" />
                   <div className="absolute top-4 right-4 text-[10px] font-mono text-brand-muted tracking-widest border border-brand-border p-1">
                     TARGET_ID :: {selectedJob.jobId}
@@ -283,7 +283,7 @@ export function ResultsInspector({ filename, onBack }: ResultsInspectorProps) {
                 </div>
 
                 {/* Detail Content */}
-                <div className="p-8 flex flex-col gap-8 font-mono text-sm leading-relaxed">
+                <div className="p-8 flex flex-col gap-8 font-mono text-sm leading-relaxed shrink-0">
                   {selectedJob.descriptionText && (
                     <div className="space-y-4">
                       <h3 className="text-xl font-display text-brand-accent tracking-widest font-bold flex items-center gap-2">

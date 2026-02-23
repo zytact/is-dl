@@ -55,7 +55,7 @@ export function ResultsDashboard() {
   }, []);
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-brand-panel brutal-border relative group overflow-hidden">
+    <div className="flex-1 flex flex-col h-full min-h-0 bg-brand-panel brutal-border relative group overflow-hidden">
       <AnimatePresence mode="wait">
         {selectedFile ? (
           <ResultsInspector
@@ -70,7 +70,7 @@ export function ResultsDashboard() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="flex-1 flex flex-col h-full p-1"
+            className="flex-1 flex flex-col h-full min-h-0 p-1"
           >
             <div className="flex justify-between items-center bg-brand-dark border-b border-brand-border px-4 py-3 relative z-10 shrink-0">
               <h2 className="text-xl flex items-center gap-3 text-brand-cyan tracking-widest font-display font-bold">
@@ -92,7 +92,7 @@ export function ResultsDashboard() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-auto scrollbar-cyber p-4">
+            <div className="flex-1 overflow-auto min-h-0 scrollbar-cyber p-4">
               {loading ? (
                 <div className="flex flex-col items-center justify-center h-full gap-4 opacity-50">
                   <div className="w-16 h-16 border-4 border-brand-border border-t-brand-cyan rounded-full animate-spin" />
