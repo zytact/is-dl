@@ -112,14 +112,14 @@ export default function App() {
           <button
             type="button"
             onClick={() => setActiveTab('scraper')}
-            className={`brutal-btn !border-brand-border !text-brand-text hover:!bg-brand-border px-8 ${activeTab === 'scraper' ? '!bg-brand-text !text-brand-dark' : ''}`}
+            className={`brutal-btn !border-brand-border !text-brand-text hover:!bg-brand-border px-8 ${activeTab === 'scraper' ? '!bg-brand-border !text-brand-dark' : ''}`}
           >
             Terminal
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('results')}
-            className={`brutal-btn !border-brand-border !text-brand-text hover:!bg-brand-border px-8 ${activeTab === 'results' ? '!bg-brand-cyan !text-brand-dark !border-brand-cyan' : ''}`}
+            className={`brutal-btn !border-brand-border !text-brand-text hover:!bg-brand-border px-8 ${activeTab === 'results' ? '!bg-brand-border !text-brand-dark' : ''}`}
           >
             Payloads
           </button>
