@@ -1,5 +1,5 @@
-import { AnimatePresence, motion } from 'framer-motion';
 import { Activity, Square, Terminal } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { ResultsDashboard } from './components/ResultsDashboard';
 import { ScraperForm, type ScraperFormData } from './components/ScraperForm';
