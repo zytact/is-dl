@@ -102,6 +102,28 @@ export function ResultsDashboard() {
     setConfirmDelete(null);
   };
 
+  const handleDownloadSingle = async (
+    e: React.MouseEvent,
+    filename: string,
+  ) => {
+    e.stopPropagation();
+    try {
+      const res = await fetch(`http://localhost:3000/api/results/${filename}`);
+      if (!res.ok) throw new Error('Download failed');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to download', err);
+    }
+  };
+
   const handleExportAll = async () => {
     setExporting(true);
     setExportError(null);
@@ -264,6 +286,16 @@ export function ResultsDashboard() {
                               title="View Raw JSON"
                             >
                               <FileJson className="w-5 h-5" />
+                            </button>
+                            <button
+                              type="button"
+                              className="text-brand-muted hover:text-brand-ok transition-colors flex items-center justify-center hover:scale-110 transform"
+                              onClick={(e) =>
+                                handleDownloadSingle(e, job.filename)
+                              }
+                              title="Download JSON"
+                            >
+                              <Download className="w-5 h-5" />
                             </button>
                             <button
                               type="button"

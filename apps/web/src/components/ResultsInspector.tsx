@@ -3,6 +3,7 @@ import {
   Calendar,
   ChevronRight,
   Database,
+  Download,
   ExternalLink,
   FileJson,
   Globe,
@@ -140,6 +141,24 @@ export function ResultsInspector({
     }
   };
 
+  const handleDownload = async () => {
+    try {
+      const res = await fetch(`http://localhost:3000/api/results/${filename}`);
+      if (!res.ok) throw new Error('Download failed');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to download', err);
+    }
+  };
+
   const { meta, jobs } = data;
 
   return (
@@ -197,6 +216,14 @@ export function ResultsInspector({
               title="View Raw JSON"
             >
               <FileJson className="w-5 h-5" />
+            </button>
+            <button
+              type="button"
+              className="text-brand-muted hover:text-brand-ok transition-colors flex items-center justify-center hover:scale-110 transform"
+              onClick={handleDownload}
+              title="Download JSON"
+            >
+              <Download className="w-5 h-5" />
             </button>
             <button
               type="button"
