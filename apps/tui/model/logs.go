@@ -8,8 +8,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/arnab/is-dl-tui/api"
-	"github.com/arnab/is-dl-tui/ui"
+	"github.com/zytact/is-dl-tui/api"
+	"github.com/zytact/is-dl-tui/ui"
 )
 
 type LogsModel struct {

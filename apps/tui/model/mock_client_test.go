@@ -1,6 +1,6 @@
 package model
 
-import "github.com/arnab/is-dl-tui/api"
+import "github.com/zytact/is-dl-tui/api"
 
 type mockClient struct {
 	startScrapeErr  error

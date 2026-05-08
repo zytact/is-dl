@@ -1,4 +1,4 @@
-module github.com/arnab/is-dl-tui
+module github.com/zytact/is-dl-tui
 
 go 1.25.9
 
