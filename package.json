@@ -9,6 +9,7 @@
     "dev": "turbo run dev",
     "dev:api": "turbo run dev --filter=@repo/api",
     "dev:web": "turbo run dev --filter=@repo/web",
+    "dev:tui": "cd apps/tui && go run ./...",
     "build": "turbo run build",
     "start": "turbo run start",
     "start:api": "turbo run start --filter=@repo/api",
