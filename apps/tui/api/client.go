@@ -84,6 +84,15 @@ type ResultFile struct {
 	Jobs []JobListing `json:"jobs"`
 }
 
+type APIClient interface {
+	StartScrape(opts ScrapeOptions) error
+	AbortScrape() error
+	ListResults() ([]ResultMeta, error)
+	GetResult(filename string) (*ResultFile, error)
+	DeleteResult(filename string) error
+	ExportZIP(destDir string) (string, error)
+}
+
 func NewClient(baseURL string) *Client {
 	return &Client{
 		BaseURL: strings.TrimRight(baseURL, "/"),

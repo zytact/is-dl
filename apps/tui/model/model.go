@@ -33,7 +33,7 @@ type ErrMsg struct {
 }
 
 type Model struct {
-	client *api.Client
+	client api.APIClient
 	width  int
 	height int
 
@@ -46,7 +46,7 @@ type Model struct {
 	err string
 }
 
-func New(client *api.Client) Model {
+func New(client api.APIClient) Model {
 	return Model{
 		client:  client,
 		tab:     TabScrape,
