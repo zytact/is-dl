@@ -1,9 +1,10 @@
 package main
 
 import (
-  "context"
-  "fmt"
-  "os"
+	"context"
+	"fmt"
+	"os"
+	"time"
 
   tea "github.com/charmbracelet/bubbletea"
 
@@ -19,10 +20,17 @@ func main() {
   ctx, cancel := context.WithCancel(context.Background())
   logCh := make(chan api.SSEEvent, 128)
 
-  go func() {
-    defer close(logCh)
-    _ = client.StreamLogs(ctx, logCh)
-  }()
+	go func() {
+		defer close(logCh)
+		for {
+			_ = client.StreamLogs(ctx, logCh)
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(2 * time.Second):
+			}
+		}
+	}()
 
   go func() {
     for evt := range logCh {

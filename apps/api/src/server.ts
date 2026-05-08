@@ -11,6 +11,7 @@ let currentLogs: string[] = [];
 let isScraping = false;
 let scrapeAbortController: AbortController | null = null;
 const sseControllers: Set<(data: string) => void> = new Set();
+const outputDir = join(import.meta.dir, '..', 'out');
 
 const addLog = (msg: string) => {
   currentLogs.push(msg);
@@ -97,7 +98,7 @@ serve({
             typeof body.limit === 'number'
               ? body.limit
               : Number(body.limit) || 50,
-          outDir: './out',
+          outDir: outputDir,
           headless: typeof body.headless === 'boolean' ? body.headless : true,
           debug: typeof body.debug === 'boolean' ? body.debug : false,
           remoteOnly:
@@ -184,14 +185,14 @@ serve({
 
     if (url.pathname === '/api/results' && req.method === 'GET') {
       try {
-        await ensureDir('./out');
-        const files = await readdir('./out');
+        await ensureDir(outputDir);
+        const files = await readdir(outputDir);
         const jsonFiles = files.filter((f) => f.endsWith('.json'));
 
         const results = [];
         for (const file of jsonFiles) {
           try {
-            const content = await readFile(join('./out', file), 'utf-8');
+            const content = await readFile(join(outputDir, file), 'utf-8');
             const data = JSON.parse(content);
             results.push({
               filename: file,
@@ -220,8 +221,8 @@ serve({
 
     if (url.pathname === '/api/results/export' && req.method === 'GET') {
       try {
-        await ensureDir('./out');
-        const files = await readdir('./out');
+        await ensureDir(outputDir);
+        const files = await readdir(outputDir);
         const jsonFiles = files.filter((f) => f.endsWith('.json'));
 
         if (jsonFiles.length === 0) {
@@ -241,7 +242,7 @@ serve({
         archive.pipe(passThrough);
 
         for (const file of jsonFiles) {
-          const filePath = join('./out', file);
+          const filePath = join(outputDir, file);
           archive.append(createReadStream(filePath), { name: file });
         }
 
@@ -276,7 +277,7 @@ serve({
 
       try {
         const { unlink } = await import('node:fs/promises');
-        await unlink(join('./out', filename));
+        await unlink(join(outputDir, filename));
         return new Response(JSON.stringify({ success: true }), {
           headers: {
             'Content-Type': 'application/json',
@@ -303,7 +304,7 @@ serve({
       }
 
       try {
-        const content = await readFile(join('./out', filename), 'utf-8');
+        const content = await readFile(join(outputDir, filename), 'utf-8');
         return new Response(content, {
           headers: {
             'Content-Type': 'application/json',
@@ -329,9 +330,8 @@ async function ensureDir(path: string) {
   try {
     await readdir(path);
   } catch (_e) {
-    import('node:fs/promises').then((fs) =>
-      fs.mkdir(path, { recursive: true }),
-    );
+    const fs = await import('node:fs/promises');
+    await fs.mkdir(path, { recursive: true });
   }
 }
 
