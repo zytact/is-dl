@@ -17,7 +17,7 @@ import (
 )
 
 type ResultsModel struct {
-	client *api.Client
+	client api.APIClient
 	width  int
 	height int
 
@@ -42,7 +42,7 @@ type ResultsModel struct {
 	lastError      string
 }
 
-func NewResults(client *api.Client) *ResultsModel {
+func NewResults(client api.APIClient) *ResultsModel {
 	t := table.New(
 		table.WithColumns([]table.Column{
 			{Title: "ID", Width: 4},
@@ -385,7 +385,7 @@ func (r *ResultsModel) openURLCmd() tea.Cmd {
 	url := r.detailResult.Jobs[idx].JobURL
 	if strings.TrimSpace(url) == "" {
 		return func() tea.Msg {
-			return resultsErrMsg{err: fmt.Errorf("No job URL for selected record")}
+			return resultsErrMsg{err: fmt.Errorf("no job URL for selected record")}
 		}
 	}
 	return func() tea.Msg {
@@ -502,10 +502,6 @@ func (r *ResultsModel) currentListFilename() string {
 		return ""
 	}
 	return r.rows[idx].Filename
-}
-
-func (r *ResultsModel) currentDetailFilename() string {
-	return r.detailFilename
 }
 
 func (r *ResultsModel) applyListCursorAfterRefresh() {

@@ -3,6 +3,9 @@
   "scripts": {
     "build": "go build -o bin/is-dl-tui .",
     "dev": "go run ./...",
-    "start": "./bin/is-dl-tui"
+    "start": "./bin/is-dl-tui",
+    "lint": "golangci-lint run ./...",
+    "format": "gofmt -w .",
+    "test": "go test ./..."
   }
 }

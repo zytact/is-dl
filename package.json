@@ -20,6 +20,7 @@
     "lint": "turbo run lint",
     "format": "turbo run format",
     "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
     "prepare": "husky"
   },
   "lint-staged": {
