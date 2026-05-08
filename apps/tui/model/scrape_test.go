@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/arnab/is-dl-tui/api"
+	"github.com/zytact/is-dl-tui/api"
 )
 
 func newTestScrape(c api.APIClient) *ScrapeModel {

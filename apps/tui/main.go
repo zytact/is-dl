@@ -8,8 +8,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/arnab/is-dl-tui/api"
-	"github.com/arnab/is-dl-tui/model"
+	"github.com/zytact/is-dl-tui/api"
+	"github.com/zytact/is-dl-tui/model"
 )
 
 func main() {

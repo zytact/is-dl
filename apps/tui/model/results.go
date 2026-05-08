@@ -12,8 +12,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/arnab/is-dl-tui/api"
-	"github.com/arnab/is-dl-tui/ui"
+	"github.com/zytact/is-dl-tui/api"
+	"github.com/zytact/is-dl-tui/ui"
 )
 
 type ResultsModel struct {
@@ -29,6 +29,9 @@ type ResultsModel struct {
 	detailTable    table.Model
 	detailViewport viewport.Model
 	detailFilename string
+
+	inJobDetail       bool
+	jobDetailViewport viewport.Model
 
 	loading               bool
 	loaded                bool
@@ -86,6 +89,11 @@ func (r *ResultsModel) SetSize(width, height int) {
 		r.detailViewport.Height = descH
 		r.detailTable.SetColumns(buildDetailColumns(innerW))
 	}
+	if r.inJobDetail {
+		r.jobDetailViewport.Width = innerW
+		r.jobDetailViewport.Height = maxInt(innerH-4, 2)
+		r.jobDetailViewport.SetContent(buildFullJobDetail(r.detailResult, r.selectedJobIndex, innerW))
+	}
 }
 
 func (r *ResultsModel) Update(msg tea.Msg) (*ResultsModel, tea.Cmd) {
@@ -134,6 +142,11 @@ func (r *ResultsModel) Update(msg tea.Msg) (*ResultsModel, tea.Cmd) {
 				r.confirmDeleteFilename = ""
 				return r, nil
 			}
+			if r.inJobDetail {
+				r.inJobDetail = false
+				r.detailTable.SetCursor(r.selectedJobIndex)
+				return r, nil
+			}
 			if r.inDetail {
 				r.inDetail = false
 				r.detailResult = nil
@@ -144,24 +157,55 @@ func (r *ResultsModel) Update(msg tea.Msg) (*ResultsModel, tea.Cmd) {
 				return r, r.exportCmd()
 			}
 		case "enter":
+			if r.inJobDetail {
+				return r, nil
+			}
 			if r.inDetail {
-				return r, r.openURLCmd()
+				return r, r.openJobDetailCmd()
 			}
 			if r.confirmDeleteFilename != "" {
 				return r, nil
 			}
 			return r, r.openDetailCmd()
 		case "o":
+			if r.inJobDetail {
+				return r, r.openURLFromJobDetail()
+			}
 			if r.inDetail {
 				return r, r.openURLCmd()
 			}
 		case "up", "down":
+			if r.inJobDetail {
+				var cmd tea.Cmd
+				r.jobDetailViewport, cmd = r.jobDetailViewport.Update(msg)
+				return r, cmd
+			}
 			if r.inDetail {
 				var cmd tea.Cmd
 				r.detailTable, cmd = r.detailTable.Update(msg)
 				r.selectedJobIndex = r.detailTable.Cursor()
 				r.detailViewport.SetContent(buildJobDescription(r.detailResult, r.detailTable.Cursor()))
 				return r, cmd
+			}
+		case "left", "h":
+			if r.inJobDetail {
+				r.selectedJobIndex = maxInt(r.selectedJobIndex-1, 0)
+				innerW := r.innerWidth()
+				innerH := r.innerHeight()
+				r.jobDetailViewport.SetContent(buildFullJobDetail(r.detailResult, r.selectedJobIndex, innerW))
+				r.jobDetailViewport.GotoTop()
+				r.jobDetailViewport.Height = maxInt(innerH-4, 2)
+				return r, nil
+			}
+		case "right", "l":
+			if r.inJobDetail && r.detailResult != nil {
+				r.selectedJobIndex = minInt(r.selectedJobIndex+1, len(r.detailResult.Jobs)-1)
+				innerW := r.innerWidth()
+				innerH := r.innerHeight()
+				r.jobDetailViewport.SetContent(buildFullJobDetail(r.detailResult, r.selectedJobIndex, innerW))
+				r.jobDetailViewport.GotoTop()
+				r.jobDetailViewport.Height = maxInt(innerH-4, 2)
+				return r, nil
 			}
 		}
 	case resultsLoadingMsg:
@@ -218,6 +262,11 @@ func (r *ResultsModel) Update(msg tea.Msg) (*ResultsModel, tea.Cmd) {
 		return r, nil
 	}
 
+	if r.inJobDetail {
+		var cmd tea.Cmd
+		r.jobDetailViewport, cmd = r.jobDetailViewport.Update(msg)
+		return r, cmd
+	}
 	if r.inDetail {
 		var cmd tea.Cmd
 		r.detailTable, cmd = r.detailTable.Update(msg)
@@ -235,8 +284,20 @@ func (r *ResultsModel) View() string {
 	panelW := r.panelContentWidth()
 
 	var content string
-	if r.inDetail && r.detailResult != nil {
-		footer := ui.HelpText.Render("↑↓ navigate jobs   enter/o: open URL   b/esc: back   d: delete")
+	if r.inJobDetail && r.detailResult != nil {
+		total := len(r.detailResult.Jobs)
+		jobNav := fmt.Sprintf("Job %d / %d", r.selectedJobIndex+1, total)
+		header := ui.PanelTitle.Render("JOB DETAIL") + "  " + ui.MetaText.Render(jobNav)
+		meta := ui.MetaText.Render("File: "+r.detailFilename+"  Query: "+strings.TrimSpace(r.detailResult.Meta.Query))
+		footer := ui.HelpText.Render("←/→ prev/next job   ↑/↓ scroll   o open URL   b/esc back")
+		content = lipgloss.JoinVertical(lipgloss.Left,
+			header,
+			meta,
+			r.jobDetailViewport.View(),
+			footer,
+		)
+	} else if r.inDetail && r.detailResult != nil {
+		footer := ui.HelpText.Render("↑↓ navigate jobs   enter: view job   o: open URL   b/esc: back   d: delete")
 		if r.detailConfirmDelete {
 			footer = ui.WarningText.Render("Delete " + r.detailFilename + "? y/n")
 		}
@@ -494,6 +555,97 @@ func buildJobDescription(result *api.ResultFile, index int) string {
 		b.WriteString(requirements)
 	}
 	return b.String()
+}
+
+func (r *ResultsModel) openJobDetailCmd() tea.Cmd {
+	if r.detailResult == nil || len(r.detailResult.Jobs) == 0 {
+		return nil
+	}
+	idx := r.detailTable.Cursor()
+	r.selectedJobIndex = idx
+	innerW := r.innerWidth()
+	innerH := r.innerHeight()
+	vp := viewport.New(innerW, maxInt(innerH-4, 2))
+	vp.SetContent(buildFullJobDetail(r.detailResult, idx, innerW))
+	r.jobDetailViewport = vp
+	r.inJobDetail = true
+	return nil
+}
+
+func (r *ResultsModel) openURLFromJobDetail() tea.Cmd {
+	if r.detailResult == nil {
+		return nil
+	}
+	idx := r.selectedJobIndex
+	if idx < 0 || idx >= len(r.detailResult.Jobs) {
+		return nil
+	}
+	url := r.detailResult.Jobs[idx].JobURL
+	if strings.TrimSpace(url) == "" {
+		return func() tea.Msg {
+			return resultsErrMsg{err: fmt.Errorf("no job URL for selected record")}
+		}
+	}
+	return func() tea.Msg {
+		cmd := exec.Command("xdg-open", url)
+		if _, err := exec.LookPath("xdg-open"); err != nil {
+			cmd = exec.Command("open", url)
+		}
+		if err := cmd.Start(); err != nil {
+			return resultsErrMsg{err: err}
+		}
+		return nil
+	}
+}
+
+func buildFullJobDetail(result *api.ResultFile, index int, width int) string {
+	if result == nil || index < 0 || index >= len(result.Jobs) {
+		return ""
+	}
+	job := result.Jobs[index]
+	sep := strings.Repeat("─", maxInt(width, 10))
+	var b strings.Builder
+
+	writeField := func(label, value string) {
+		if strings.TrimSpace(value) != "" {
+			b.WriteString(ui.PanelTitle.Render(label+":") + " " + value + "\n")
+		}
+	}
+
+	writeField("Title", displayValue(job.Title, "(untitled)"))
+	writeField("Company", displayValue(job.CompanyName, "(unknown company)"))
+	writeField("Location", displayValue(job.LocationText, "Any Region"))
+	writeField("Job Type", displayValue(job.JobType, ""))
+	writeField("Posted", displayValue(job.PostedAtText, ""))
+	writeField("Posted ISO", displayValue(job.PostedAtIso, ""))
+	writeField("Alumni Count", displayValue(job.AlumniCount, ""))
+	writeField("Job URL", job.JobURL)
+	writeField("Company URL", displayValue(job.CompanyURL, ""))
+	writeField("Job ID", displayValue(job.JobID, ""))
+
+	b.WriteString(ui.MutedText.Render(sep) + "\n")
+
+	desc := strings.TrimSpace(displayValue(job.DescriptionText, ""))
+	if desc != "" {
+		b.WriteString(ui.PanelTitle.Render("Description:") + "\n" + desc + "\n")
+	} else {
+		b.WriteString(ui.MutedText.Render("No description captured.") + "\n")
+	}
+
+	req := strings.TrimSpace(displayValue(job.RequirementsText, ""))
+	if req != "" && req != desc {
+		b.WriteString("\n" + ui.MutedText.Render(sep) + "\n")
+		b.WriteString(ui.PanelTitle.Render("Requirements:") + "\n" + req + "\n")
+	}
+
+	return b.String()
+}
+
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 func (r *ResultsModel) currentListFilename() string {
