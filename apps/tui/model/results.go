@@ -74,13 +74,13 @@ func (r *ResultsModel) Refresh() tea.Cmd {
 func (r *ResultsModel) SetSize(width, height int) {
 	r.width = width
 	r.height = height
-	innerW := r.panelContentWidth()
-	innerH := r.panelContentHeight()
-	r.table.SetHeight(maxInt(innerH-4, 1)) // header (2) + footer (1) + gap (1)
+	innerW := r.innerWidth()
+	innerH := r.innerHeight()
+	r.table.SetHeight(maxInt(innerH-3, 1)) // header (2) + footer (1)
 	r.table.SetColumns(buildListColumns(innerW))
 	if r.inDetail {
-		jobsH := maxInt((innerH-8)/2, 2) // header (6) + footer (1) + gap (1)
-		descH := maxInt(innerH-8-jobsH, 2)
+		jobsH := maxInt((innerH-6)/2, 2)
+		descH := maxInt(innerH-6-jobsH, 2)
 		r.detailTable.SetHeight(jobsH)
 		r.detailViewport.Width = innerW
 		r.detailViewport.Height = descH
@@ -175,7 +175,7 @@ func (r *ResultsModel) Update(msg tea.Msg) (*ResultsModel, tea.Cmd) {
 		r.loaded = true
 		r.confirmDeleteFilename = ""
 		r.deletingFilename = ""
-		innerW := r.panelContentWidth()
+		innerW := r.innerWidth()
 		r.table.SetColumns(buildListColumns(innerW))
 		r.table.SetRows(buildResultRows(msg.rows, innerW))
 		if r.deleteCursor == -1 && r.inDetail {
@@ -187,10 +187,10 @@ func (r *ResultsModel) Update(msg tea.Msg) (*ResultsModel, tea.Cmd) {
 		r.inDetail = true
 		r.detailResult = msg.result
 		r.detailFilename = msg.filename
-		innerW := r.panelContentWidth()
-		innerH := r.panelContentHeight()
-		jobsH := maxInt((innerH-8)/2, 2)
-		descH := maxInt(innerH-8-jobsH, 2)
+		innerW := r.innerWidth()
+		innerH := r.innerHeight()
+		jobsH := maxInt((innerH-6)/2, 2)
+		descH := maxInt(innerH-6-jobsH, 2)
 		r.detailTable = buildJobsTable(msg.result, innerW)
 		r.detailViewport = viewport.New(innerW, descH)
 		r.selectedJobIndex = 0
@@ -287,6 +287,14 @@ func (r *ResultsModel) panelContentHeight() int {
 	// The root view renders a one-line tab header above this panel; the panel
 	// border accounts for the other two cells.
 	return maxInt(r.height-3, 1)
+}
+
+func (r *ResultsModel) innerWidth() int {
+	return maxInt(r.panelContentWidth()-4, 6)
+}
+
+func (r *ResultsModel) innerHeight() int {
+	return maxInt(r.panelContentHeight()-2, 1)
 }
 
 type resultsListMsg struct {
