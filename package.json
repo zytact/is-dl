@@ -29,7 +29,11 @@
       "biome check",
       "biome format --write"
     ],
-    "*.{json,css}": "biome format --write"
+    "*.{json,css}": "biome format --write",
+    "apps/tui/**/*.go": [
+      "gofmt -w",
+      "sh -c 'cd apps/tui && golangci-lint run ./...'"
+    ]
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.13",
