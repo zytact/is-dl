@@ -1,0 +1,7 @@
+{
+  "name": "tui",
+  "scripts": {
+    "build": "go build -o bin/is-dl-tui ./...",
+    "dev": "go run ./..."
+  }
+}
