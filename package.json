@@ -17,6 +17,7 @@
     "start:web": "turbo run start --filter=@repo/web",
     "start:tui": "cd apps/tui && ./bin/is-dl-tui",
     "start:api:tui": "turbo run start --filter=@repo/api & cd apps/tui && ./bin/is-dl-tui",
+    "launch": "bash scripts/start-api-tui.sh",
     "lint": "turbo run lint",
     "format": "turbo run format",
     "typecheck": "turbo run typecheck",
