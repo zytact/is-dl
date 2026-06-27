@@ -3,6 +3,7 @@ import {
   Database,
   Download,
   FileJson,
+  Sparkles,
   Trash2,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -17,6 +18,12 @@ interface ApiFileEntry {
     query?: string;
   };
   count: number;
+  aiAgentSummary?: {
+    detectedCount: number;
+    highCount: number;
+    mediumCount: number;
+    lowCount: number;
+  };
 }
 
 interface ResultEntry {
@@ -28,6 +35,7 @@ interface ResultEntry {
   link: string;
   count: number;
   filename: string;
+  hasAiAgentSignals: boolean;
 }
 
 export function ResultsDashboard() {
@@ -55,6 +63,7 @@ export function ResultsDashboard() {
         link: `http://localhost:3000/api/results/${file.filename}`,
         count: file.count,
         filename: file.filename,
+        hasAiAgentSignals: (file.aiAgentSummary?.detectedCount || 0) > 0,
       }));
       setResults(parsed);
     } catch (err) {
@@ -257,6 +266,12 @@ export function ResultsDashboard() {
                           <span className="group-hover/row:underline decoration-brand-cyan decoration-2 underline-offset-4">
                             {job.title}
                           </span>
+                          {job.hasAiAgentSignals && (
+                            <span className="ml-3 inline-flex items-center gap-1 border border-brand-accent bg-brand-accent/10 px-2 py-1 text-[10px] text-brand-accent tracking-widest align-middle">
+                              <Sparkles className="w-3 h-3" />
+                              AI MENTIONED
+                            </span>
+                          )}
                         </td>
                         <td className="p-4">
                           <span className="bg-[#1a1a1a] px-3 py-1 border border-brand-border group-hover/row:border-brand-cyan transition-colors text-brand-text">

@@ -10,25 +10,51 @@ import {
   MapPin,
   Search,
   Server,
+  Sparkles,
   Terminal,
   Trash2,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+
+type AiAgentConfidence = 'high' | 'medium' | 'low';
+type AiAgentRequirementStrength = 'required' | 'preferred' | 'mentioned';
+type AiAgentSignalCategory =
+  | 'tool'
+  | 'agentic_workflow'
+  | 'llm_dev_workflow'
+  | 'prompting_for_code'
+  | 'generic_ai_tooling';
+type AiAgentFilter = 'all' | 'matches' | AiAgentConfidence;
+
+interface AiAgentSnippet {
+  source: 'title' | 'requirements' | 'description';
+  text: string;
+}
+
+interface AiAgentSignals {
+  detected: boolean;
+  confidence: AiAgentConfidence | null;
+  requirementStrength: AiAgentRequirementStrength | null;
+  tools: string[];
+  categories: AiAgentSignalCategory[];
+  snippets: AiAgentSnippet[];
+}
 
 interface Job {
-  jobId: string;
+  jobId: string | null;
   jobUrl: string;
-  title: string;
-  companyName: string;
-  companyUrl: string;
-  locationText: string;
-  postedAtText: string;
+  title: string | null;
+  companyName: string | null;
+  companyUrl: string | null;
+  locationText: string | null;
+  postedAtText: string | null;
   postedAtIso: string | null;
-  jobType: string;
+  jobType: string | null;
   alumniCount: string | null;
-  descriptionText: string;
-  requirementsText: string;
+  descriptionText: string | null;
+  requirementsText: string | null;
+  aiAgentSignals?: AiAgentSignals;
 }
 
 interface Meta {
@@ -63,6 +89,7 @@ export function ResultsInspector({
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [aiAgentFilter, setAiAgentFilter] = useState<AiAgentFilter>('all');
 
   useEffect(() => {
     setLoading(true);
@@ -86,6 +113,26 @@ export function ResultsInspector({
         setLoading(false);
       });
   }, [filename]);
+
+  const jobs = useMemo(() => data?.jobs || [], [data]);
+  const filteredJobs = useMemo(
+    () =>
+      jobs.filter((job) => {
+        const signals = normalizeAiAgentSignals(job.aiAgentSignals);
+        if (aiAgentFilter === 'all') return true;
+        if (aiAgentFilter === 'matches') return signals.detected;
+        return signals.confidence === aiAgentFilter;
+      }),
+    [jobs, aiAgentFilter],
+  );
+
+  useEffect(() => {
+    if (!data) return;
+    if (selectedJob && filteredJobs.includes(selectedJob)) {
+      return;
+    }
+    setSelectedJob(filteredJobs[0] || null);
+  }, [data, filteredJobs, selectedJob]);
 
   if (loading) {
     return (
@@ -159,7 +206,10 @@ export function ResultsInspector({
     }
   };
 
-  const { meta, jobs } = data;
+  const { meta } = data;
+  const aiMatchCount = jobs.filter(
+    (job) => normalizeAiAgentSignals(job.aiAgentSignals).detected,
+  ).length;
 
   return (
     <motion.div
@@ -203,6 +253,12 @@ export function ResultsInspector({
             <span className="w-2 h-2 bg-brand-cyan inline-block rounded-none animate-pulse" />
             RECORDS: {jobs.length}
           </div>
+          {aiMatchCount > 0 && (
+            <div className="flex items-center gap-2 bg-brand-dark border border-brand-accent px-3 py-1 text-brand-accent">
+              <Sparkles className="w-4 h-4" />
+              AI MENTIONED
+            </div>
+          )}
           <div className="flex items-center gap-4">
             <button
               type="button"
@@ -284,14 +340,42 @@ export function ResultsInspector({
         <div className="w-[35%] min-w-[300px] border-r border-brand-border flex flex-col h-full bg-[#0a0a0a]">
           <div className="p-3 border-b border-brand-border text-xs text-brand-muted font-mono tracking-widest bg-brand-dark flex justify-between items-center shrink-0">
             <span>INDEXED_ENTITIES</span>
-            <span className="text-brand-text">{jobs.length} FOUND</span>
+            <span className="text-brand-text">{filteredJobs.length} FOUND</span>
+          </div>
+          <div className="border-b border-brand-border bg-brand-dark p-2 shrink-0">
+            <div className="mb-2 flex items-center justify-between font-mono text-[10px] uppercase tracking-widest">
+              <span className="flex items-center gap-1 text-brand-accent">
+                <Sparkles className="w-3 h-3" />
+                AI Signal Filter
+              </span>
+              <span className="text-brand-muted">
+                {aiMatchCount}/{jobs.length} mentioned
+              </span>
+            </div>
+            <div className="grid grid-cols-5 gap-1">
+              {AI_AGENT_FILTERS.map((filter) => (
+                <button
+                  key={filter.value}
+                  type="button"
+                  onClick={() => setAiAgentFilter(filter.value)}
+                  className={`border px-2 py-1 text-[10px] font-mono uppercase tracking-widest transition-colors ${
+                    aiAgentFilter === filter.value
+                      ? 'border-brand-accent bg-brand-accent/10 text-brand-accent'
+                      : 'border-brand-border text-brand-muted hover:border-brand-cyan hover:text-brand-cyan'
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="flex-1 overflow-y-auto min-h-0 scrollbar-cyber p-2 flex flex-col gap-2">
-            {jobs.map((job) => {
-              const isActive = selectedJob?.jobId === job.jobId;
+            {filteredJobs.map((job, idx) => {
+              const signals = normalizeAiAgentSignals(job.aiAgentSignals);
+              const isActive = selectedJob === job;
               return (
                 <button
-                  key={job.jobId}
+                  key={`${getJobKey(job)}:${idx}`}
                   type="button"
                   onClick={() => setSelectedJob(job)}
                   className={`w-full text-left p-3 border font-mono transition-all duration-200 relative group overflow-hidden shrink-0 ${
@@ -302,10 +386,10 @@ export function ResultsInspector({
                 >
                   <div className="flex justify-between items-start mb-2">
                     <span className="text-[10px] opacity-70">
-                      ID: {job.jobId.slice(-6)}
+                      ID: {getJobKey(job).slice(-6)}
                     </span>
                     <span className="text-[10px] text-brand-ok">
-                      {job.postedAtText}
+                      {job.postedAtText || 'UNKNOWN'}
                     </span>
                   </div>
                   <h3
@@ -313,15 +397,23 @@ export function ResultsInspector({
                       isActive ? 'text-brand-cyan font-bold' : 'text-brand-text'
                     }`}
                   >
-                    {job.title}
+                    {job.title || 'Untitled Role'}
                   </h3>
+                  {signals.detected && signals.confidence && (
+                    <div
+                      className={`mb-2 inline-flex items-center gap-1 border px-2 py-1 text-[10px] uppercase tracking-widest ${aiBadgeClass(signals.confidence)}`}
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      AI: {shortConfidence(signals.confidence)}
+                    </div>
+                  )}
                   <div className="flex justify-between items-center text-xs mt-3">
                     <span className="truncate max-w-[60%]">
-                      {job.companyName}
+                      {job.companyName || 'Unknown Company'}
                     </span>
                     <span className="flex items-center gap-1 opacity-70">
                       <MapPin className="w-3 h-3" />
-                      {job.locationText.split(',')[0]}
+                      {(job.locationText || 'Unknown').split(',')[0]}
                     </span>
                   </div>
 
@@ -341,6 +433,11 @@ export function ResultsInspector({
                 </button>
               );
             })}
+            {filteredJobs.length === 0 && (
+              <div className="p-6 text-center text-xs font-mono uppercase tracking-widest text-brand-muted border border-brand-border bg-brand-panel">
+                NO ENTITIES MATCH FILTER
+              </div>
+            )}
           </div>
         </div>
 
@@ -349,7 +446,7 @@ export function ResultsInspector({
           <AnimatePresence mode="wait">
             {selectedJob ? (
               <motion.div
-                key={selectedJob.jobId}
+                key={getJobKey(selectedJob)}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -360,34 +457,41 @@ export function ResultsInspector({
                 <div className="p-8 border-b border-brand-border relative bg-[#0a0a0a] overflow-hidden shrink-0">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-brand-cyan/5 rounded-full blur-3xl pointer-events-none" />
                   <div className="absolute top-4 right-4 text-[10px] font-mono text-brand-muted tracking-widest border border-brand-border p-1">
-                    TARGET_ID :: {selectedJob.jobId}
+                    TARGET_ID :: {getJobKey(selectedJob)}
                   </div>
 
                   <h1 className="text-4xl md:text-5xl font-display font-bold text-brand-text mt-4 mb-2 tracking-tight">
-                    {selectedJob.title}
+                    {selectedJob.title || 'Untitled Role'}
                   </h1>
 
                   <div className="flex flex-wrap items-center gap-4 text-sm font-mono mt-6">
-                    <a
-                      href={selectedJob.companyUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-2 text-brand-cyan hover:underline group"
-                    >
-                      <Globe className="w-4 h-4" />
-                      <span className="group-hover:text-white transition-colors">
-                        {selectedJob.companyName}
-                      </span>
-                    </a>
+                    {selectedJob.companyUrl ? (
+                      <a
+                        href={selectedJob.companyUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-2 text-brand-cyan hover:underline group"
+                      >
+                        <Globe className="w-4 h-4" />
+                        <span className="group-hover:text-white transition-colors">
+                          {selectedJob.companyName || 'Unknown Company'}
+                        </span>
+                      </a>
+                    ) : (
+                      <div className="flex items-center gap-2 text-brand-cyan">
+                        <Globe className="w-4 h-4" />
+                        {selectedJob.companyName || 'Unknown Company'}
+                      </div>
+                    )}
                     <span className="text-brand-border">|</span>
                     <div className="flex items-center gap-2 text-brand-muted">
                       <MapPin className="w-4 h-4" />
-                      {selectedJob.locationText}
+                      {selectedJob.locationText || 'Unknown'}
                     </div>
                     <span className="text-brand-border">|</span>
                     <div className="flex items-center gap-2 text-brand-muted">
                       <Calendar className="w-4 h-4" />
-                      {selectedJob.postedAtText}
+                      {selectedJob.postedAtText || 'Unknown'}
                     </div>
                   </div>
 
@@ -410,6 +514,15 @@ export function ResultsInspector({
 
                 {/* Detail Content */}
                 <div className="p-8 flex flex-col gap-8 font-mono text-sm leading-relaxed shrink-0">
+                  {normalizeAiAgentSignals(selectedJob.aiAgentSignals)
+                    .detected && (
+                    <AiAgentSignalsPanel
+                      signals={normalizeAiAgentSignals(
+                        selectedJob.aiAgentSignals,
+                      )}
+                    />
+                  )}
+
                   {selectedJob.descriptionText && (
                     <div className="space-y-4">
                       <h3 className="text-xl font-display text-brand-accent tracking-widest font-bold flex items-center gap-2">
@@ -450,4 +563,111 @@ export function ResultsInspector({
       </div>
     </motion.div>
   );
+}
+
+const AI_AGENT_FILTERS: Array<{ value: AiAgentFilter; label: string }> = [
+  { value: 'all', label: 'All Jobs' },
+  { value: 'matches', label: 'Any AI' },
+  { value: 'high', label: 'High' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'low', label: 'Low' },
+];
+
+function AiAgentSignalsPanel({ signals }: { signals: AiAgentSignals }) {
+  return (
+    <div className="space-y-4 border border-brand-accent bg-brand-accent/5 p-4">
+      <h3 className="text-xl font-display text-brand-accent tracking-widest font-bold flex items-center gap-2">
+        <Sparkles className="w-5 h-5" /> AI_AGENT_SIGNALS
+      </h3>
+      <div className="flex flex-wrap gap-2 text-xs uppercase tracking-widest">
+        {signals.confidence && (
+          <span
+            className={`border px-3 py-1 ${aiBadgeClass(signals.confidence)}`}
+          >
+            Confidence: {signals.confidence}
+          </span>
+        )}
+        {signals.requirementStrength && (
+          <span className="border border-brand-border bg-brand-dark px-3 py-1 text-brand-muted">
+            Requirement: {signals.requirementStrength}
+          </span>
+        )}
+      </div>
+      <SignalLine label="Tools" values={signals.tools} />
+      <SignalLine label="Categories" values={signals.categories} />
+      {signals.snippets.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-xs uppercase tracking-widest text-brand-muted">
+            Evidence
+          </div>
+          {signals.snippets.map((snippet) => (
+            <div
+              key={`${snippet.source}:${snippet.text}`}
+              className="border-l-2 border-brand-accent bg-brand-dark/70 p-3 text-brand-text/80"
+            >
+              <span className="mr-2 text-[10px] uppercase tracking-widest text-brand-accent">
+                {snippet.source}
+              </span>
+              {snippet.text}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SignalLine({ label, values }: { label: string; values: string[] }) {
+  if (values.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-2 text-xs">
+      <span className="uppercase tracking-widest text-brand-muted">
+        {label}:
+      </span>
+      {values.map((value) => (
+        <span
+          key={value}
+          className="border border-brand-border bg-brand-dark px-2 py-1 text-brand-text"
+        >
+          {value}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function normalizeAiAgentSignals(
+  signals: AiAgentSignals | undefined,
+): AiAgentSignals {
+  return (
+    signals || {
+      detected: false,
+      confidence: null,
+      requirementStrength: null,
+      tools: [],
+      categories: [],
+      snippets: [],
+    }
+  );
+}
+
+function getJobKey(job: Job): string {
+  return (
+    job.jobId || job.jobUrl || `${job.title || 'job'}:${job.companyName || ''}`
+  );
+}
+
+function shortConfidence(confidence: AiAgentConfidence): string {
+  if (confidence === 'medium') return 'MED';
+  return confidence.toUpperCase();
+}
+
+function aiBadgeClass(confidence: AiAgentConfidence): string {
+  if (confidence === 'high') {
+    return 'border-brand-accent bg-brand-accent/10 text-brand-accent';
+  }
+  if (confidence === 'medium') {
+    return 'border-brand-cyan bg-brand-cyan/10 text-brand-cyan';
+  }
+  return 'border-brand-border bg-brand-dark text-brand-muted';
 }

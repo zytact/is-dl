@@ -131,6 +131,8 @@ The scraper generates JSON files in `apps/api/out`:
 
 - `linkedin-jobs.<timestamp>.json` - Job data in JSON format
 
+Each job includes `aiAgentSignals` for rules-based detection of AI coding-agent/tool mentions. `meta.aiAgentSummary` includes detected/high/medium/low counts for quick LLM review.
+
 ### Data Extracted Per Job
 
 ```typescript
@@ -147,6 +149,7 @@ interface JobListing {
     alumniCount: string | null; // "X alumni work here"
     descriptionText: string | null;
     requirementsText: string | null;
+    aiAgentSignals: AiAgentSignals;
 }
 ```
 

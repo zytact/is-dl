@@ -198,6 +198,12 @@ serve({
               filename: file,
               meta: data.meta || {},
               count: data.jobs?.length || 0,
+              aiAgentSummary: data.meta?.aiAgentSummary || {
+                detectedCount: 0,
+                highCount: 0,
+                mediumCount: 0,
+                lowCount: 0,
+              },
             });
           } catch (_e) {
             // Ignore malformed JSON files

@@ -1,4 +1,8 @@
 import type { Page } from 'playwright';
+import {
+  detectAiAgentSignals,
+  emptyAiAgentSignals,
+} from '../ai-agent-detector.ts';
 import { parsePostedTime } from '../normalize.ts';
 import type { JobListing } from '../types.ts';
 
@@ -104,6 +108,11 @@ export async function extractJobDetailsFromView(
 
     // Extract requirements (heuristic from description)
     const requirementsText = extractRequirements(descriptionText, debug);
+    const aiAgentSignals = detectAiAgentSignals({
+      title,
+      requirementsText,
+      descriptionText,
+    });
 
     return {
       jobId,
@@ -118,6 +127,7 @@ export async function extractJobDetailsFromView(
       alumniCount,
       descriptionText: descriptionText?.trim() || null,
       requirementsText,
+      aiAgentSignals,
     };
   } catch (error) {
     if (debug) {
@@ -139,6 +149,7 @@ export async function extractJobDetailsFromView(
       alumniCount: null,
       descriptionText: null,
       requirementsText: null,
+      aiAgentSignals: emptyAiAgentSignals(),
     };
   }
 }
