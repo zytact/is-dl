@@ -2,23 +2,24 @@
 
 LinkedIn Internship Scraper - Extract job postings from LinkedIn and export to JSON.
 
-This is a monorepo built with [Turborepo](https://turbo.build/) containing:
+This is a monorepo built with [Vite+](https://viteplus.dev/) containing:
 
-- `apps/api` - Bun + Playwright backend with REST API and CLI
+- `apps/api` - Node + Playwright backend with REST API and CLI
 - `apps/web` - React + Vite + Tailwind + TanStack Router frontend
+- `apps/tui` - Go Bubble Tea TUI
 
 ## Installation
 
 Install dependencies from the root:
 
 ```bash
-bun install
+vp install
 ```
 
 Install Playwright browsers:
 
 ```bash
-bunx playwright install chromium
+vp exec playwright install chromium
 ```
 
 ## Development
@@ -26,14 +27,14 @@ bunx playwright install chromium
 Start both apps:
 
 ```bash
-bun run dev
+vp run dev
 ```
 
 Start specific app:
 
 ```bash
-bun run dev:api   # Backend only (port 3000)
-bun run dev:web   # Frontend only (port 5173)
+vp run dev:api   # Backend only (port 3000)
+vp run dev:web   # Frontend only (port 5173)
 ```
 
 ## Web Interface
@@ -68,25 +69,24 @@ The backend runs at `http://localhost:3000`:
 
 ```json
 {
-    "keywords": "software engineer intern",
-    "location": "United States",
-    "limit": 50,
-    "remoteOnly": false,
-    "experienceLevel": "Internship",
-    "jobType": "Full-time,Part-time",
-    "postedWithin": "Past week",
-    "headless": true,
-    "debug": false
+  "keywords": "software engineer intern",
+  "location": "United States",
+  "limit": 50,
+  "remoteOnly": false,
+  "experienceLevel": "Internship",
+  "jobType": "Full-time,Part-time",
+  "postedWithin": "Past week",
+  "headless": true,
+  "debug": false
 }
 ```
 
 ## CLI Usage
 
-Run the scraper CLI from `apps/api`:
+Run the scraper CLI:
 
 ```bash
-cd apps/api
-bun run cli --keywords "software engineer intern" --location "United States" --limit 30
+vp run --filter @repo/api cli -- --keywords "software engineer intern" --location "United States" --limit 30
 ```
 
 ### First Run (Authentication)
@@ -114,15 +114,13 @@ On the first run, the scraper will open a browser window and prompt you to log i
 **Search for remote internships:**
 
 ```bash
-cd apps/api
-bun run cli -k "data science" -l "Remote" --remote-only --posted-within "Past week"
+vp run --filter @repo/api cli -- -k "data science" -l "Remote" --remote-only --posted-within "Past week"
 ```
 
 **Search for frontend developer positions with browser visible:**
 
 ```bash
-cd apps/api
-bun run cli -k "frontend developer" -l "San Francisco" --experience-level "Internship" --no-headless
+vp run --filter @repo/api cli -- -k "frontend developer" -l "San Francisco" --experience-level "Internship" --no-headless
 ```
 
 ## Output
@@ -137,19 +135,19 @@ Each job includes `aiAgentSignals` for rules-based detection of AI coding-agent/
 
 ```typescript
 interface JobListing {
-    jobId: string | null;
-    jobUrl: string;
-    title: string | null;
-    companyName: string | null;
-    companyUrl: string | null;
-    locationText: string | null;
-    postedAtText: string | null; // "3 days ago"
-    postedAtIso: string | null; // ISO timestamp
-    jobType: string | null;
-    alumniCount: string | null; // "X alumni work here"
-    descriptionText: string | null;
-    requirementsText: string | null;
-    aiAgentSignals: AiAgentSignals;
+  jobId: string | null;
+  jobUrl: string;
+  title: string | null;
+  companyName: string | null;
+  companyUrl: string | null;
+  locationText: string | null;
+  postedAtText: string | null; // "3 days ago"
+  postedAtIso: string | null; // ISO timestamp
+  jobType: string | null;
+  alumniCount: string | null; // "X alumni work here"
+  descriptionText: string | null;
+  requirementsText: string | null;
+  aiAgentSignals: AiAgentSignals;
 }
 ```
 
@@ -158,11 +156,10 @@ interface JobListing {
 From the root:
 
 ```bash
-bun run dev        # Start all apps in dev mode
-bun run build      # Build all apps
-bun run lint       # Lint all apps
-bun run format     # Format all apps
-bun run typecheck  # Type check all apps
+vp run dev       # Start all apps in dev mode
+vp run build     # Build all apps
+vp check         # Format, lint, typecheck
+vp test run      # Run tests
 ```
 
 ## Project Structure
@@ -170,7 +167,7 @@ bun run typecheck  # Type check all apps
 ```
 is-dl/
 ├── apps/
-│   ├── api/                      # Bun + Playwright backend
+│   ├── api/                      # Node + Playwright backend
 │   │   ├── src/
 │   │   │   ├── server.ts         # REST API server
 │   │   │   ├── cli.ts            # CLI entry point
@@ -198,8 +195,8 @@ is-dl/
 │       │   ├── router.tsx
 │       │   └── main.tsx
 │       └── package.json
-├── turbo.json         # Turborepo pipeline config
-├── biome.json         # Unified linter/formatter
+├── vite.config.ts     # Vite+ lint/format/test/staged config
+├── pnpm-workspace.yaml
 ├── tsconfig.json      # Shared TypeScript base config
 └── package.json       # Root workspace config
 ```
@@ -208,7 +205,7 @@ is-dl/
 
 **Backend:**
 
-- [Bun](https://bun.sh) - Runtime & HTTP server
+- [Node.js](https://nodejs.org) - Runtime & HTTP server
 - [Playwright](https://playwright.dev) - Browser automation
 - [Archiver](https://www.archiverjs.com) - ZIP export
 
@@ -233,4 +230,4 @@ Going through LinkedIn is a mess. It is filled with trash posts and wastes time.
 - Location can be flexible: "Remote", "United States", "San Francisco, CA", etc.
 - CORS is enabled for all API endpoints
 
-Built with [Bun](https://bun.sh) and [Turborepo](https://turbo.build).
+Built with [Vite+](https://viteplus.dev/) and [pnpm](https://pnpm.io/).

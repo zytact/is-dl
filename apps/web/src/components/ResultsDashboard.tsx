@@ -1,11 +1,4 @@
-import {
-  AlertTriangle,
-  Database,
-  Download,
-  FileJson,
-  Sparkles,
-  Trash2,
-} from 'lucide-react';
+import { AlertTriangle, Database, Download, FileJson, Sparkles, Trash2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
 import { ResultsInspector } from './ResultsInspector';
@@ -57,9 +50,7 @@ export function ResultsDashboard() {
         title: file.meta?.query || file.filename,
         company: 'Multiple Targets',
         location: file.meta?.location || 'Any Region',
-        date: file.meta?.scrapedAt
-          ? new Date(file.meta.scrapedAt).toLocaleDateString()
-          : 'Unknown',
+        date: file.meta?.scrapedAt ? new Date(file.meta.scrapedAt).toLocaleDateString() : 'Unknown',
         link: `http://localhost:3000/api/results/${file.filename}`,
         count: file.count,
         filename: file.filename,
@@ -111,10 +102,7 @@ export function ResultsDashboard() {
     setConfirmDelete(null);
   };
 
-  const handleDownloadSingle = async (
-    e: React.MouseEvent,
-    filename: string,
-  ) => {
+  const handleDownloadSingle = async (e: React.MouseEvent, filename: string) => {
     e.stopPropagation();
     try {
       const res = await fetch(`http://localhost:3000/api/results/${filename}`);
@@ -305,9 +293,7 @@ export function ResultsDashboard() {
                             <button
                               type="button"
                               className="text-brand-muted hover:text-brand-ok transition-colors flex items-center justify-center hover:scale-110 transform"
-                              onClick={(e) =>
-                                handleDownloadSingle(e, job.filename)
-                              }
+                              onClick={(e) => handleDownloadSingle(e, job.filename)}
                               title="Download JSON"
                             >
                               <Download className="w-5 h-5" />
@@ -319,9 +305,7 @@ export function ResultsDashboard() {
                                   ? 'border border-brand-error text-brand-error'
                                   : 'border border-transparent text-brand-muted hover:text-brand-error hover:border-brand-error/50'
                               }`}
-                              onClick={(e) =>
-                                handleDeleteRequest(e, job.filename)
-                              }
+                              onClick={(e) => handleDeleteRequest(e, job.filename)}
                               title="Purge Record"
                               disabled={isDeleting === job.filename}
                             >
@@ -342,9 +326,7 @@ export function ResultsDashboard() {
                                 className="absolute right-4 top-1/2 -translate-y-1/2 bg-brand-dark border border-brand-error/60 text-brand-text font-mono text-xs uppercase tracking-widest px-3 py-2 flex items-center gap-3 brutal-shadow"
                                 onClick={(e) => e.stopPropagation()}
                               >
-                                <span className="text-brand-error">
-                                  Confirm purge?
-                                </span>
+                                <span className="text-brand-error">Confirm purge?</span>
                                 <button
                                   type="button"
                                   className="border border-brand-border px-2 py-1 text-brand-muted hover:text-brand-text hover:border-brand-text transition-colors"
@@ -355,9 +337,7 @@ export function ResultsDashboard() {
                                 <button
                                   type="button"
                                   className="border border-brand-error bg-brand-error/10 px-2 py-1 text-brand-error hover:bg-brand-error hover:text-brand-dark transition-colors"
-                                  onClick={(e) =>
-                                    handleDeleteConfirm(e, job.filename)
-                                  }
+                                  onClick={(e) => handleDeleteConfirm(e, job.filename)}
                                 >
                                   Purge
                                 </button>
@@ -369,10 +349,7 @@ export function ResultsDashboard() {
                     ))}
                     {results.length === 0 && (
                       <tr>
-                        <td
-                          colSpan={6}
-                          className="text-center p-12 text-brand-muted"
-                        >
+                        <td colSpan={6} className="text-center p-12 text-brand-muted">
                           <AlertTriangle className="w-8 h-8 mx-auto mb-4 text-brand-error opacity-50" />
                           NO RECORDS FOUND IN CURRENT DATASET
                         </td>

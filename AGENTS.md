@@ -1,70 +1,82 @@
 # AGENTS
 
+Use concise language.
+
 ## Repo shape
 
-- Turborepo monorepo with three apps:
-  - `apps/api` — Bun + Playwright backend with REST API and CLI
+- Vite+ monorepo with three apps:
+  - `apps/api` — Node + Playwright backend with REST API and CLI
   - `apps/web` — React + Vite + Tailwind frontend
-  - `apps/tui` — Go TUI (standalone, not wired to api/web yet)
+  - `apps/tui` — Go TUI
 
 ## Setup
 
-- Install deps at repo root: `bun install`
-- Install Playwright Chromium once: `bunx playwright install chromium` (required for scraper/CLI)
+- Install deps: `vp install`
+- Install Playwright Chromium once: `vp exec playwright install chromium`
 
 ## Dev commands
 
-| Command | What it does |
-|---|---|
-| `bun run dev` | All apps (turbo) |
-| `bun run dev:api` | API only (kills port 3000 first via `lsof`) |
-| `bun run dev:web` | Web only (port 5173) |
-| `bun run dev:tui` | Go TUI (`go run ./...`) |
-| `bun run dev:api:tui` | API + TUI concurrently |
-| `bun run build` | Build all apps |
-| `bun run lint` | Biome check all apps |
-| `bun run format` | Biome format all apps |
-| `bun run typecheck` | TypeScript check all apps |
+| Command              | What it does            |
+| -------------------- | ----------------------- |
+| `vp run dev`         | All apps                |
+| `vp run dev:api`     | API only, port 3000     |
+| `vp run dev:web`     | Web only, port 5173     |
+| `vp run dev:tui`     | Go TUI                  |
+| `vp run dev:api:tui` | API + TUI               |
+| `vp run build`       | Build all apps          |
+| `vp check`           | Format, lint, typecheck |
+| `vp test run`        | Tests                   |
 
 ## apps/api
 
-- **Entry point:** `src/server.ts` (Bun HTTP server on port 3000)
-- **Routes:** All under `/api/` — no path aliases, no router library. Each route is a manual `if url.pathname === ...` check.
-- **Scraper:** `src/scraper.ts` — `runScraper()` drives the full scrape loop: paginate, click cards, extract details, write JSON. Uses `AbortSignal` for abort. Built-in 1–3s rate limiting between job clicks.
-- **Browser:** `src/linkedin/browser.ts` — Playwright setup; saves session to `storageState.json` (gitignored) for auth persistence.
-- **Output:** Writes to `src/../out/` (relative to `import.meta.dir`). Format is `{ meta: {...}, jobs: [...] }`.
-- **State:** In-memory — no DB. `isScraping`, `currentLogs`, `sseControllers` are module-level vars.
-- **CLI:** `src/cli.ts` — pure arg parser; scraper logic lives in `scraper.ts`. Both share `types.ts`.
+- **Entry:** `src/server.ts` (Node HTTP server on port 3000)
+- **Routes:** All under `/api/`; manual `if url.pathname === ...`.
+- **Scraper:** `src/scraper.ts`; `runScraper()` handles pagination, details, output JSON, abort signal, 1-3s rate limit.
+- **Browser:** `src/linkedin/browser.ts`; saves session to `storageState.json`.
+- **Output:** `apps/api/out/`; format `{ meta: {...}, jobs: [...] }`.
+- **State:** In-memory module vars.
+- **CLI:** `src/cli.ts` parses args; `src/index.ts` runs scraper.
 
 ## apps/web
 
-- **Router:** TanStack Router with code-based route definitions in `src/router.tsx` (no file-based routing).
-- **Routes:** `/` → `routes/index.tsx` (scraper form + SSE logs), `/results` → `routes/results.tsx` (results dashboard).
-- **API calls:** Direct `fetch` to `http://localhost:3000/api/*`.
-- **Styling:** Tailwind CSS v4 via `@tailwindcss/vite` plugin (not PostCSS).
+- **Router:** TanStack Router, code routes in `src/router.tsx`.
+- **Routes:** `/`, `/results`.
+- **API:** Direct `fetch` to `http://localhost:3000/api/*`.
+- **Styling:** Tailwind CSS v4 via `@tailwindcss/vite`.
 
 ## apps/tui
 
-- **Package name:** `github.com/arnab/is-dl-tui`
-- **Framework:** Bubble Tea (Charmbracelet) — `tea.Program` with `AltScreen` + mouse support.
-- **HTTP client:** `api.NewClient("http://localhost:3000")` — hardcoded API URL.
-- **SSE:** Streams logs from `/api/logs` via a goroutine, forwards events via a Go channel to the Bubble Tea model.
-- **Status:** Not yet wired to the API or web app; runs standalone.
+- **Go package:** `github.com/arnab/is-dl-tui`
+- **NPM package:** `@repo/tui`
+- **Framework:** Bubble Tea.
+- **HTTP:** `api.NewClient("http://localhost:3000")`.
+- **SSE:** `/api/logs` goroutine -> Bubble Tea channel.
 
 ## CLI
 
-Run CLI from root or `apps/api`:
 ```bash
-bun run cli --keywords "..." --location "..."
+vp run --filter @repo/api cli -- --keywords "..." --location "..."
 ```
-First run opens browser for LinkedIn login; session saved to `apps/api/storageState.json` (gitignored).
-
-## Scraped output
-
-Results written to `apps/api/out/` as `linkedin-jobs.<timestamp>.json`.
 
 ## Tech notes
 
-- API CORS is open for all origins
-- Scraper has built-in 1–3s rate limiting between job extractions
-- Biome config: `quoteStyle: "single"`, `indentStyle: "space"`
+- API CORS open.
+- Oxlint/Oxfmt configured in root `vite.config.ts`.
+- Vite+ hooks via `prepare: vp config`.
+
+<!--VITE PLUS START-->
+
+# Using Vite+, the Unified Toolchain for the Web
+
+This project is using Vite+, a unified toolchain built on top of Vite, Rolldown, Vitest, tsdown, Oxlint, Oxfmt, and Vite Task. Vite+ wraps runtime management, package management, and frontend tooling in a single global CLI called `vp`. Vite+ is distinct from Vite, and it invokes Vite through `vp dev` and `vp build`. Run `vp help` to print a list of commands and `vp <command> --help` for information about a specific command.
+
+Docs are local at `node_modules/vite-plus/docs` or online at https://viteplus.dev/guide/.
+
+## Review Checklist
+
+- [ ] Run `vp install` after pulling remote changes and before getting started.
+- [ ] Run `vp check` and `vp test` to format, lint, type check and test changes.
+- [ ] Check if there are `vite.config.ts` tasks or `package.json` scripts necessary for validation, run via `vp run <script>`.
+- [ ] If setup, runtime, or package-manager behavior looks wrong, run `vp env doctor` and include its output when asking for help.
+
+<!--VITE PLUS END-->

@@ -1,12 +1,11 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vite-plus/test';
 import { detectAiAgentSignals } from './ai-agent-detector.ts';
 
 describe('detectAiAgentSignals', () => {
   test('detects named coding-agent tools case-insensitively', () => {
     const signals = detectAiAgentSignals({
       title: 'Software Engineer',
-      requirementsText:
-        'Required experience using claude code, Cursor, and OpenCode.',
+      requirementsText: 'Required experience using claude code, Cursor, and OpenCode.',
       descriptionText: null,
     });
 
@@ -63,8 +62,7 @@ describe('detectAiAgentSignals', () => {
     });
     const codingSignals = detectAiAgentSignals({
       title: 'Software Engineer',
-      requirementsText:
-        'Build AI-assisted development workflows and agentic coding systems.',
+      requirementsText: 'Build AI-assisted development workflows and agentic coding systems.',
       descriptionText: null,
     });
 
@@ -76,8 +74,7 @@ describe('detectAiAgentSignals', () => {
   test('guards ambiguous Continue and mouse cursor mentions', () => {
     const plainSignals = detectAiAgentSignals({
       title: null,
-      requirementsText:
-        'Continue improving onboarding and mouse cursor states.',
+      requirementsText: 'Continue improving onboarding and mouse cursor states.',
       descriptionText: null,
     });
     const toolSignals = detectAiAgentSignals({
@@ -94,8 +91,7 @@ describe('detectAiAgentSignals', () => {
   test('boosts confidence with requirement strength', () => {
     const signals = detectAiAgentSignals({
       title: 'Software Engineer',
-      requirementsText:
-        'Required experience with AI-assisted development in TypeScript.',
+      requirementsText: 'Required experience with AI-assisted development in TypeScript.',
       descriptionText: null,
     });
 

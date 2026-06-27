@@ -99,10 +99,7 @@ export async function getPaginationInfo(
   }
 }
 
-export async function goToNextPage(
-  page: Page,
-  debug: boolean = false,
-): Promise<boolean> {
+export async function goToNextPage(page: Page, debug: boolean = false): Promise<boolean> {
   try {
     // Look for next page button - the selector from selectors.txt has dynamic ID
     // We'll use a more stable selector

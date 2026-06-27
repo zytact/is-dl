@@ -77,11 +77,7 @@ interface ResultsInspectorProps {
   onDeleted: () => void;
 }
 
-export function ResultsInspector({
-  filename,
-  onBack,
-  onDeleted,
-}: ResultsInspectorProps) {
+export function ResultsInspector({ filename, onBack, onDeleted }: ResultsInspectorProps) {
   const [data, setData] = useState<ResultsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -149,14 +145,8 @@ export function ResultsInspector({
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-brand-panel brutal-border p-1 text-brand-error">
         <Terminal className="w-12 h-12 mb-4 opacity-50" />
-        <p className="font-mono tracking-widest uppercase">
-          FATAL ERROR: {error}
-        </p>
-        <button
-          type="button"
-          onClick={onBack}
-          className="brutal-btn mt-6 text-sm"
-        >
+        <p className="font-mono tracking-widest uppercase">FATAL ERROR: {error}</p>
+        <button type="button" onClick={onBack} className="brutal-btn mt-6 text-sm">
           RETURN TO DATABANK
         </button>
       </div>
@@ -246,8 +236,7 @@ export function ResultsInspector({
           </div>
           <div className="flex items-center gap-2">
             <Server className="w-4 h-4 text-brand-cyan" />
-            <span className="text-brand-text">SRC:</span>{' '}
-            {meta.source?.toUpperCase() || 'UNKNOWN'}
+            <span className="text-brand-text">SRC:</span> {meta.source?.toUpperCase() || 'UNKNOWN'}
           </div>
           <div className="flex items-center gap-2 bg-brand-dark border border-brand-border px-3 py-1 brutal-shadow-cyan text-brand-cyan">
             <span className="w-2 h-2 bg-brand-cyan inline-block rounded-none animate-pulse" />
@@ -263,12 +252,7 @@ export function ResultsInspector({
             <button
               type="button"
               className="text-brand-muted hover:text-brand-accent transition-colors flex items-center justify-center hover:scale-110 transform"
-              onClick={() =>
-                window.open(
-                  `http://localhost:3000/api/results/${filename}`,
-                  '_blank',
-                )
-              }
+              onClick={() => window.open(`http://localhost:3000/api/results/${filename}`, '_blank')}
               title="View Raw JSON"
             >
               <FileJson className="w-5 h-5" />
@@ -385,9 +369,7 @@ export function ResultsInspector({
                   }`}
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <span className="text-[10px] opacity-70">
-                      ID: {getJobKey(job).slice(-6)}
-                    </span>
+                    <span className="text-[10px] opacity-70">ID: {getJobKey(job).slice(-6)}</span>
                     <span className="text-[10px] text-brand-ok">
                       {job.postedAtText || 'UNKNOWN'}
                     </span>
@@ -514,12 +496,9 @@ export function ResultsInspector({
 
                 {/* Detail Content */}
                 <div className="p-8 flex flex-col gap-8 font-mono text-sm leading-relaxed shrink-0">
-                  {normalizeAiAgentSignals(selectedJob.aiAgentSignals)
-                    .detected && (
+                  {normalizeAiAgentSignals(selectedJob.aiAgentSignals).detected && (
                     <AiAgentSignalsPanel
-                      signals={normalizeAiAgentSignals(
-                        selectedJob.aiAgentSignals,
-                      )}
+                      signals={normalizeAiAgentSignals(selectedJob.aiAgentSignals)}
                     />
                   )}
 
@@ -535,12 +514,10 @@ export function ResultsInspector({
                   )}
 
                   {selectedJob.requirementsText &&
-                    selectedJob.requirementsText !==
-                      selectedJob.descriptionText && (
+                    selectedJob.requirementsText !== selectedJob.descriptionText && (
                       <div className="space-y-4">
                         <h3 className="text-xl font-display text-brand-cyan tracking-widest font-bold flex items-center gap-2">
-                          <ChevronRight className="w-5 h-5" />{' '}
-                          TARGET_REQUIREMENTS
+                          <ChevronRight className="w-5 h-5" /> TARGET_REQUIREMENTS
                         </h3>
                         <div className="text-brand-text/80 whitespace-pre-wrap bg-brand-dark/50 border-l-2 border-brand-border p-4 pl-6">
                           {selectedJob.requirementsText}
@@ -581,9 +558,7 @@ function AiAgentSignalsPanel({ signals }: { signals: AiAgentSignals }) {
       </h3>
       <div className="flex flex-wrap gap-2 text-xs uppercase tracking-widest">
         {signals.confidence && (
-          <span
-            className={`border px-3 py-1 ${aiBadgeClass(signals.confidence)}`}
-          >
+          <span className={`border px-3 py-1 ${aiBadgeClass(signals.confidence)}`}>
             Confidence: {signals.confidence}
           </span>
         )}
@@ -597,9 +572,7 @@ function AiAgentSignalsPanel({ signals }: { signals: AiAgentSignals }) {
       <SignalLine label="Categories" values={signals.categories} />
       {signals.snippets.length > 0 && (
         <div className="space-y-2">
-          <div className="text-xs uppercase tracking-widest text-brand-muted">
-            Evidence
-          </div>
+          <div className="text-xs uppercase tracking-widest text-brand-muted">Evidence</div>
           {signals.snippets.map((snippet) => (
             <div
               key={`${snippet.source}:${snippet.text}`}
@@ -621,9 +594,7 @@ function SignalLine({ label, values }: { label: string; values: string[] }) {
   if (values.length === 0) return null;
   return (
     <div className="flex flex-wrap gap-2 text-xs">
-      <span className="uppercase tracking-widest text-brand-muted">
-        {label}:
-      </span>
+      <span className="uppercase tracking-widest text-brand-muted">{label}:</span>
       {values.map((value) => (
         <span
           key={value}
@@ -636,9 +607,7 @@ function SignalLine({ label, values }: { label: string; values: string[] }) {
   );
 }
 
-function normalizeAiAgentSignals(
-  signals: AiAgentSignals | undefined,
-): AiAgentSignals {
+function normalizeAiAgentSignals(signals: AiAgentSignals | undefined): AiAgentSignals {
   return (
     signals || {
       detected: false,
@@ -652,9 +621,7 @@ function normalizeAiAgentSignals(
 }
 
 function getJobKey(job: Job): string {
-  return (
-    job.jobId || job.jobUrl || `${job.title || 'job'}:${job.companyName || ''}`
-  );
+  return job.jobId || job.jobUrl || `${job.title || 'job'}:${job.companyName || ''}`;
 }
 
 function shortConfidence(confidence: AiAgentConfidence): string {

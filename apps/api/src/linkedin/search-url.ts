@@ -30,9 +30,7 @@ export function buildSearchUrl(options: SearchOptions): string {
       Executive: '6',
     };
 
-    const codes = options.experienceLevel
-      .map((level) => experienceLevelMap[level])
-      .filter(Boolean);
+    const codes = options.experienceLevel.map((level) => experienceLevelMap[level]).filter(Boolean);
 
     if (codes.length > 0) {
       params.set('f_E', codes.join(','));
@@ -51,9 +49,7 @@ export function buildSearchUrl(options: SearchOptions): string {
       Other: 'O',
     };
 
-    const codes = options.jobType
-      .map((type) => jobTypeMap[type])
-      .filter(Boolean);
+    const codes = options.jobType.map((type) => jobTypeMap[type]).filter(Boolean);
 
     if (codes.length > 0) {
       params.set('f_JT', codes.join(','));

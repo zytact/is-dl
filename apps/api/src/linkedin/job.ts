@@ -1,8 +1,5 @@
 import type { Page } from 'playwright';
-import {
-  detectAiAgentSignals,
-  emptyAiAgentSignals,
-} from '../ai-agent-detector.ts';
+import { detectAiAgentSignals, emptyAiAgentSignals } from '../ai-agent-detector.ts';
 import { parsePostedTime } from '../normalize.ts';
 import type { JobListing } from '../types.ts';
 
@@ -38,20 +35,12 @@ export async function extractJobDetailsFromView(
     }
 
     // Extract title - try to find the job title
-    const title = await extractText(
-      page,
-      '.job-details-jobs-unified-top-card__job-title',
-      debug,
-    );
+    const title = await extractText(page, '.job-details-jobs-unified-top-card__job-title', debug);
 
     // Extract company name and URL
     const companyNameElement = await page.$(SELECTORS.companyName);
-    const companyName = companyNameElement
-      ? await companyNameElement.textContent()
-      : null;
-    const companyUrl = companyNameElement
-      ? await companyNameElement.getAttribute('href')
-      : null;
+    const companyName = companyNameElement ? await companyNameElement.textContent() : null;
+    const companyUrl = companyNameElement ? await companyNameElement.getAttribute('href') : null;
 
     // Extract location
     const locationText = await extractText(page, SELECTORS.location, debug);
@@ -77,11 +66,7 @@ export async function extractJobDetailsFromView(
 
     // Fallback: try alternative description selector
     if (!descriptionText) {
-      descriptionText = await extractText(
-        page,
-        '.jobs-description__content',
-        debug,
-      );
+      descriptionText = await extractText(page, '.jobs-description__content', debug);
     }
 
     // Try to expand description if "Show more" button exists
@@ -95,11 +80,7 @@ export async function extractJobDetailsFromView(
         // Re-extract description after expanding
         descriptionText = await extractText(page, SELECTORS.description, debug);
         if (!descriptionText) {
-          descriptionText = await extractText(
-            page,
-            '.jobs-description__content',
-            debug,
-          );
+          descriptionText = await extractText(page, '.jobs-description__content', debug);
         }
       }
     } catch {
@@ -154,11 +135,7 @@ export async function extractJobDetailsFromView(
   }
 }
 
-async function extractText(
-  page: Page,
-  selector: string,
-  debug: boolean,
-): Promise<string | null> {
+async function extractText(page: Page, selector: string, debug: boolean): Promise<string | null> {
   try {
     const element = await page.$(selector);
     if (!element) return null;
@@ -173,10 +150,7 @@ async function extractText(
   }
 }
 
-async function extractPostedTime(
-  page: Page,
-  debug: boolean,
-): Promise<string | null> {
+async function extractPostedTime(page: Page, debug: boolean): Promise<string | null> {
   try {
     // Try multiple selectors for posted time
     const selectors = [
@@ -198,10 +172,7 @@ async function extractPostedTime(
   }
 }
 
-async function extractAlumniCount(
-  page: Page,
-  debug: boolean,
-): Promise<string | null> {
+async function extractAlumniCount(page: Page, debug: boolean): Promise<string | null> {
   try {
     // Look for alumni information - try multiple patterns
     const selectors = [
@@ -229,10 +200,7 @@ async function extractAlumniCount(
   }
 }
 
-function extractRequirements(
-  descriptionText: string | null,
-  debug: boolean,
-): string | null {
+function extractRequirements(descriptionText: string | null, debug: boolean): string | null {
   if (!descriptionText) return null;
 
   try {

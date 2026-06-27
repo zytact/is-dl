@@ -21,9 +21,7 @@ export function TerminalLogs({ logs, isScraping }: TerminalLogsProps) {
       <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-brand-cyan opacity-50 z-10 pointer-events-none"></div>
 
       <div className="flex justify-between items-center bg-brand-dark border-b border-brand-border px-3 py-1">
-        <span className="text-xs text-brand-cyan font-bold tracking-widest uppercase">
-          STDOUT
-        </span>
+        <span className="text-xs text-brand-cyan font-bold tracking-widest uppercase">STDOUT</span>
         <span className="text-[10px] text-brand-muted uppercase">
           TTY1 {/* NODE_ENV=production */}
         </span>
@@ -40,27 +38,18 @@ export function TerminalLogs({ logs, isScraping }: TerminalLogsProps) {
         ) : (
           logs.map((log, i) => {
             const isError =
-              log.includes('Error') ||
-              log.includes('Failed') ||
-              log.includes('ABORTED');
-            const isSuccess =
-              log.includes('complete') || log.includes('Successfully');
+              log.includes('Error') || log.includes('Failed') || log.includes('ABORTED');
+            const isSuccess = log.includes('complete') || log.includes('Successfully');
 
             return (
               <div
                 key={`log-${i}-${log.slice(0, 20)}`}
                 className={`mb-1 typewriter-text ${
-                  isError
-                    ? 'text-brand-error'
-                    : isSuccess
-                      ? 'text-brand-ok'
-                      : 'text-brand-text'
+                  isError ? 'text-brand-error' : isSuccess ? 'text-brand-ok' : 'text-brand-text'
                 }`}
                 style={{ animationDuration: '0.2s' }}
               >
-                <span className="opacity-50 mr-2 text-xs">
-                  [{new Date().toLocaleTimeString()}]
-                </span>
+                <span className="opacity-50 mr-2 text-xs">[{new Date().toLocaleTimeString()}]</span>
                 {log}
               </div>
             );
