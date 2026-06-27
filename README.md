@@ -24,7 +24,7 @@ vp exec playwright install chromium
 
 ## Development
 
-Start both apps:
+Start API + web:
 
 ```bash
 vp run dev
@@ -36,6 +36,14 @@ Start specific app:
 vp run dev:api   # Backend only (port 3000)
 vp run dev:web   # Frontend only (port 5173)
 ```
+
+Start the TUI explicitly:
+
+```bash
+vp run dev:tui   # Starts API quietly, then runs TUI
+```
+
+In TUI mode, API output is written to `apps/api/out/api.log` so the TUI owns the terminal.
 
 ## Web Interface
 
@@ -156,7 +164,8 @@ interface JobListing {
 From the root:
 
 ```bash
-vp run dev       # Start all apps in dev mode
+vp run dev       # Start API + web in dev mode
+vp run dev:tui   # Start API + TUI, with API logs redirected
 vp run build     # Build all apps
 vp check         # Format, lint, typecheck
 vp test run      # Run tests

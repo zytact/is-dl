@@ -16,16 +16,16 @@ Use concise language.
 
 ## Dev commands
 
-| Command              | What it does            |
-| -------------------- | ----------------------- |
-| `vp run dev`         | All apps                |
-| `vp run dev:api`     | API only, port 3000     |
-| `vp run dev:web`     | Web only, port 5173     |
-| `vp run dev:tui`     | Go TUI                  |
-| `vp run dev:api:tui` | API + TUI               |
-| `vp run build`       | Build all apps          |
-| `vp check`           | Format, lint, typecheck |
-| `vp test run`        | Tests                   |
+| Command              | What it does               |
+| -------------------- | -------------------------- |
+| `vp run dev`         | API + web                  |
+| `vp run dev:api`     | API only, port 3000        |
+| `vp run dev:web`     | Web only, port 5173        |
+| `vp run dev:tui`     | API + TUI, API logs hidden |
+| `vp run dev:api:tui` | Alias for `dev:tui`        |
+| `vp run build`       | Build all apps             |
+| `vp check`           | Format, lint, typecheck    |
+| `vp test run`        | Tests                      |
 
 ## apps/api
 
