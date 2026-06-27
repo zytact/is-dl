@@ -8,6 +8,7 @@
     "lint": "biome check",
     "format": "biome format --write",
     "typecheck": "tsc --noEmit",
+    "test": "bun test",
     "start": "bun run src/server.ts"
   },
   "dependencies": {

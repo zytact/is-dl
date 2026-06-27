@@ -1,3 +1,37 @@
+export type AiAgentConfidence = 'high' | 'medium' | 'low';
+
+export type AiAgentRequirementStrength = 'required' | 'preferred' | 'mentioned';
+
+export type AiAgentSignalCategory =
+  | 'tool'
+  | 'agentic_workflow'
+  | 'llm_dev_workflow'
+  | 'prompting_for_code'
+  | 'generic_ai_tooling';
+
+export type AiAgentSignalSource = 'title' | 'requirements' | 'description';
+
+export interface AiAgentSnippet {
+  source: AiAgentSignalSource;
+  text: string;
+}
+
+export interface AiAgentSignals {
+  detected: boolean;
+  confidence: AiAgentConfidence | null;
+  requirementStrength: AiAgentRequirementStrength | null;
+  tools: string[];
+  categories: AiAgentSignalCategory[];
+  snippets: AiAgentSnippet[];
+}
+
+export interface AiAgentSummary {
+  detectedCount: number;
+  highCount: number;
+  mediumCount: number;
+  lowCount: number;
+}
+
 export interface JobListing {
   jobId: string | null;
   jobUrl: string;
@@ -11,6 +45,7 @@ export interface JobListing {
   alumniCount: string | null; // "X alumni work here"
   descriptionText: string | null;
   requirementsText: string | null;
+  aiAgentSignals: AiAgentSignals;
 }
 
 export interface SearchMeta {
@@ -25,6 +60,7 @@ export interface SearchMeta {
   scrapedAt: string;
   source: string;
   count: number;
+  aiAgentSummary: AiAgentSummary;
 }
 
 export interface ScraperOutput {

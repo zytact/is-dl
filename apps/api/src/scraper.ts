@@ -1,3 +1,4 @@
+import { summarizeAiAgentSignals } from './ai-agent-detector.ts';
 import {
   closeBrowser,
   ensureOutDir,
@@ -175,6 +176,7 @@ export async function runScraper(
     }
 
     onLog(`\nSuccessfully extracted ${jobs.length} jobs.\n`);
+    const aiAgentSummary = summarizeAiAgentSignals(jobs);
 
     // Prepare output data
     const output: ScraperOutput = {
@@ -190,6 +192,7 @@ export async function runScraper(
         scrapedAt: new Date().toISOString(),
         source: 'linkedin',
         count: jobs.length,
+        aiAgentSummary,
       },
       jobs,
     };
@@ -200,6 +203,9 @@ export async function runScraper(
 
     onLog('\nScraping completed successfully!');
     onLog(`Total jobs scraped: ${jobs.length}`);
+    onLog(
+      `AI agent signals: ${aiAgentSummary.detectedCount} detected (${aiAgentSummary.highCount} high, ${aiAgentSummary.mediumCount} medium, ${aiAgentSummary.lowCount} low)`,
+    );
     onLog(`JSON: ${jsonPath}`);
   } catch (err) {
     const errorStr = err instanceof Error ? err.message : String(err);
