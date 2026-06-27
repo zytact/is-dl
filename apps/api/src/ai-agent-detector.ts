@@ -66,8 +66,7 @@ const TOOL_RULES: Rule[] = [
     categories: ['tool'],
   },
   {
-    regex:
-      /\b(openai[\s-]+codex|codex[\s-]+cli|codex[\s-]+(?:coding[\s-]+)?agent)\b/gi,
+    regex: /\b(openai[\s-]+codex|codex[\s-]+cli|codex[\s-]+(?:coding[\s-]+)?agent)\b/gi,
     confidence: 'high',
     tools: ['OpenAI Codex'],
     categories: ['tool'],
@@ -77,8 +76,7 @@ const TOOL_RULES: Rule[] = [
     confidence: 'high',
     tools: ['Cursor'],
     categories: ['tool'],
-    guard: (text, match) =>
-      !nearMatch(text, match.index ?? 0, /\bmouse\s+cursor\b/i),
+    guard: (text, match) => !nearMatch(text, match.index ?? 0, /\bmouse\s+cursor\b/i),
   },
   {
     regex: /\bopencode\b/gi,
@@ -141,8 +139,7 @@ const TOOL_RULES: Rule[] = [
     confidence: 'low',
     tools: ['Claude'],
     categories: ['generic_ai_tooling'],
-    guard: (text, match) =>
-      !nearMatch(text, match.index ?? 0, /\bclaude[\s-]+code\b/i),
+    guard: (text, match) => !nearMatch(text, match.index ?? 0, /\bclaude[\s-]+code\b/i),
   },
   {
     regex: /\bchatgpt\b/gi,
@@ -168,15 +165,13 @@ const PHRASE_RULES: Rule[] = [
     requiresDevContext: true,
   },
   {
-    regex:
-      /\bagentic[\s-]+(?:coding|development|software[\s-]+engineering)\b/gi,
+    regex: /\bagentic[\s-]+(?:coding|development|software[\s-]+engineering)\b/gi,
     confidence: 'high',
     categories: ['agentic_workflow'],
     requiresDevContext: true,
   },
   {
-    regex:
-      /\bai[\s-]+assisted[\s-]+(?:development|software[\s-]+engineering|coding)\b/gi,
+    regex: /\bai[\s-]+assisted[\s-]+(?:development|software[\s-]+engineering|coding)\b/gi,
     confidence: 'medium',
     categories: ['llm_dev_workflow'],
     requiresDevContext: true,
@@ -231,11 +226,7 @@ export function detectAiAgentSignals(input: {
   const tools = unique(hits.flatMap((hit) => hit.tools));
   const categories = unique(hits.flatMap((hit) => hit.categories));
   const requirementStrength = detectRequirementStrength(sources, hits);
-  const confidence = applyStrengthBoost(
-    highestConfidence(hits),
-    requirementStrength,
-    categories,
-  );
+  const confidence = applyStrengthBoost(highestConfidence(hits), requirementStrength, categories);
 
   return {
     detected: true,
@@ -270,10 +261,7 @@ function findHits(source: SourceText): MatchHit[] {
   for (const rule of rules) {
     for (const match of source.text.matchAll(rule.regex)) {
       const index = match.index ?? 0;
-      if (
-        rule.requiresDevContext &&
-        !nearMatch(source.text, index, DEV_CONTEXT)
-      ) {
+      if (rule.requiresDevContext && !nearMatch(source.text, index, DEV_CONTEXT)) {
         continue;
       }
       if (rule.guard && !rule.guard(source.text, match)) {
@@ -349,18 +337,14 @@ function applyStrengthBoost(
 function highestConfidence(hits: MatchHit[]): AiAgentConfidence {
   return hits.reduce<AiAgentConfidence>(
     (highest, hit) =>
-      CONFIDENCE_RANK[hit.confidence] > CONFIDENCE_RANK[highest]
-        ? hit.confidence
-        : highest,
+      CONFIDENCE_RANK[hit.confidence] > CONFIDENCE_RANK[highest] ? hit.confidence : highest,
     'low',
   );
 }
 
 function selectSnippets(sources: SourceText[], hits: MatchHit[]) {
   const sortedHits = [...hits].sort(
-    (a, b) =>
-      SOURCE_PRIORITY[a.source] - SOURCE_PRIORITY[b.source] ||
-      a.index - b.index,
+    (a, b) => SOURCE_PRIORITY[a.source] - SOURCE_PRIORITY[b.source] || a.index - b.index,
   );
   const snippets: AiAgentSignals['snippets'] = [];
 
@@ -369,11 +353,7 @@ function selectSnippets(sources: SourceText[], hits: MatchHit[]) {
     if (!source) continue;
 
     const text = normalizeSnippet(sliceAround(source.text, hit.index, 160));
-    if (
-      snippets.some(
-        (snippet) => snippet.source === hit.source && snippet.text === text,
-      )
-    ) {
+    if (snippets.some((snippet) => snippet.source === hit.source && snippet.text === text)) {
       continue;
     }
     snippets.push({ source: hit.source, text });

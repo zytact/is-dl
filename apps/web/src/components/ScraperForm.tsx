@@ -29,12 +29,9 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
     headless: true,
   });
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    const val =
-      type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
+    const val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
     setFormData((prev) => ({ ...prev, [name]: val }));
   };
 
@@ -46,9 +43,7 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       <div className="flex justify-between border-b border-brand-border pb-2">
-        <h3 className="text-brand-cyan tracking-widest font-bold uppercase">
-          TARGET_PARAMS
-        </h3>
+        <h3 className="text-brand-cyan tracking-widest font-bold uppercase">TARGET_PARAMS</h3>
       </div>
 
       <div className="flex flex-col gap-1 relative group">
@@ -150,9 +145,7 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
           onChange={handleChange}
           disabled={isScraping}
         />
-        <span className="text-[10px] text-brand-muted ml-1 uppercase">
-          COMMA_SEPARATED
-        </span>
+        <span className="text-[10px] text-brand-muted ml-1 uppercase">COMMA_SEPARATED</span>
       </div>
 
       <div className="flex flex-col gap-1 relative group">

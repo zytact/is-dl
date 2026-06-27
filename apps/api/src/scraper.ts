@@ -1,9 +1,5 @@
 import { summarizeAiAgentSignals } from './ai-agent-detector.ts';
-import {
-  closeBrowser,
-  ensureOutDir,
-  launchBrowser,
-} from './linkedin/browser.ts';
+import { closeBrowser, ensureOutDir, launchBrowser } from './linkedin/browser.ts';
 import { extractJobDetailsFromView } from './linkedin/job.ts';
 import {
   clickJobCard,
@@ -21,10 +17,7 @@ function checkAbort(signal?: AbortSignal): void {
   }
 }
 
-function waitOrAbort(
-  signal: AbortSignal | undefined,
-  ms: number,
-): Promise<void> {
+function waitOrAbort(signal: AbortSignal | undefined, ms: number): Promise<void> {
   return new Promise((resolve, reject) => {
     if (!signal) {
       setTimeout(resolve, ms);
@@ -91,9 +84,7 @@ export async function runScraper(
     // Get pagination info
     const paginationInfo = await getPaginationInfo(session.page, options.debug);
     if (paginationInfo) {
-      onLog(
-        `Pagination: Page ${paginationInfo.current} of ${paginationInfo.total}`,
-      );
+      onLog(`Pagination: Page ${paginationInfo.current} of ${paginationInfo.total}`);
     }
 
     checkAbort(signal);
@@ -134,17 +125,11 @@ export async function runScraper(
           await clickJobCard(session.page, i, options.debug);
 
           // Extract details from the loaded view
-          const jobDetails = await extractJobDetailsFromView(
-            session.page,
-            i,
-            options.debug,
-          );
+          const jobDetails = await extractJobDetailsFromView(session.page, i, options.debug);
           jobs.push(jobDetails);
 
           if (options.debug) {
-            onLog(
-              `  Title: ${jobDetails.title}, Company: ${jobDetails.companyName}`,
-            );
+            onLog(`  Title: ${jobDetails.title}, Company: ${jobDetails.companyName}`);
           }
 
           // Rate limiting: wait between requests

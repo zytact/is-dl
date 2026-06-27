@@ -21,10 +21,10 @@ elif command -v alacritty &>/dev/null; then
 elif command -v xterm &>/dev/null; then
   xterm -e bash -c "$TUI_CMD; exec bash" &
 else
-  echo "No terminal emulator found. Open new terminal and run: bun run start:tui"
+  echo "No terminal emulator found. Open new terminal and run: vp run start:tui"
 fi
 
 lsof -i :3000 | grep LISTEN | awk '{print $2}' | xargs -r kill -9 || true
 
 cd "$ROOT"
-bun run start:api
+vp run start:api

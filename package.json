@@ -1,46 +1,33 @@
 {
   "name": "is-dl",
   "private": true,
-  "packageManager": "bun@1.3.9",
-  "workspaces": [
-    "apps/*"
-  ],
   "scripts": {
-    "dev": "turbo run dev",
-    "dev:api": "turbo run dev --filter=@repo/api",
-    "dev:web": "turbo run dev --filter=@repo/web",
-    "dev:tui": "cd apps/tui && go run ./...",
-    "dev:api:tui": "turbo run dev --filter=@repo/api & cd apps/tui && go run ./...",
-    "build": "turbo run build",
-    "start": "turbo run start",
-    "start:api": "turbo run start --filter=@repo/api",
-    "start:web": "turbo run start --filter=@repo/web",
-    "start:tui": "cd apps/tui && ./bin/is-dl-tui",
-    "start:api:tui": "turbo run start --filter=@repo/api & cd apps/tui && ./bin/is-dl-tui",
+    "dev": "vp run -r dev",
+    "dev:api": "vp run --filter @repo/api dev",
+    "dev:web": "vp run --filter @repo/web dev",
+    "dev:tui": "vp run --filter @repo/tui dev",
+    "dev:api:tui": "vp run --filter @repo/api dev & vp run --filter @repo/tui dev",
+    "build": "vp run -r build",
+    "start": "vp run -r start",
+    "start:api": "vp run --filter @repo/api start",
+    "start:web": "vp run --filter @repo/web start",
+    "start:tui": "vp run --filter @repo/tui start",
+    "start:api:tui": "vp run --filter @repo/api start & vp run --filter @repo/tui start",
     "launch": "bash scripts/start-api-tui.sh",
-    "lint": "turbo run lint",
-    "format": "turbo run format",
-    "typecheck": "turbo run typecheck",
-    "test": "turbo run test",
-    "prepare": "husky"
-  },
-  "lint-staged": {
-    "*.{js,ts,jsx,tsx}": [
-      "biome check",
-      "biome format --write"
-    ],
-    "*.{json,css}": "biome format --write",
-    "apps/tui/**/*.go": [
-      "gofmt -w",
-      "sh -c 'cd apps/tui && golangci-lint run ./...'"
-    ]
+    "check": "vp check",
+    "lint": "vp lint",
+    "format": "vp fmt",
+    "typecheck": "vp run -r typecheck",
+    "test": "vp test run",
+    "prepare": "vp config"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.13",
-    "@types/bun": "latest",
-    "husky": "^9.1.7",
-    "lint-staged": "^16.2.7",
-    "turbo": "^2.4.4",
-    "typescript": "^5"
-  }
+    "@types/node": "^24.10.1",
+    "oxfmt": "^0.56.0",
+    "oxlint": "^1.71.0",
+    "tsx": "^4.22.4",
+    "typescript": "^5",
+    "vite-plus": "catalog:"
+  },
+  "packageManager": "pnpm@11.6.0"
 }

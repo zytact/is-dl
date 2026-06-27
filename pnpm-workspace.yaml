@@ -1,0 +1,16 @@
+allowBuilds:
+  esbuild: true
+
+packages:
+  - 'apps/*'
+
+catalog:
+  vite-plus: latest
+
+peerDependencyRules:
+  allowAny:
+    - vite
+    - vitest
+  allowedVersions:
+    vite: '*'
+    vitest: '*'

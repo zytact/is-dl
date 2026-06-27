@@ -76,7 +76,7 @@ function printHelp() {
 LinkedIn Internship Scraper
 
 Usage:
-  bun run index.ts [options]
+  vp run --filter @repo/api cli -- [options]
 
 Options:
   -k, --keywords <query>           Search keywords (required)
@@ -92,8 +92,8 @@ Options:
   -h, --help                       Show this help message
 
 Examples:
-  bun run index.ts --keywords "software engineer intern" --location "United States" --limit 30
-  bun run index.ts -k "data science" -l "Remote" --remote-only --posted-within "Past week"
-  bun run index.ts -k "frontend developer" -l "San Francisco" --experience-level "Internship" --no-headless
+  vp run --filter @repo/api cli -- --keywords "software engineer intern" --location "United States" --limit 30
+  vp run --filter @repo/api cli -- -k "data science" -l "Remote" --remote-only --posted-within "Past week"
+  vp run --filter @repo/api cli -- -k "frontend developer" -l "San Francisco" --experience-level "Internship" --no-headless
 `);
 }
