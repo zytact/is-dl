@@ -7,18 +7,15 @@
     "dev:web": "vp run --filter @repo/web dev",
     "dev:tui": "bash scripts/start-api-tui.sh dev",
     "dev:api:tui": "vp run dev:tui",
-    "build": "vp run -r build",
     "start": "vp run -F @repo/api -F @repo/web start",
     "start:api": "vp run --filter @repo/api start",
     "start:web": "vp run --filter @repo/web start",
     "start:tui": "bash scripts/start-api-tui.sh start",
     "start:api:tui": "vp run start:tui",
     "launch": "vp run start:tui",
-    "check": "vp check",
     "lint": "vp lint",
     "format": "vp fmt",
     "typecheck": "vp run -r typecheck",
-    "test": "vp test run",
     "prepare": "vp config"
   },
   "devDependencies": {
