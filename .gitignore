@@ -5,6 +5,8 @@ node_modules
 out
 dist
 *.tgz
+!apps/api/out/
+!apps/api/out/.gitkeep
 
 # code coverage
 coverage
