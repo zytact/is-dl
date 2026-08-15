@@ -5,7 +5,7 @@ packages:
   - 'apps/*'
 
 catalog:
-  vite-plus: latest
+  vite-plus: 0.2.1
 
 peerDependencyRules:
   allowAny:
