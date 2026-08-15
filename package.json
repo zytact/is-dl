@@ -26,5 +26,8 @@
     "typescript": "^5",
     "vite-plus": "catalog:"
   },
+  "engines": {
+    "node": "24.x"
+  },
   "packageManager": "pnpm@11.6.0"
 }
