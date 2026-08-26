@@ -293,16 +293,3 @@ function filterBullets(item: Item, tags: string[], dropped: Set<string>): Item {
     .filter((bullet) => !tags.length || bullet.tags.some((tag) => tags.includes(tag)));
   return { ...item, bullets };
 }
-
-export function allTags(resume: Resume): Set<string> {
-  const tags = new Set<string>();
-  for (const section of resume.sections) {
-    for (const item of section.items) {
-      for (const tag of item.tags) tags.add(tag);
-      if (item.kind === 'entry') {
-        for (const bullet of item.bullets) for (const tag of bullet.tags) tags.add(tag);
-      }
-    }
-  }
-  return tags;
-}

@@ -10,11 +10,8 @@ import {
   readApplications,
 } from '../applications.ts';
 import { buildCtx, type CliBase, type Ctx } from '../cli-context.ts';
-import { resolveResumeDir } from '../config.ts';
 import { CliError } from '../errors.ts';
-import { loadProject } from '../resume/build.ts';
 import { listRuns, readRun, resolveRunId } from '../runs.ts';
-import { scoreJobs } from '../scoring.ts';
 import type { JobListing } from '../types.ts';
 import { GLOBAL_OPTIONS, usage } from './shared.ts';
 
@@ -23,7 +20,6 @@ const APPS_OPTIONS = {
   'from-run': { type: 'string' },
   status: { type: 'string' },
   'older-than': { type: 'string' },
-  'resume-dir': { type: 'string' },
 } as const;
 
 async function findJob(
@@ -41,17 +37,6 @@ async function findJob(
     if (job) return { job, runId };
   }
   return null;
-}
-
-/** Gaps are only known when a resume project exists. Missing one is not an error. */
-async function unmatchedTagsFor(ctx: Ctx, job: JobListing, dir: string): Promise<string[]> {
-  try {
-    const project = await loadProject(dir);
-    return scoreJobs(project, [job])[0]?.unmatchedTags ?? [];
-  } catch {
-    ctx.debug(`No resume project in ${dir}, recording no unmatched tags.`);
-    return [];
-  }
 }
 
 function line(record: ApplicationRecord): string {
@@ -75,7 +60,6 @@ export async function appsCommand(base: CliBase, argv: string[]): Promise<void> 
     case 'add': {
       if (!first) throw new CliError('USAGE', 'Usage: is-dl apps add <jobId> [--variant x]');
       const found = await findJob(ctx, first, values['from-run']);
-      const dir = resolveResumeDir(ctx.config, ctx.env, values['resume-dir'], ctx.cwd);
 
       const record: ApplicationRecord = {
         jobId: first,
@@ -85,7 +69,6 @@ export async function appsCommand(base: CliBase, argv: string[]): Promise<void> 
         variant: values.variant ?? null,
         appliedAt: new Date().toISOString(),
         source: found?.runId ?? 'manual',
-        unmatchedTags: found ? await unmatchedTagsFor(ctx, found.job, dir) : [],
         status: 'applied',
       };
 
@@ -147,7 +130,6 @@ export async function appsCommand(base: CliBase, argv: string[]): Promise<void> 
         `${first}  ${history.at(-1)!.company ?? '?'} - ${history.at(-1)!.title ?? '?'}`,
         `url: ${history.at(-1)!.url ?? '-'}`,
         `variant: ${history.at(-1)!.variant ?? '-'}`,
-        `unmatched tags: ${history.at(-1)!.unmatchedTags.join(', ') || '-'}`,
         'history:',
         ...history.map((record) => `  ${record.appliedAt}  ${record.status}`),
       ].join('\n');

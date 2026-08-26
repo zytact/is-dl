@@ -24,7 +24,6 @@ export interface ApplicationRecord {
   variant: string | null;
   appliedAt: string;
   source: string;
-  unmatchedTags: string[];
   status: ApplicationStatus;
 }
 
