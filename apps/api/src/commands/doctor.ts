@@ -3,6 +3,7 @@ import { parseArgs } from 'node:util';
 import { buildCtx, type CliBase } from '../cli-context.ts';
 import { CliError } from '../errors.ts';
 import { chromiumExecutable } from '../linkedin/browser.ts';
+import { whichSync } from '../which.ts';
 import { GLOBAL_OPTIONS, usage } from './shared.ts';
 
 interface Check {
@@ -18,6 +19,8 @@ export async function doctorCommand(base: CliBase, argv: string[]): Promise<void
   const major = Number(process.versions.node.split('.')[0]);
   const browser = chromiumExecutable();
   const session = existsSync(ctx.paths.sessionFile);
+  const tectonic = whichSync('tectonic');
+  const pdftotext = whichSync('pdftotext');
 
   const checks: Check[] = [
     { name: 'node', ok: major >= 24, detail: `v${process.versions.node} (need >=24)` },
@@ -36,6 +39,18 @@ export async function doctorCommand(base: CliBase, argv: string[]): Promise<void
       ok: true,
       detail: ctx.config.file ?? `${ctx.paths.configFile} (not created)`,
     },
+    {
+      name: 'tectonic',
+      ok: tectonic !== null,
+      detail:
+        tectonic ??
+        'missing, needed for is-dl resume build. Install from https://tectonic-typesetting.github.io/install.html (no sudo)',
+    },
+    {
+      name: 'pdftotext',
+      ok: true,
+      detail: pdftotext ?? 'missing, the resume text extraction gate will be skipped',
+    },
     { name: 'runs', ok: true, detail: ctx.paths.runsDir },
     { name: 'cache', ok: true, detail: ctx.paths.cache },
   ];
@@ -47,7 +62,8 @@ export async function doctorCommand(base: CliBase, argv: string[]): Promise<void
   );
 
   if (!ok) {
-    throw new CliError(browser === null ? 'DEPENDENCY' : 'AUTH_REQUIRED', 'doctor found problems', {
+    const dependency = browser === null || tectonic === null;
+    throw new CliError(dependency ? 'DEPENDENCY' : 'AUTH_REQUIRED', 'doctor found problems', {
       silent: true,
     });
   }

@@ -5,6 +5,7 @@ import { appsCommand } from './commands/apps.ts';
 import { loginCommand, logoutCommand } from './commands/auth.ts';
 import { configCommand } from './commands/config.ts';
 import { doctorCommand } from './commands/doctor.ts';
+import { resumeCommand } from './commands/resume.ts';
 import { runsCommand } from './commands/runs.ts';
 import { gapsCommand, scoreCommand } from './commands/score.ts';
 import { searchCommand } from './commands/search.ts';
@@ -27,6 +28,7 @@ const COMMANDS: Record<string, Command> = {
   apps: appsCommand,
   score: scoreCommand,
   gaps: gapsCommand,
+  resume: resumeCommand,
 };
 
 const HELP = `is-dl ${version} - LinkedIn job scraper
@@ -43,6 +45,7 @@ Commands:
   apps add|status|list|show Track applications in an append-only log
   score <runId|latest>      Score a run against the tagged bullets in resume.yaml
   gaps                      Aggregate unmatched tags across the application log
+  resume init|build|check   Build resume variants with tectonic
   serve                     Run the REST API used by the web UI and TUI
   doctor                    Check node, playwright, browser, session, paths
 
@@ -77,6 +80,12 @@ apps flags:
       --status <status>             Filter apps list
       --older-than <10d>            Filter apps list by age
 
+resume flags:
+      --variant <name>              Variant to build
+      --all                         Build every variant
+      --dir <path>                  Resume project dir (config: resume.dir)
+  -o, --out <dir>                   Build output dir (default <resume dir>/build)
+
 runs list flags:   --limit <n>  --since <date>
 serve flags:       --port <n>   --host <addr>
 
@@ -88,6 +97,7 @@ Examples:
   is-dl search -k "frontend intern" -l Remote --limit 20 --json
   is-dl runs show latest --json
   is-dl search -k "intern" --exclude-unpaid --exclude-seen
+  is-dl resume build --variant ai
 
 is-dl never submits an application. It searches, filters, scores, logs and
 builds a PDF. Applying is always yours to do.

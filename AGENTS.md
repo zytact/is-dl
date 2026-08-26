@@ -41,6 +41,22 @@ Published as `is-dl`. `vp pack` builds `dist/cli.mjs` (the `is-dl` bin) and `dis
 - **Browser:** `src/linkedin/browser.ts`; the session file is a parameter, and it refuses to prompt without a TTY.
 - **Exit codes:** `src/errors.ts`; 0 ok, 1 error, 2 usage, 3 auth, 4 dependency, 5 aborted, 6 config.
 
+### Triage
+
+- **Pay:** `src/pay.ts` classifies each listing as paid, token, unpaid or unstated with the matched snippet as evidence. `search --exclude-unpaid` drops unpaid and token only.
+- **Location:** `src/location-conflict.ts` flags a Remote tag whose body text demands attendance. Never filtered, only surfaced.
+- **Applications:** append-only JSONL at the data dir (`src/applications.ts`). The last record for a jobId is its state. `search --exclude-seen` skips anything already logged.
+- **Scoring:** `src/scoring.ts` matches a fixed skill vocabulary against listing text and the tags in resume.yaml. No weights, no model, no network.
+- is-dl never submits an application. Search, filter, score, log, build a PDF.
+
+### Resume pipeline
+
+- `src/resume/` holds the schema, the single LaTeX escape function, and the tectonic build.
+- Project dir comes from config `resume.dir`, default cwd. It holds `preamble.tex` (frozen), `resume.yaml` (superset of facts) and `variants.yaml` (headline, section order, lead/drop/tags).
+- The pipeline selects. It never writes prose: every sentence in a built PDF is copied verbatim from resume.yaml.
+- Two gates on every build: page count parsed from the LaTeX log (>1 page fails and names the section), and a pdftotext extraction check. FontAwesome icons garble the text stream under both engines and are not a regression.
+- Engine is tectonic (XeTeX). The preamble picks XCharter via fontspec under non-pdfTeX so bold survives, and `\AND` is a plain `\textbar` emitted only between contact items.
+
 ## apps/web
 
 - **Router:** TanStack Router, code routes in `src/router.tsx`.
