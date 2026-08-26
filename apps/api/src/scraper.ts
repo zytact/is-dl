@@ -1,5 +1,6 @@
+import { join } from 'node:path';
 import { summarizeAiAgentSignals } from './ai-agent-detector.ts';
-import { closeBrowser, ensureOutDir, launchBrowser } from './linkedin/browser.ts';
+import { closeBrowser, launchBrowser } from './linkedin/browser.ts';
 import { extractJobDetailsFromView } from './linkedin/job.ts';
 import {
   clickJobCard,
@@ -8,7 +9,7 @@ import {
   goToNextPage,
 } from './linkedin/search.ts';
 import { buildSearchUrl } from './linkedin/search-url.ts';
-import { writeOutput } from './output.ts';
+import { ensureDir } from './runs.ts';
 import type { JobListing, ScraperOutput, SearchOptions } from './types.ts';
 
 function checkAbort(signal?: AbortSignal): void {
@@ -41,9 +42,9 @@ function waitOrAbort(signal: AbortSignal | undefined, ms: number): Promise<void>
 
 export async function runScraper(
   options: SearchOptions,
-  onLog: (msg: string) => void = console.log,
+  onLog: (msg: string) => void = console.error,
   signal?: AbortSignal,
-): Promise<string> {
+): Promise<ScraperOutput> {
   onLog('LinkedIn Internship Scraper\n');
 
   checkAbort(signal);
@@ -52,15 +53,15 @@ export async function runScraper(
   onLog(`  Keywords: ${options.keywords}`);
   onLog(`  Location: ${options.location || 'Any'}`);
   onLog(`  Limit: ${options.limit}`);
-  onLog(`  Remote only: ${options.remoteOnly ? 'Yes' : 'No'}`);
-  onLog(`  Output directory: ${options.outDir}\n`);
+  onLog(`  Remote only: ${options.remoteOnly ? 'Yes' : 'No'}\n`);
 
-  // Ensure output directory exists
-  await ensureOutDir(options.outDir);
-
-  // Launch browser
-  const session = await launchBrowser(options.headless, options.debug, onLog);
-  let finalJsonPath = '';
+  const session = await launchBrowser({
+    sessionFile: options.sessionFile,
+    headless: options.headless,
+    debug: options.debug,
+    onLog,
+  });
+  let output: ScraperOutput;
 
   try {
     // Build search URL
@@ -69,7 +70,7 @@ export async function runScraper(
 
     await session.page.goto(searchUrl, {
       waitUntil: 'domcontentloaded',
-      timeout: 30000,
+      timeout: options.timeout,
     });
 
     checkAbort(signal);
@@ -77,8 +78,10 @@ export async function runScraper(
     await waitOrAbort(signal, 3000);
 
     if (options.debug) {
-      await session.page.screenshot({ path: 'debug-initial-page.png' });
-      onLog('Screenshot saved to debug-initial-page.png');
+      await ensureDir(options.debugDir);
+      const shotPath = join(options.debugDir, 'debug-initial-page.png');
+      await session.page.screenshot({ path: shotPath });
+      onLog(`Screenshot saved to ${shotPath}`);
     }
 
     // Get pagination info
@@ -138,7 +141,6 @@ export async function runScraper(
         } catch (error) {
           const errMsg = error instanceof Error ? error.message : String(error);
           onLog(`Error processing job ${i + 1}: ${errMsg}`);
-          console.error(`Error processing job ${i + 1}:`, errMsg);
         }
       }
 
@@ -163,8 +165,7 @@ export async function runScraper(
     onLog(`\nSuccessfully extracted ${jobs.length} jobs.\n`);
     const aiAgentSummary = summarizeAiAgentSignals(jobs);
 
-    // Prepare output data
-    const output: ScraperOutput = {
+    output = {
       meta: {
         query: options.keywords,
         location: options.location,
@@ -182,24 +183,18 @@ export async function runScraper(
       jobs,
     };
 
-    // Write output files
-    const { jsonPath } = await writeOutput(output, options.outDir);
-    finalJsonPath = jsonPath;
-
     onLog('\nScraping completed successfully!');
     onLog(`Total jobs scraped: ${jobs.length}`);
     onLog(
       `AI agent signals: ${aiAgentSummary.detectedCount} detected (${aiAgentSummary.highCount} high, ${aiAgentSummary.mediumCount} medium, ${aiAgentSummary.lowCount} low)`,
     );
-    onLog(`JSON: ${jsonPath}`);
   } catch (err) {
     const errorStr = err instanceof Error ? err.message : String(err);
     onLog(`\nFATAL ERROR: ${errorStr}`);
     throw err;
   } finally {
-    // Close browser and save session
-    await closeBrowser(session, onLog);
+    await closeBrowser(session, options.sessionFile, onLog);
   }
 
-  return finalJsonPath;
+  return output;
 }

@@ -76,7 +76,10 @@ export interface SearchOptions {
   remoteOnly?: boolean;
   postedWithin?: string;
   jobType?: string[];
-  outDir: string;
   debug?: boolean;
   headless?: boolean;
+  timeout: number;
+  sessionFile: string;
+  /** Where debug screenshots land. Never the current working directory. */
+  debugDir: string;
 }

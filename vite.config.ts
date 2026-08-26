@@ -9,6 +9,8 @@ export default defineConfig({
         command: 'vp check',
         input: [
           { auto: true },
+          '!apps/api/dist',
+          '!apps/api/dist/**',
           '!apps/api/out',
           '!apps/api/out/**',
           '!apps/web/dist',
@@ -25,6 +27,8 @@ export default defineConfig({
         command: ['vp test run', 'cd apps/tui && go test ./...'],
         input: [
           { auto: true },
+          '!apps/api/dist',
+          '!apps/api/dist/**',
           '!apps/api/out',
           '!apps/api/out/**',
           '!apps/web/dist',
@@ -40,6 +44,7 @@ export default defineConfig({
       build: {
         command: [
           '(cd apps/api && tsc --noEmit)',
+          '(cd apps/api && vp pack)',
           '(cd apps/web && tsc -b)',
           '(cd apps/web && vp exec vite build)',
           '(cd apps/tui && go build -o bin/is-dl-tui .)',
@@ -47,6 +52,8 @@ export default defineConfig({
         env: ['NODE_ENV', 'VITE_*'],
         input: [
           { auto: true },
+          '!apps/api/dist',
+          '!apps/api/dist/**',
           '!apps/api/out',
           '!apps/api/out/**',
           '!apps/web/dist',
@@ -59,6 +66,7 @@ export default defineConfig({
           '!apps/tui/bin/**',
         ],
         output: [
+          { pattern: 'apps/api/dist/**', base: 'workspace' },
           { pattern: 'apps/web/dist/**', base: 'workspace' },
           { pattern: 'apps/tui/bin/**', base: 'workspace' },
         ],
@@ -75,6 +83,7 @@ export default defineConfig({
       'dist/**',
       'node_modules/**',
       '.turbo/**',
+      'apps/api/dist/**',
       'apps/api/out/**',
       'apps/tui/bin/**',
     ],
@@ -84,6 +93,7 @@ export default defineConfig({
       'dist/**',
       'node_modules/**',
       '.turbo/**',
+      'apps/api/dist/**',
       'apps/api/out/**',
       'apps/tui/bin/**',
     ],
