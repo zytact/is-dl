@@ -60,6 +60,7 @@ export async function appsCommand(base: CliBase, argv: string[]): Promise<void> 
     case 'add': {
       if (!first) throw new CliError('USAGE', 'Usage: is-dl apps add <jobId> [--variant x]');
       const found = await findJob(ctx, first, values['from-run']);
+      const now = new Date().toISOString();
 
       const record: ApplicationRecord = {
         jobId: first,
@@ -67,7 +68,8 @@ export async function appsCommand(base: CliBase, argv: string[]): Promise<void> 
         title: found?.job.title ?? null,
         url: found?.job.jobUrl ?? null,
         variant: values.variant ?? null,
-        appliedAt: new Date().toISOString(),
+        appliedAt: now,
+        recordedAt: now,
         source: found?.runId ?? 'manual',
         status: 'applied',
       };
@@ -95,7 +97,7 @@ export async function appsCommand(base: CliBase, argv: string[]): Promise<void> 
       const record: ApplicationRecord = {
         ...previous,
         status: second,
-        appliedAt: new Date().toISOString(),
+        recordedAt: new Date().toISOString(),
       };
       await appendApplication(file, record);
       ctx.emit(`${first}: ${previous.status} -> ${second}`, () => ({ ok: true, record }));
@@ -131,7 +133,7 @@ export async function appsCommand(base: CliBase, argv: string[]): Promise<void> 
         `url: ${history.at(-1)!.url ?? '-'}`,
         `variant: ${history.at(-1)!.variant ?? '-'}`,
         'history:',
-        ...history.map((record) => `  ${record.appliedAt}  ${record.status}`),
+        ...history.map((record) => `  ${record.recordedAt}  ${record.status}`),
       ].join('\n');
       ctx.emit(human, () => ({ ok: true, jobId: first, history }));
       return;

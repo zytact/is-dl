@@ -1,0 +1,568 @@
+{
+  "meta": {
+    "query": "frontend developer intern",
+    "location": "Remote",
+    "filters": {
+      "experienceLevel": [
+        "Internship"
+      ],
+      "remoteOnly": true,
+      "jobType": [
+        "Internship"
+      ]
+    },
+    "scrapedAt": "2026-08-26T13:49:16.431Z",
+    "source": "linkedin",
+    "count": 24,
+    "aiAgentSummary": {
+      "detectedCount": 2,
+      "highCount": 2,
+      "mediumCount": 0,
+      "lowCount": 0
+    }
+  },
+  "jobs": [
+    {
+      "jobId": "4457258502",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4457258502&f_E=1&f_JT=I&f_WT=2&keywords=frontend%20developer%20intern&sortBy=DD",
+      "title": "Full Stack Developer | Internship",
+      "companyName": "PrimrIQ",
+      "companyUrl": "https://www.linkedin.com/company/primriq/life",
+      "locationText": "India",
+      "postedAtText": "33 minutes ago",
+      "postedAtIso": null,
+      "jobType": "Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "About the rolePrimrIQ AI Services LLP is looking for a Full Stack Developer Intern to help build clean, responsive interfaces for our web platform. You'll work closely with the team to turn designs and requirements into working features that people actually use.What you'll doBuild responsive UI components using ReactIntegrate frontend components with backend APIsTranslate designs into clean, working interfacesDebug and improve existing frontend codeWork with the team on version control and code reviewsWho can applyStudents and recent graduates (B.Tech / BCA / B.Sc CS / MCA or similar)Working knowledge of HTML, CSS, and JavaScriptFamiliarity with React is a strong plusComfortable reading documentation and solving problems independentlyDetailsLocation: RemoteDuration: upto 6 Months Stipend: Unpaid What you'll gainHands-on work with React and modern frontend toolsInvolvement in real product and feature projectsMentorship on development workflowsInternship completion certificateHow to applyApply through LinkedIn using the Apply button on this post. Applicant Privacy PracticesPrimrIQ collects and processes applicant information solely for recruitment, internship selection, and related communication. Your information may be reviewed by authorized members of the PrimrIQ team for evaluating your application and contacting you regarding the opportunity.PrimrIQ is an equal opportunity organization. We welcome applicants from all backgrounds and make selection decisions based on skills, qualifications, and suitability for the role.",
+      "requirementsText": "into working features that people actually use.What you'll doBuild responsive UI components using ReactIntegrate frontend components with backend APIsTranslate designs into clean, working interfacesDebug and improve existing frontend codeWork with the team on version control and code reviewsWho can applyStudents and recent graduates (B.Tech / BCA / B.Sc CS / MCA or similar)Working knowledge of HTML, CSS, and JavaScriptFamiliarity with React is a strong plusComfortable reading documentation and solving problems independentlyDetailsLocation: RemoteDuration: upto 6 Months Stipend: Unpaid What you'll gainHands-on work with React and modern frontend toolsInvolvement in real product and feature projectsMentorship on development workflowsInternship completion certificateHow to applyApply through LinkedIn using the Apply button on this post. Applicant Privacy PracticesPrimrIQ collects and processes applicant information solely for recruitment, internship selection, and related communication. Y",
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4457948044",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4457948044&f_E=1&f_JT=I&f_WT=2&keywords=frontend%20developer%20intern&sortBy=DD",
+      "title": "Python Developer - Intern (Remote)",
+      "companyName": "Abekus",
+      "companyUrl": "https://www.linkedin.com/company/abekus/life",
+      "locationText": "India",
+      "postedAtText": "1 hour ago",
+      "postedAtIso": "2026-08-26T12:47:33.244Z",
+      "jobType": "Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "Company DescriptionAbekus is an adaptive learning platform that helps you build skills in a structured and personalized way. Powered by AI, it delivers a dynamic learning experience designed to sharpen your abilities, track your progress, and prepare you for real-world challenges. More than just practice, Abekus makes learning engaging, effective, and future-ready.Role DescriptionWe are offering a remote internship for a Enthusiatic Python Developer with exposure to Machine Learning & AI. In this role, you will get hands-on experience with real projects involving data analysis, algorithm design, and the development of machine learning models. You will also assist in research, experimentation with deep learning techniques, and writing efficient, well-structured Python code. Collaboration with the team and proper documentation of your work will be an integral part of the internship.Qualifications      Strong proficiency in Python programmingKnowledge of Machine Learning and Deep Learning conceptsUnderstanding of statistics and data analysisFamiliarity with algorithms and computer science fundamentalsExcellent problem-solving skills and attention to detailAbility to work independently in a remote setupPursuing or completed a degree in Computer Science, Data Science, or related field",
+      "requirementsText": "Strong proficiency in Python programmingKnowledge of Machine Learning and Deep Learning conceptsUnderstanding of statistics and data analysisFamiliarity with algorithms and computer science fundamentalsExcellent problem-solving skills and attention to detailAbility to work independently in a remote setupPursuing or completed a degree in Computer Science, Data Science, or related field",
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4459184834",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4459184834&f_E=1&f_JT=I&f_WT=2&keywords=frontend%20developer%20intern&sortBy=DD",
+      "title": "Python Developer Intern",
+      "companyName": "Zenithbyte",
+      "companyUrl": "https://www.linkedin.com/company/zenith-byte/life",
+      "locationText": "India",
+      "postedAtText": "1 hour ago",
+      "postedAtIso": "2026-08-26T12:47:37.863Z",
+      "jobType": "Up to 7,500 INR/month\n            \n            \n              Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "About the CompanyZenithbyte is dedicated to providing innovative IT solutions that empower businesses to thrive in the digital age. Our mission is to deliver high-quality technology solutions while fostering a culture of collaboration, creativity, and continuous improvement.About the RoleWe are looking for a motivated Python Developer Intern to join our development team. In this role, you will work on backend development, automation, and data-driven applications using Python. This internship offers hands-on experience in building real-world projects while working alongside experienced developers.Key Responsibilities      Write clean, efficient, and optimized Python code.Develop backend services and automation scripts.Work with Python frameworks such as Django or Flask.Integrate third-party APIs and support system development.Debug, test, and maintain existing applications.Collaborate with the development team to build scalable solutions.\nQualifications      Currently pursuing or recently completed a degree in Computer Science, Information Technology, or a related field.Strong understanding of Python fundamentals and Object-Oriented Programming (OOP).Passion for software development and problem-solving.\nRequired Skills      PythonObject-Oriented Programming (OOP)SQL (Basic)REST APIsGit/GitHub\nPreferred Skills      Experience with Django or Flask.Knowledge of database management.Familiarity with backend architecture and deployment concepts.\nStipendPerformance-based stipend of up to ₹7,500 per month.Why Join Us?      Work on real-world development projects.Receive mentorship from experienced developers.Gain practical industry experience.Build a strong portfolio to enhance your career opportunities.Opportunity for a full-time role based on performance.\nEqual Opportunity EmployerZenithbyte is committed to creating a diverse and inclusive workplace. We are proud to be an equal opportunity employer and consider all qualified applicants without regard to protected characteristic.Apply NowKickstart your software development career with hands-on Python experience. Join Zenithbyte and build solutions that make an impact while strengthening your technical skills and professional portfolio.",
+      "requirementsText": "Currently pursuing or recently completed a degree in Computer Science, Information Technology, or a related field.Strong understanding of Python fundamentals and Object-Oriented Programming (OOP).Passion for software development and problem-solving.\nRequired Skills      PythonObject-Oriented Programming (OOP)SQL (Basic)REST APIsGit/GitHub\nPreferred Skills      Experience with Django or Flask.Knowledge of database management.Familiarity with backend architecture and deployment concepts.\nStipendPerformance-based stipend of up to ₹7,500 per month.Why Join Us?      Work on real-world development projects.Receive mentorship from experienced developers.Gain practical industry experience.Build a strong portfolio to enhance your career opportunities.Opportunity for a full-time role based on performance.\nEqual Opportunity EmployerZenithbyte is committed to creating a diverse and inclusive workplace. We are proud to be an equal opportunity employer and consider all qualified applicants without r",
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4457260199",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4457260199&f_E=1&f_JT=I&f_WT=2&keywords=frontend%20developer%20intern&sortBy=DD",
+      "title": "React Native Mobile Developer (Fresher)",
+      "companyName": "myMooment",
+      "companyUrl": "https://www.linkedin.com/company/mymooment/life",
+      "locationText": "Hyderabad, Telangana, India",
+      "postedAtText": "1 hour ago",
+      "postedAtIso": "2026-08-26T12:47:42.820Z",
+      "jobType": "Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "🎨 Job DescriptionWe are looking for a dedicated React Native Mobile App Developer to build, integrate, and polish production-ready mobile applications.You will work closely with our backend engineers to integrate APIs, handle Firebase authentication, implement real-time notifications, and deliver a smooth mobile experience.______________________________________________________Note: This role is strictly for React Native (mobile) developers. React JS / web-only developers should not apply._______________________________________________________Role details🧾 Role: React Native Mobile App Developer📅 Type: Unpaid Internship🌍 Location: Remote (Candidates based in Hyderabad, Andhra Pradesh are preferred)🧠 Experience: Freshers / Grads / Students✅ Must-Have Skills:      React Native (mobile app development)Firebase (Auth, Cloud Messaging, Analytics)REST API integration\n🚀What you will Gain      Real experience on a production startupExposure to real product architectureStrong portfolio\nPlease note: This is an unpaid internship. Only candidates who are genuinely interested and comfortable with an unpaid internship are requested to apply. If you are not interested in an unpaid opportunity at this time, you are welcome to apply for our paid roles in the future.",
+      "requirementsText": null,
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4457256220",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4457256220&f_E=1&f_JT=I&f_WT=2&keywords=frontend%20developer%20intern&sortBy=DD",
+      "title": "Unity Game Developer intern",
+      "companyName": "GameGenesis",
+      "companyUrl": "https://www.linkedin.com/company/gamegenesis/life",
+      "locationText": "Ahmedabad, Gujarat, India",
+      "postedAtText": "2 hours ago",
+      "postedAtIso": "2026-08-26T11:47:47.182Z",
+      "jobType": "Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "Unity Developer Intern📍 Remote | 🕒 3-Month Internship | 🎮 GameGenesisBuild Games That Players LoveAt GameGenesis, we're looking for a passionate Unity Developer Intern who enjoys transforming ideas into engaging gameplay experiences. You'll work closely with designers, artists, and fellow developers to create game mechanics, systems, and features using Unity.If you're enthusiastic about game development, problem-solving, and building interactive experiences, we'd love to have you on our team.---Your Mission- Develop gameplay systems and mechanics using Unity and C#.- Implement player controls, UI systems, game features, and interactions.- Collaborate with designers and artists to bring game concepts to life.- Debug, test, and optimize game performance across platforms.- Integrate animations, audio, VFX, and game assets into projects.- Write clean, maintainable, and reusable code.- Participate in playtesting and improve gameplay based on feedback.---We're Looking For Someone Who- Has experience with Unity Engine and C# programming.- Understands object-oriented programming principles.- Has strong problem-solving and debugging skills.- Has a good understanding of gameplay systems and game architecture.- Is passionate about game development and eager to learn.- Can work effectively in a collaborative team environment.- Has basic knowledge of multiplayer game development, networking concepts, or multiplayer frameworks.---It'll Be Awesome If You Also Have- Experience with Photon, Mirror, Netcode for GameObjects, or other multiplayer solutions.- Knowledge of mobile game development and optimization.- Familiarity with Unity UI, Animation System, and Scriptable Objects.- Experience integrating third-party SDKs and plugins.- Understanding of backend services and APIs.- A portfolio or GitHub showcasing Unity projects.---Why Join GameGenesis?- 🎮 Work on real game development projects.- 🚀 Gain hands-on experience with professional Unity workflows.- 🤝 Collaborate with designers, artists, and developers.- 💡 Build gameplay systems that players interact with every day.- 📂 Strengthen your portfolio with production-quality projects.- 📈 Outstanding performers may be considered for future full-time opportunities.---Our Development ToolkitUnity • C# • Photon • Mirror • Netcode for GameObjects • Git • Visual Studio • Firebase",
+      "requirementsText": null,
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4457920326",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4457920326&f_E=1&f_JT=I&f_WT=2&keywords=frontend%20developer%20intern&sortBy=DD",
+      "title": "Full Stack Web Developer Intern",
+      "companyName": "Zenithbyte",
+      "companyUrl": "https://www.linkedin.com/company/zenith-byte/life",
+      "locationText": "India",
+      "postedAtText": "2 hours ago",
+      "postedAtIso": "2026-08-26T11:47:52.433Z",
+      "jobType": "Up to 7,500 INR/month\n            \n            \n              Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "Full Stack Web Developer Intern (Paid)Company: ZenithbyteLocation: RemoteDuration: 3 MonthsFor College Students Only!Performance based stipend up-to 7500.00/-This is a structured Career Launch Internship Program designed to help students gain practical project experience, mentorship, and industry exposure. The program includes guided learning resources, project evaluations, certificates, and performance-based opportunities.Perks and benefits:Performance based stipend up-to 7500.00/-Certificate of InternshipLetter of Recommendation (based on performance)Swags and goodiesPotential full-time role based on performanceRole Overview:Work on live projects involving both front-end and back-end development. Gain hands-on experience with modern web technologies and build strong technical skills.Key Responsibilities:Develop and maintain responsive websitesBuild dynamic web applicationsTest, debug, and optimize applicationsCollaborate with designers and developersEligibility:Students or recent graduates in Computer Science, IT, or related fields with knowledge of HTML, CSS, and JavaScript. Familiarity with React, Angular, or Node.js is preferred.",
+      "requirementsText": null,
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4457918328",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4457918328&f_E=1&f_JT=I&f_WT=2&keywords=frontend%20developer%20intern&sortBy=DD",
+      "title": "MERN Stack Developer",
+      "companyName": "Wake Up Whistle",
+      "companyUrl": "https://www.linkedin.com/company/wake-up-whistle/life",
+      "locationText": "India",
+      "postedAtText": "4 hours ago",
+      "postedAtIso": "2026-08-26T09:47:56.321Z",
+      "jobType": "Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "💻 MERN Stack Developer Intern | Wakeup WhistleWakeup Whistle is looking for a passionate MERN Stack Developer Intern who wants to gain hands-on experience in building modern web applications. This opportunity is suitable for students and freshers who enjoy coding and want to strengthen their frontend and backend development skills.📌 Position: MERN Stack Developer Intern🏢 Company: Wakeup Whistle🌐 Location: Remote💼 Internship Type: Full-time📅 Last Date to Apply: 15th September🚀 Internship OverviewAs a MERN Stack Developer Intern, you’ll work with the MongoDB, Express.js, React.js, and Node.js technology stack. You’ll get practical exposure to developing application features, connecting APIs, managing databases, debugging code, and improving web application performance.🔹 What You’ll Work On      Develop and enhance web application features.Build reusable and responsive components using React.js.Assist with backend development using Node.js and Express.js.Create and integrate REST APIs.Work with MongoDB for storing and retrieving application data.Connect frontend interfaces with backend services.Troubleshoot bugs and assist in resolving technical issues.Test application features and improve reliability.Write clean, maintainable, and well-structured code.Optimize applications for better performance.Use Git and GitHub for version control.Collaborate with team members during development and feature implementation.\n🛠️ Technical SkillsCandidates should have basic knowledge of:      JavaScriptReact.jsNode.jsExpress.jsMongoDBHTML5 and CSS3REST APIsGit/GitHub\nAdditional knowledge of TypeScript, Next.js, authentication, cloud deployment, or testing frameworks will be an added advantage.🎓 Who Can Apply?      Students and recent graduates.Freshers interested in Full Stack Web Development.Candidates pursuing Computer Science, IT, Software Engineering, or related courses.Candidates who have built personal, academic, or portfolio projects using JavaScript or MERN.Candidates who have completed web development courses or certifications.\n🌟 What You’ll Gain      Hands-on experience with the complete MERN stack.Practical understanding of frontend and backend development.Experience working with APIs and databases.Exposure to real-world development workflows.Improved JavaScript, debugging, and problem-solving skills.Experience with Git/GitHub and collaborative development.Projects and experience to strengthen your developer portfolio.Professional exposure in a remote working environment.\n📢 Applications are open until 15th September.If you’re ready to build, code, and learn modern web development, apply now for the MERN Stack Developer Internship at Wakeup Whistle.",
+      "requirementsText": null,
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4457908635",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4457908635&f_E=1&f_JT=I&f_WT=2&keywords=frontend%20developer%20intern&sortBy=DD",
+      "title": "Frontend Developer",
+      "companyName": "Wake Up Whistle",
+      "companyUrl": "https://www.linkedin.com/company/wake-up-whistle/life",
+      "locationText": "India",
+      "postedAtText": "4 hours ago",
+      "postedAtIso": "2026-08-26T09:48:00.564Z",
+      "jobType": "Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "🎨 Frontend Developer Intern | Wakeup WhistleWakeup Whistle is looking for a creative and motivated Frontend Developer Intern who wants to gain practical experience in designing and developing modern, responsive, and user-friendly web interfaces.This internship is a great opportunity for students and freshers who want to strengthen their frontend skills while working on practical web development tasks.📌 Position: Frontend Developer Intern🏢 Company: Wakeup Whistle🌐 Location: Remote💼 Internship Type: Full-time📅 Last Date to Apply: 15th September💻 About the RoleAs a Frontend Developer Intern, you’ll focus on the part of web applications that users interact with. You’ll help turn designs and ideas into functional interfaces while learning how professional development teams build, test, and improve websites.🔹 Key Responsibilities      Develop responsive web pages for desktop and mobile devices.Convert designs and wireframes into functional interfaces.Create reusable UI components.Write clean and structured HTML, CSS, and JavaScript.Assist with frontend development using React.js.Integrate frontend components with APIs and backend services.Test websites across different browsers and screen sizes.Identify and resolve UI and frontend bugs.Improve page responsiveness, usability, and performance.Collaborate with designers and backend developers.Maintain consistency across different sections of web applications.Use Git/GitHub for code management and collaboration.Assist in implementing new frontend features and improvements.\n🛠️ Skills & Requirements      Good understanding of HTML5, CSS3, and JavaScript.Knowledge of responsive web design.Basic familiarity with React.js.Understanding of REST APIs is an advantage.Familiarity with Git/GitHub is preferred.Knowledge of Bootstrap, Tailwind CSS, or similar frameworks is a plus.Basic understanding of browser compatibility and web performance.Good problem-solving ability.Strong attention to UI details.Willingness to learn modern frontend technologies.\n🎓 Who Can Apply?This opportunity is suitable for:      Students and recent graduates.Freshers looking to begin a career in frontend development.Candidates from Computer Science, IT, Software Engineering, or related fields.Candidates with websites, academic projects, or personal frontend projects.Individuals who have completed relevant web development courses or certifications.\n🚀 What You’ll Gain      Practical experience building modern web interfaces.Hands-on exposure to HTML, CSS, JavaScript, and React.Experience working with responsive layouts and API integration.Understanding of real-world frontend development workflows.Improved coding, debugging, and UI implementation skills.Experience with Git/GitHub and team collaboration.Projects that can strengthen your portfolio and resume.Professional experience in a remote environment.\n📢 Applications are open until 15th September.If you’re passionate about Web Development, User Interfaces, and Modern Frontend Technologies, apply now for the Frontend Developer Internship at Wakeup Whistle.",
+      "requirementsText": "Good understanding of HTML5, CSS3, and JavaScript.Knowledge of responsive web design.Basic familiarity with React.js.Understanding of REST APIs is an advantage.Familiarity with Git/GitHub is preferred.Knowledge of Bootstrap, Tailwind CSS, or similar frameworks is a plus.Basic understanding of browser compatibility and web performance.Good problem-solving ability.Strong attention to UI details.Willingness to learn modern frontend technologies.\n🎓 Who Can Apply?This opportunity is suitable for:      Students and recent graduates.Freshers looking to begin a career in frontend development.Candidates from Computer Science, IT, Software Engineering, or related fields.Candidates with websites, academic projects, or personal frontend projects.Individuals who have completed relevant web development courses or certifications.\n🚀 What You’ll Gain      Practical experience building modern web interfaces.Hands-on exposure to HTML, CSS, JavaScript, and React.Experience working with responsive layout",
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4457918308",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4457918308&f_E=1&f_JT=I&f_WT=2&keywords=frontend%20developer%20intern&sortBy=DD",
+      "title": "MERN Stack Developer",
+      "companyName": "ArGo Intern",
+      "companyUrl": "https://www.linkedin.com/company/argo-intern/life",
+      "locationText": "India",
+      "postedAtText": "4 hours ago",
+      "postedAtIso": "2026-08-26T09:48:05.315Z",
+      "jobType": "Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "MERN Stack Developer Intern | Argo InternArgo Intern is looking for a motivated and enthusiastic MERN Stack Developer Intern to join our development team. This internship is a great opportunity for students and freshers who want to gain practical experience in full-stack web development and work with modern JavaScript technologies.📌 Position: MERN Stack Developer Intern🏢 Organization: Argo Intern💼 Internship Type: Full-time🌐 Location: Remote📅 Last Date to Apply: 15th September💻 About the InternshipAs a MERN Stack Developer Intern, you will assist in building and improving modern web applications using MongoDB, Express.js, React.js, and Node.js. You will work on frontend and backend development tasks while gaining practical experience in APIs, databases, debugging, and application development.🔹 Key Responsibilities      Assist in developing responsive and user-friendly web applications.Build reusable frontend components using React.js.Support backend development using Node.js and Express.js.Work with MongoDB to store, manage, and retrieve application data.Assist in developing and integrating REST APIs.Write clean, readable, and maintainable code.Debug and troubleshoot application issues.Assist in testing applications and fixing bugs.Work with developers to improve application performance and functionality.Participate in code reviews and follow development best practices.Use Git/GitHub for version control and collaboration.Learn and implement modern web development practices.\n🛠️ Skills & Requirements      Basic to good knowledge of JavaScript.Understanding of HTML5 and CSS3.Familiarity with React.js.Basic understanding of Node.js and Express.js.Understanding of MongoDB and database concepts.Basic knowledge of REST APIs.Familiarity with Git/GitHub is preferred.Understanding of responsive web design.Good problem-solving and debugging skills.Strong willingness to learn and work with new technologies.\n⭐ Good to Have      Knowledge of ES6+ JavaScript concepts.Familiarity with TypeScript or Next.js.Basic understanding of authentication and authorization.Experience with personal or academic MERN projects.Familiarity with deployment or cloud platforms.Understanding of frontend testing tools.\n🎓 Who Can Apply?      Students pursuing Computer Science, Information Technology, Software Engineering, or related fields.Freshers interested in Full Stack Web Development.Candidates with academic, personal, or portfolio projects using the MERN stack.Candidates who have completed relevant web development courses or certifications.Anyone with a strong interest in learning modern web technologies.\n🚀 What You’ll Gain      Hands-on experience in full-stack web development.Practical exposure to MongoDB, Express.js, React.js, and Node.js.Experience working on real-world web development projects.Opportunity to strengthen your JavaScript and programming skills.Understanding of APIs, databases, Git, debugging, and deployment.Professional experience to strengthen your resume and portfolio.Learning and career development opportunities in a remote environment.\n📢 Applications are open until 15th September.If you’re passionate about Web Development, JavaScript, and Full-Stack Technologies, apply now and start your development journey with Argo Intern!",
+      "requirementsText": "Basic to good knowledge of JavaScript.Understanding of HTML5 and CSS3.Familiarity with React.js.Basic understanding of Node.js and Express.js.Understanding of MongoDB and database concepts.Basic knowledge of REST APIs.Familiarity with Git/GitHub is preferred.Understanding of responsive web design.Good problem-solving and debugging skills.Strong willingness to learn and work with new technologies.\n⭐ Good to Have      Knowledge of ES6+ JavaScript concepts.Familiarity with TypeScript or Next.js.Basic understanding of authentication and authorization.Experience with personal or academic MERN projects.Familiarity with deployment or cloud platforms.Understanding of frontend testing tools.\n🎓 Who Can Apply?      Students pursuing Computer Science, Information Technology, Software Engineering, or related fields.Freshers interested in Full Stack Web Development.Candidates with academic, personal, or portfolio projects using the MERN stack.Candidates who have completed relevant web development c",
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4457901703",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4457901703&f_E=1&f_JT=I&f_WT=2&keywords=frontend%20developer%20intern&sortBy=DD",
+      "title": "Frontend Developer",
+      "companyName": "ArGo Intern",
+      "companyUrl": "https://www.linkedin.com/company/argo-intern/life",
+      "locationText": "India",
+      "postedAtText": "4 hours ago",
+      "postedAtIso": "2026-08-26T09:48:11.287Z",
+      "jobType": "Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "Frontend Developer Intern | Argo InternArgo Intern is looking for a creative and motivated Frontend Developer Intern to join our development team. This internship is a great opportunity for students and freshers who want to gain hands-on experience in building responsive websites, interactive user interfaces, and modern web applications.📌 Position: Frontend Developer Intern🏢 Organization: Argo Intern💼 Internship Type: Full-time🌐 Location: Remote📅 Last Date to Apply: 15th September💻 About the InternshipAs a Frontend Developer Intern, you will work on creating and improving user-facing web interfaces. You will collaborate with developers and designers to convert ideas and designs into responsive, functional, and user-friendly digital experiences.🔹 Key Responsibilities      Assist in developing responsive and interactive web pages.Convert UI/UX designs and wireframes into functional interfaces.Build reusable frontend components.Write clean, structured, and maintainable code.Work with HTML, CSS, and JavaScript to create web interfaces.Assist in developing applications using React.js or other frontend frameworks.Integrate frontend applications with REST APIs.Identify, troubleshoot, and fix frontend bugs.Test websites across different browsers and devices.Improve website performance, responsiveness, and usability.Collaborate with UI/UX designers and backend developers.Use Git/GitHub for version control and team collaboration.Stay updated with modern frontend development practices.\n🛠️ Skills & Requirements      Basic to good knowledge of HTML5, CSS3, and JavaScript.Understanding of responsive web design.Familiarity with React.js is preferred.Basic understanding of REST APIs and API integration.Familiarity with Git/GitHub is an advantage.Understanding of browser compatibility and web performance.Basic knowledge of CSS frameworks such as Bootstrap or Tailwind CSS is a plus.Good problem-solving and debugging skills.Strong attention to detail.Willingness to learn new technologies and development practices.\n⭐ Good to Have      Knowledge of JavaScript ES6+.Familiarity with TypeScript or Next.js.Basic understanding of web accessibility and SEO.Experience with Figma or other UI/UX design tools.Knowledge of frontend testing tools.Academic or personal projects involving frontend development.\n🎓 Who Can Apply?      Students pursuing Computer Science, Information Technology, Software Engineering, or related fields.Freshers interested in Frontend or Web Development.Candidates with personal, academic, or portfolio-based web development projects.Candidates who have completed frontend development courses or certifications.Anyone passionate about creating modern and user-friendly web experiences.\n🚀 What You’ll Gain      Hands-on experience in Frontend Web Development.Practical exposure to HTML, CSS, JavaScript, React, and modern development tools.Experience working on real-world web projects.Opportunity to improve your UI development and programming skills.Understanding of APIs, Git, debugging, and responsive design.Professional experience to strengthen your resume and portfolio.Learning and career development opportunities in a remote environment.\n📢 Applications are open until 15th September.If you’re passionate about Frontend Development, UI Design, and Modern Web Technologies, apply now and start your development journey with Argo Intern!",
+      "requirementsText": "Basic to good knowledge of HTML5, CSS3, and JavaScript.Understanding of responsive web design.Familiarity with React.js is preferred.Basic understanding of REST APIs and API integration.Familiarity with Git/GitHub is an advantage.Understanding of browser compatibility and web performance.Basic knowledge of CSS frameworks such as Bootstrap or Tailwind CSS is a plus.Good problem-solving and debugging skills.Strong attention to detail.Willingness to learn new technologies and development practices.\n⭐ Good to Have      Knowledge of JavaScript ES6+.Familiarity with TypeScript or Next.js.Basic understanding of web accessibility and SEO.Experience with Figma or other UI/UX design tools.Knowledge of frontend testing tools.Academic or personal projects involving frontend development.\n🎓 Who Can Apply?      Students pursuing Computer Science, Information Technology, Software Engineering, or related fields.Freshers interested in Frontend or Web Development.Candidates with personal, academic, or p",
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4457697314",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4457697314&f_E=1&f_JT=I&f_WT=2&keywords=frontend%20developer%20intern&sortBy=DD",
+      "title": "Full Stack Engineer",
+      "companyName": "Zetheta Algorithms Private Limited",
+      "companyUrl": "https://www.linkedin.com/company/zetheta/life",
+      "locationText": "India",
+      "postedAtText": "7 hours ago",
+      "postedAtIso": "2026-08-26T06:48:17.738Z",
+      "jobType": "Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "About the CompanyZeTheta Algorithms Private Limited is a FinTech start-up which has been recently set up and is developing innovative AI tools. https://www.instagram.com/zetheta.officialAbout the RoleThe Full Stack Engineer Intern will be responsible for developing the online platforms which shall include frontend, backend, APIs, and data processing logic. This includes wireframing, building the website's home page, password authentication, dashboards post login, and AI features integration. Extensive model building with algorithms is involved.ResponsibilitiesDevelop responsive web interfaces using HTML, CSS, and PHP. Develop interactive UI using React.js with Tailwind CSS or alternatives such as Vue.js and Angular. Design UI for multiple AI features. Utilize UI libraries like Bootstrap or Material UI for styling. Design, build, and implement secure RESTful APIs using Node.js with Express.js. Implement authentication systems using Firebase free tier or PostgreSQL with Supabase. Store and retrieve intern, employer, and job data on MongoDB Atlas (free tier). Connect APIs with the frontend and collaborate with team members to integrate frontend components with server-side logic. Develop a blockchain-based certificate verification system. Develop and maintain server-side applications using frameworks such as Django, Flask, Express (Node.js), Rails (Ruby), Spring (Java), or Laravel (PHP). Troubleshoot and optimize backend performance.QualificationsBasic proficiency in one or more backend frameworks. Strong programming skills in HTML, CSS, React.js, Tailwind CSS, PHP, Python, JavaScript, and Ruby. Understanding of API integration using Axios or Fetch. Familiarity with MongoDB, PostgreSQL, SQLite, and NoSQL databases. Ability to work independently in a remote setting.BenefitsOpportunity to build practical skills with modern backend technologies. Enhance your professional portfolio. Exposure to real-world development projects in a remote work environment.Internship DetailsDuration: Self-paced. Options of 15 days, 1 month, 2 months, 3 months, 4 months, or 6 months. Type: Unpaid.Application ProcessJoin us through online enrolment — simply submit your updated CV. We do not conduct any interview or assessment. All motivated early career talent are welcome to take up the role.",
+      "requirementsText": "Basic proficiency in one or more backend frameworks. Strong programming skills in HTML, CSS, React.js, Tailwind CSS, PHP, Python, JavaScript, and Ruby. Understanding of API integration using Axios or Fetch. Familiarity with MongoDB, PostgreSQL, SQLite, and NoSQL databases. Ability to work independently in a remote setting.BenefitsOpportunity to build practical skills with modern backend technologies. Enhance your professional portfolio. Exposure to real-world development projects in a remote work environment.Internship DetailsDuration: Self-paced. Options of 15 days, 1 month, 2 months, 3 months, 4 months, or 6 months. Type: Unpaid.Application ProcessJoin us through online enrolment — simply submit your updated CV. We do not conduct any interview or assessment. All motivated early career talent are welcome to take up the role.",
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4457904148",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4457904148&f_E=1&f_JT=I&f_WT=2&keywords=frontend%20developer%20intern&sortBy=DD",
+      "title": "Frontend Developer",
+      "companyName": "Zetheta Algorithms Private Limited",
+      "companyUrl": "https://www.linkedin.com/company/zetheta/life",
+      "locationText": "India",
+      "postedAtText": "7 hours ago",
+      "postedAtIso": "2026-08-26T06:48:21.694Z",
+      "jobType": "Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "About the Company:ZeTheta Algorithms Private Limited is a FinTech start-up which has been recently set up and is developing innovative AI tools.https://www.instagram.com/zetheta.officialAbout the Role:The Front-End Web Developer Intern will be responsible for creating responsive and interactive user interfaces for our web applications. This includes wire framing, building the website's home page, user dashboards, and integrating AI features with an engaging and intuitive design.Responsibilities:      Develop responsive web interfaces using HTML, CSS, and JavaScriptCreate interactive UI components using React.js + Tailwind CSS (or Vue.js, Angular)Design user interfaces for multiple AI features and data visualizationUtilize UI libraries like Bootstrap or Material UI for consistent stylingImplement front-end form validation and user input handlingEnsure cross-browser compatibility and responsive design for mobile devicesConnect front-end components with RESTful APIs using Axios/FetchCollaborate with back-end developers to integrate UI components with server-side logicOptimize web applications for maximum speed and scalabilityParticipate in code reviews and implement feedback from senior developers\nQualifications:      Student or Fresh Graduate. No experience required.Strong programming skills in HTML, CSS, and JavaScriptBasic proficiency in React.js and Tailwind CSSUnderstanding of responsive design principlesFamiliarity with API integration (Axios/Fetch)Knowledge of UI/UX best practicesBasic understanding of browser rendering and performanceAbility to work independently in a remote setting\nBenefits:      Opportunity to build practical skills with modern front-end technologiesEnhance your professional portfolio with real-world projectsExposure to FinTech industry and AI applicationsRemote work flexibility\nInternship Details:      Duration: Self Paced with options of 15 days and 1 to 6 months.Type: Unpaid",
+      "requirementsText": "Student or Fresh Graduate. No experience required.Strong programming skills in HTML, CSS, and JavaScriptBasic proficiency in React.js and Tailwind CSSUnderstanding of responsive design principlesFamiliarity with API integration (Axios/Fetch)Knowledge of UI/UX best practicesBasic understanding of browser rendering and performanceAbility to work independently in a remote setting\nBenefits:      Opportunity to build practical skills with modern front-end technologiesEnhance your professional portfolio with real-world projectsExposure to FinTech industry and AI applicationsRemote work flexibility\nInternship Details:      Duration: Self Paced with options of 15 days and 1 to 6 months.Type: Unpaid",
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4457904148",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4457904148&f_E=1&f_JT=I&f_WT=2&keywords=frontend%20developer%20intern&sortBy=DD",
+      "title": "Frontend Developer",
+      "companyName": "Zetheta Algorithms Private Limited",
+      "companyUrl": "https://www.linkedin.com/company/zetheta/life",
+      "locationText": "India",
+      "postedAtText": "7 hours ago",
+      "postedAtIso": "2026-08-26T06:48:25.431Z",
+      "jobType": "Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "About the Company:ZeTheta Algorithms Private Limited is a FinTech start-up which has been recently set up and is developing innovative AI tools.https://www.instagram.com/zetheta.officialAbout the Role:The Front-End Web Developer Intern will be responsible for creating responsive and interactive user interfaces for our web applications. This includes wire framing, building the website's home page, user dashboards, and integrating AI features with an engaging and intuitive design.Responsibilities:      Develop responsive web interfaces using HTML, CSS, and JavaScriptCreate interactive UI components using React.js + Tailwind CSS (or Vue.js, Angular)Design user interfaces for multiple AI features and data visualizationUtilize UI libraries like Bootstrap or Material UI for consistent stylingImplement front-end form validation and user input handlingEnsure cross-browser compatibility and responsive design for mobile devicesConnect front-end components with RESTful APIs using Axios/FetchCollaborate with back-end developers to integrate UI components with server-side logicOptimize web applications for maximum speed and scalabilityParticipate in code reviews and implement feedback from senior developers\nQualifications:      Student or Fresh Graduate. No experience required.Strong programming skills in HTML, CSS, and JavaScriptBasic proficiency in React.js and Tailwind CSSUnderstanding of responsive design principlesFamiliarity with API integration (Axios/Fetch)Knowledge of UI/UX best practicesBasic understanding of browser rendering and performanceAbility to work independently in a remote setting\nBenefits:      Opportunity to build practical skills with modern front-end technologiesEnhance your professional portfolio with real-world projectsExposure to FinTech industry and AI applicationsRemote work flexibility\nInternship Details:      Duration: Self Paced with options of 15 days and 1 to 6 months.Type: Unpaid",
+      "requirementsText": "Student or Fresh Graduate. No experience required.Strong programming skills in HTML, CSS, and JavaScriptBasic proficiency in React.js and Tailwind CSSUnderstanding of responsive design principlesFamiliarity with API integration (Axios/Fetch)Knowledge of UI/UX best practicesBasic understanding of browser rendering and performanceAbility to work independently in a remote setting\nBenefits:      Opportunity to build practical skills with modern front-end technologiesEnhance your professional portfolio with real-world projectsExposure to FinTech industry and AI applicationsRemote work flexibility\nInternship Details:      Duration: Self Paced with options of 15 days and 1 to 6 months.Type: Unpaid",
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4459002231",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4459002231&f_E=1&f_JT=I&f_WT=2&keywords=frontend%20developer%20intern&sortBy=DD",
+      "title": "Python Developer Intern",
+      "companyName": "Devryxa",
+      "companyUrl": "https://www.linkedin.com/company/devryxa/life",
+      "locationText": "India",
+      "postedAtText": "20 hours ago",
+      "postedAtIso": "2026-08-25T17:48:30.193Z",
+      "jobType": "Up to 7,500 INR/month\n            \n            \n              Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "About the CompanyDevryxa is dedicated to providing innovative IT solutions that empower businesses to thrive in the digital age. Our mission is to deliver high-quality technology solutions while fostering a culture of collaboration, creativity, and continuous improvement.About the RoleWe are looking for a motivated Python Developer Intern to join our development team. In this role, you will work on backend development, automation, and data-driven applications using Python. This internship offers hands-on experience in building real-world projects while working alongside experienced developers.Key Responsibilities      Write clean, efficient, and optimized Python code.Develop backend services and automation scripts.Work with Python frameworks such as Django or Flask.Integrate third-party APIs and support system development.Debug, test, and maintain existing applications.Collaborate with the development team to build scalable solutions.\nQualifications      Currently pursuing or recently completed a degree in Computer Science, Information Technology, or a related field.Strong understanding of Python fundamentals and Object-Oriented Programming (OOP).Passion for software development and problem-solving.\nRequired Skills      PythonObject-Oriented Programming (OOP)SQL (Basic)REST APIsGit/GitHub\nPreferred Skills      Experience with Django or Flask.Knowledge of database management.Familiarity with backend architecture and deployment concepts.\nPerformance-based stipend of up to ₹7,500 per month.Why Join Us?      Work on real-world development projects.Receive mentorship from experienced developers.Gain practical industry experience.Build a strong portfolio to enhance your career opportunities.Opportunity for a full-time role based on performance.\nEqual Opportunity EmployerDevryxa is committed to creating a diverse and inclusive workplace. We are proud to be an equal opportunity employer and consider all qualified applicants without regard to race, religion, gender, gender identity or expression, sexual orientation, national origin, disability, age, veteran status, or any other protected characteristic.Apply NowKickstart your software development career with hands-on Python experience. Join Devryxa and build solutions that make an impact while strengthening your technical skills and professional portfolio.",
+      "requirementsText": "Currently pursuing or recently completed a degree in Computer Science, Information Technology, or a related field.Strong understanding of Python fundamentals and Object-Oriented Programming (OOP).Passion for software development and problem-solving.\nRequired Skills      PythonObject-Oriented Programming (OOP)SQL (Basic)REST APIsGit/GitHub\nPreferred Skills      Experience with Django or Flask.Knowledge of database management.Familiarity with backend architecture and deployment concepts.\nPerformance-based stipend of up to ₹7,500 per month.Why Join Us?      Work on real-world development projects.Receive mentorship from experienced developers.Gain practical industry experience.Build a strong portfolio to enhance your career opportunities.Opportunity for a full-time role based on performance.\nEqual Opportunity EmployerDevryxa is committed to creating a diverse and inclusive workplace. We are proud to be an equal opportunity employer and consider all qualified applicants without regard to r",
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4456907864",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4456907864&f_E=1&f_JT=I&f_WT=2&keywords=frontend%20developer%20intern&sortBy=DD",
+      "title": "Software Engineering Intern (Full Stack)",
+      "companyName": "Joveo",
+      "companyUrl": "https://www.linkedin.com/company/joveo/life",
+      "locationText": "Bengaluru, Karnataka, India",
+      "postedAtText": null,
+      "postedAtIso": null,
+      "jobType": "Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "Title: Software Engineering Intern (Full Stack)Location: Bengaluru, India (Work from Office, 5 days a week)Timings: 2-11 pm\nAbout JoveoAs the global leader in AI-powered recruitment marketing, we are transforming talent attraction and recruitment media buying for the world’s largest and smartest employers, staffing businesses, RPOs, and recruitment advertising agencies.The Joveo platform enables businesses to attract, source, engage, and hire the most relevant candidates on time, within their budget. Powering millions of jobs every day, our data-driven recruitment marketing platform uses advanced data science and machine learning to dynamically manage and optimize talent sourcing and applications across all online channels while providing real-time insights at every step of the job seeker journey, from click to hire.Joveo is rewriting the rules of recruitment through AI. We're looking for an intern who thinks like a founder, moves fast, and builds like an artist, someone ready to build the future of the company from 0 to 1.What you'll do Build       Greenfield AI products from whiteboard to working prototype. Ship across the full stack, React and Next.js on the front, Node.js and Express on the back, with the database underneath. Wire LLMs, embeddings, and vector databases into real products. Collaborate directly with our leadership from week one.\nWhat we're looking for       Strong programming fundamentals and projects you've actually built. Working knowledge of TypeScript, React, Next.js, Node.js, and Express.js. Comfort with SQL and database design, REST APIs, and Git. A basic grasp of LLMs, embeddings, and vector databases, plus the hunger to go deeper. Above all, a builder's mindset that thrives in ambiguity.\nWhy join       Build with the newest tools from day one. Real ownership of what you ship. Direct access to leadership. The kind of growth that takes years elsewhere.\nBuild the next chapter of Joveo. Apply now",
+      "requirementsText": null,
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4456907864",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4456907864&f_E=1&f_JT=I&f_WT=2&keywords=frontend%20developer%20intern&sortBy=DD",
+      "title": "Software Engineering Intern (Full Stack)",
+      "companyName": "Joveo",
+      "companyUrl": "https://www.linkedin.com/company/joveo/life",
+      "locationText": "Bengaluru, Karnataka, India",
+      "postedAtText": null,
+      "postedAtIso": null,
+      "jobType": "Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "Title: Software Engineering Intern (Full Stack)Location: Bengaluru, India (Work from Office, 5 days a week)Timings: 2-11 pm\nAbout JoveoAs the global leader in AI-powered recruitment marketing, we are transforming talent attraction and recruitment media buying for the world’s largest and smartest employers, staffing businesses, RPOs, and recruitment advertising agencies.The Joveo platform enables businesses to attract, source, engage, and hire the most relevant candidates on time, within their budget. Powering millions of jobs every day, our data-driven recruitment marketing platform uses advanced data science and machine learning to dynamically manage and optimize talent sourcing and applications across all online channels while providing real-time insights at every step of the job seeker journey, from click to hire.Joveo is rewriting the rules of recruitment through AI. We're looking for an intern who thinks like a founder, moves fast, and builds like an artist, someone ready to build the future of the company from 0 to 1.What you'll do Build       Greenfield AI products from whiteboard to working prototype. Ship across the full stack, React and Next.js on the front, Node.js and Express on the back, with the database underneath. Wire LLMs, embeddings, and vector databases into real products. Collaborate directly with our leadership from week one.\nWhat we're looking for       Strong programming fundamentals and projects you've actually built. Working knowledge of TypeScript, React, Next.js, Node.js, and Express.js. Comfort with SQL and database design, REST APIs, and Git. A basic grasp of LLMs, embeddings, and vector databases, plus the hunger to go deeper. Above all, a builder's mindset that thrives in ambiguity.\nWhy join       Build with the newest tools from day one. Real ownership of what you ship. Direct access to leadership. The kind of growth that takes years elsewhere.\nBuild the next chapter of Joveo. Apply now",
+      "requirementsText": null,
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4448042054",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4448042054&f_E=1&f_JT=I&f_WT=2&keywords=frontend%20developer%20intern&sortBy=DD",
+      "title": "Front-End Developer Intern",
+      "companyName": null,
+      "companyUrl": null,
+      "locationText": "India",
+      "postedAtText": null,
+      "postedAtIso": null,
+      "jobType": "Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "Job Title: Frontend Developer InternLocation: Remote/VirtualStipend: UnpaidDuration: 1 MonthAbout UsHexapython is a dynamic e-learning platform dedicated to empowering the next generation of developers. We specialize in hands-on internships across Frontend, Backend, and Full-Stack Development, providing aspiring tech professionals with real-world experience and practical skills that make them industry-ready.Role OverviewAre you a college student passionate about web development? Looking for an opportunity to learn, grow, and apply your skills in real-world projects? Join Hexapython as a Front-End Intern! This internship is perfect for beginners eager to deepen their knowledge and kickstart their career in web development.Key Responsibilities      Assist in building responsive and interactive web applications using HTML, CSS, JavaScript, React, and Tailwind.Collaborate with mentors and fellow interns to solve real-world coding challenges.Contribute to meaningful projects that directly support Hexapython’s mission.\nRequirements      Currently enrolled in a college or university program.Basic knowledge of HTML, CSS, and JavaScript (knowledge of React.js, Angular.js, or Vue.js is a plus).Enthusiastic, self-motivated, and eager to learn and grow.\nWhy Join Hexapython?      Mentorship and guidance from experienced industry professionals.Flexible work schedule that accommodates your studies.Hands-on experience working on real-world projects.Certificate of completion and potential opportunities for future employment.Exciting goodies for eligible interns upon successful completion.",
+      "requirementsText": "Currently enrolled in a college or university program.Basic knowledge of HTML, CSS, and JavaScript (knowledge of React.js, Angular.js, or Vue.js is a plus).Enthusiastic, self-motivated, and eager to learn and grow.\nWhy Join Hexapython?      Mentorship and guidance from experienced industry professionals.Flexible work schedule that accommodates your studies.Hands-on experience working on real-world projects.Certificate of completion and potential opportunities for future employment.Exciting goodies for eligible interns upon successful completion.",
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4448016802",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4448016802&f_E=1&f_JT=I&f_WT=2&keywords=frontend%20developer%20intern&sortBy=DD",
+      "title": "Software Engineer Intern",
+      "companyName": "Branch International",
+      "companyUrl": "https://www.linkedin.com/company/branch-co/life",
+      "locationText": "India",
+      "postedAtText": null,
+      "postedAtIso": null,
+      "jobType": "Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "Branch OverviewBranch is a leading AI-powered lending fintech with 50M+ downloads across India and Africa. We use alternative data and machine learning to expand financial access for millions of people traditionally excluded from the formal financial system. Founded by the former CEO of Kiva.org and backed by leading investors including Andreessen Horowitz, Visa, and the IFC, Branch combines mission-driven impact with world-class technology and scale.In India, Branch operates as a regulated digital lending institution and Middle Layer NBFC, building trusted and accessible financial products for millions of customers across the country. Our 250+ member India team is growing rapidly and works across technology, data science, risk, product, and operations to solve high-impact problems at scale.Certified as a Great Place to Work in 2025, Branch offers the opportunity to build meaningful careers while shaping the future of inclusive fintech in one of the world’s fastest-growing digital economies.Job OverviewAs a company, we are passionate about our customers, fearless in the face of barriers, and driven by data. As an engineering team, we value bottom-up innovation and decentralized decision-making: We believe the best ideas can come from anyone in the company, and we are working hard to create an environment where everyone feels empowered to propose solutions to the challenges we face. We are looking for individuals who thrive in a fast-moving, innovative, and customer-focused setting.About the RoleAs a software engineering intern, you will work closely with experienced engineers at Branch and make significant contributions to our products and code base for 4-6 months. You will brainstorm, design, code, debug, and ship features serving our millions of customers while picking up skills necessary for your career.Responsibilities      Build out functionality for existing and new product lines and platforms such as Credit, Payments, KYC, Data Platforms, etc.Integrate with various third-party systems, including payment systems, identity providers, and messaging platforms.\nQualifications      Have some experience building Backend that are more than just toy projects. Applications that have real users or an open source project would be a great plus.You have a solid foundation in computer science fundamentals, distributed systems, data storage.Know your way through various flavors of Unix and commonly used command line utilities.Proficiency with at least one mainstream language like Python, Ruby, Java, Kotlin, etc.You are highly entrepreneurial. You take the initiative to solve problems before they arise. You’ve started and/or contributed to projects you’re passionate about.You are a great collaborator and communicator. You know that startups are a team sport. You listen to others, speak your mind, and ask the right questions.You are excited by the prospect of working in a distributed team and company, working with teammates from all over the world, and learning.\nBenefits of Joining      Mission-driven, fast-paced and entrepreneurial environmentCompetitive stipend as compensationA collaborative and flat company cultureA job offer depending on your performance during the internship\nRead our Engineering Blog to learn about our technology, culture, and engineering practices: https://crafted.branch.co/Branch International is an Equal Opportunity Employer. The company does not and will not discriminate in employment on any basis prohibited by applicable law. We’re looking for more than just qualifications -- so if you’re unsure that you meet the criteria, please do not hesitate to apply!",
+      "requirementsText": "Have some experience building Backend that are more than just toy projects. Applications that have real users or an open source project would be a great plus.You have a solid foundation in computer science fundamentals, distributed systems, data storage.Know your way through various flavors of Unix and commonly used command line utilities.Proficiency with at least one mainstream language like Python, Ruby, Java, Kotlin, etc.You are highly entrepreneurial. You take the initiative to solve problems before they arise. You’ve started and/or contributed to projects you’re passionate about.You are a great collaborator and communicator. You know that startups are a team sport. You listen to others, speak your mind, and ask the right questions.You are excited by the prospect of working in a distributed team and company, working with teammates from all over the world, and learning.\nBenefits of Joining      Mission-driven, fast-paced and entrepreneurial environmentCompetitive stipend as compensa",
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4448033675",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4448033675&f_E=1&f_JT=I&f_WT=2&keywords=frontend%20developer%20intern&sortBy=DD",
+      "title": "Android Engineer Intern",
+      "companyName": "Branch International",
+      "companyUrl": "https://www.linkedin.com/company/branch-co/life",
+      "locationText": "India",
+      "postedAtText": null,
+      "postedAtIso": null,
+      "jobType": "Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "Branch OverviewBranch is a leading AI-powered lending fintech with 50M+ downloads across India and Africa. We use alternative data and machine learning to expand financial access for millions of people traditionally excluded from the formal financial system. Founded by the former CEO of Kiva.org and backed by leading investors including Andreessen Horowitz, Visa, and the IFC, Branch combines mission-driven impact with world-class technology and scale.In India, Branch operates as a regulated digital lending institution and Middle Layer NBFC, building trusted and accessible financial products for millions of customers across the country. Our 250+ member India team is growing rapidly and works across technology, data science, risk, product, and operations to solve high-impact problems at scale.Certified as a Great Place to Work in 2025, Branch offers the opportunity to build meaningful careers while shaping the future of inclusive fintech in one of the world’s fastest-growing digital economies.About RoleAs an Android Intern, you will improve the Branch Android app by building new features, optimizing performance, and contributing to the overall technical direction of the app.You will work closely with other Android engineers, Product Managers, Engineering Managers, and Designers on various challenges and deliver a smooth and reliable user experience. You will actively participate in code reviews, technical discussions, and day-to-day collaboration with the team. You will take ownership of projects and features, driving them end-to-end from development to release. You will also suggest improvements, share ideas, and contribute to technical and architectural discussions.As a company, we are passionate about our customers, fearless in the face of barriers, and driven by data. As an engineering team, we value bottom-up innovation and decentralized decision-making: We believe the best ideas can come from anyone in the company, and we are working hard to create an environment where everyone feels empowered to propose solutions to the challenges we face. We are looking for individuals who thrive in a fast-moving, innovative, and customer-focused setting.Responsibilities      Building and improving features for the Branch Android app used by our customers. You will work on creating smooth, reliable, and user-friendly mobile experiences.Working closely with backend teams to integrate APIs and support new product features. You will help ensure the Android app works seamlessly with backend systems and services.Improving app performance, stability, and overall user experience. This includes fixing issues, reducing app crashes, and making the app faster and more reliable.Working closely with Product Managers, Designers, and other engineers to understand requirements and deliver features end to end. You will support the team in successfully delivering its goals and initiatives.Supporting integrations with third-party services such as payments, authentication systems, analytics, and marketing. You will help maintain and improve these integrations as the product grows.Participating in code reviews, technical discussions, and team collaboration activities. You will contribute ideas, learn from others, and help maintain good engineering practices within the team.Taking ownership of features and projects from development to release. You will be responsible for delivering quality work and ensuring a smooth rollout to users.Contributing to improving code quality, testing, and maintainability of the Android codebase. You will help the team build a strong and scalable mobile application over time.\nQualifications      Have some experience building native Android applications that are more than just toy projects. Applications with real users or an open-source project would be a great plus.You have a solid foundation in computer science fundamentals. Good understanding of Android development using Kotlin, along with modern Android development practices and frameworks.Strong understanding of modern Android UI development using Jetpack Compose. Comfortable building responsive and scalable UI components, managing UI state, and following modern Android architecture and design patterns.Experience building features that interact with REST APIs and backend services. Familiarity with third-party integrations such as authentication, analytics, payments, or messaging platforms is a plus.Have a deep understanding of Android app performance, crash debugging, and improving app stability and reliability.Curious about new technologies and interested in learning different parts of the technology stack beyond mobile development when needed.Demonstrated fluency with modern AI-assisted development workflows and a point of view on their effectiveness for various use cases.Clear, structured written and verbal communication, comfortable operating async effectively.\nBenefits of Joining      Mission-driven, fast-paced and entrepreneurial environmentCompetitive stipend as compensationA collaborative and flat company cultureA job offer depending on your performance during the internship\nRead our Engineering Blog to learn about our technology, culture, and engineering practices: https://crafted.branch.co/We’re looking for more than just qualifications -- if you’re unsure that you meet the criteria but identify with our vision of providing equal opportunity to everyone to access financial services, please do not hesitate to apply!Branch International is an Equal Opportunity Employer. The company does not and will not discriminate in employment on any basis prohibited by applicable law.",
+      "requirementsText": "and deliver features end to end. You will support the team in successfully delivering its goals and initiatives.Supporting integrations with third-party services such as payments, authentication systems, analytics, and marketing. You will help maintain and improve these integrations as the product grows.Participating in code reviews, technical discussions, and team collaboration activities. You will contribute ideas, learn from others, and help maintain good engineering practices within the team.Taking ownership of features and projects from development to release. You will be responsible for delivering quality work and ensuring a smooth rollout to users.Contributing to improving code quality, testing, and maintainability of the Android codebase. You will help the team build a strong and scalable mobile application over time.\nQualifications      Have some experience building native Android applications that are more than just toy projects. Applications with real users or an open-source",
+      "aiAgentSignals": {
+        "detected": true,
+        "confidence": "high",
+        "requirementStrength": "required",
+        "tools": [],
+        "categories": [
+          "llm_dev_workflow"
+        ],
+        "snippets": [
+          {
+            "source": "description",
+            "text": "...gy stack beyond mobile development when needed.Demonstrated fluency with modern AI-assisted development workflows and a point of view on their effectiveness for..."
+          }
+        ]
+      }
+    },
+    {
+      "jobId": "4448033675",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4448033675&f_E=1&f_JT=I&f_WT=2&keywords=frontend%20developer%20intern&sortBy=DD",
+      "title": "Android Engineer Intern",
+      "companyName": "Branch International",
+      "companyUrl": "https://www.linkedin.com/company/branch-co/life",
+      "locationText": "India",
+      "postedAtText": null,
+      "postedAtIso": null,
+      "jobType": "Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "Branch OverviewBranch is a leading AI-powered lending fintech with 50M+ downloads across India and Africa. We use alternative data and machine learning to expand financial access for millions of people traditionally excluded from the formal financial system. Founded by the former CEO of Kiva.org and backed by leading investors including Andreessen Horowitz, Visa, and the IFC, Branch combines mission-driven impact with world-class technology and scale.In India, Branch operates as a regulated digital lending institution and Middle Layer NBFC, building trusted and accessible financial products for millions of customers across the country. Our 250+ member India team is growing rapidly and works across technology, data science, risk, product, and operations to solve high-impact problems at scale.Certified as a Great Place to Work in 2025, Branch offers the opportunity to build meaningful careers while shaping the future of inclusive fintech in one of the world’s fastest-growing digital economies.About RoleAs an Android Intern, you will improve the Branch Android app by building new features, optimizing performance, and contributing to the overall technical direction of the app.You will work closely with other Android engineers, Product Managers, Engineering Managers, and Designers on various challenges and deliver a smooth and reliable user experience. You will actively participate in code reviews, technical discussions, and day-to-day collaboration with the team. You will take ownership of projects and features, driving them end-to-end from development to release. You will also suggest improvements, share ideas, and contribute to technical and architectural discussions.As a company, we are passionate about our customers, fearless in the face of barriers, and driven by data. As an engineering team, we value bottom-up innovation and decentralized decision-making: We believe the best ideas can come from anyone in the company, and we are working hard to create an environment where everyone feels empowered to propose solutions to the challenges we face. We are looking for individuals who thrive in a fast-moving, innovative, and customer-focused setting.Responsibilities      Building and improving features for the Branch Android app used by our customers. You will work on creating smooth, reliable, and user-friendly mobile experiences.Working closely with backend teams to integrate APIs and support new product features. You will help ensure the Android app works seamlessly with backend systems and services.Improving app performance, stability, and overall user experience. This includes fixing issues, reducing app crashes, and making the app faster and more reliable.Working closely with Product Managers, Designers, and other engineers to understand requirements and deliver features end to end. You will support the team in successfully delivering its goals and initiatives.Supporting integrations with third-party services such as payments, authentication systems, analytics, and marketing. You will help maintain and improve these integrations as the product grows.Participating in code reviews, technical discussions, and team collaboration activities. You will contribute ideas, learn from others, and help maintain good engineering practices within the team.Taking ownership of features and projects from development to release. You will be responsible for delivering quality work and ensuring a smooth rollout to users.Contributing to improving code quality, testing, and maintainability of the Android codebase. You will help the team build a strong and scalable mobile application over time.\nQualifications      Have some experience building native Android applications that are more than just toy projects. Applications with real users or an open-source project would be a great plus.You have a solid foundation in computer science fundamentals. Good understanding of Android development using Kotlin, along with modern Android development practices and frameworks.Strong understanding of modern Android UI development using Jetpack Compose. Comfortable building responsive and scalable UI components, managing UI state, and following modern Android architecture and design patterns.Experience building features that interact with REST APIs and backend services. Familiarity with third-party integrations such as authentication, analytics, payments, or messaging platforms is a plus.Have a deep understanding of Android app performance, crash debugging, and improving app stability and reliability.Curious about new technologies and interested in learning different parts of the technology stack beyond mobile development when needed.Demonstrated fluency with modern AI-assisted development workflows and a point of view on their effectiveness for various use cases.Clear, structured written and verbal communication, comfortable operating async effectively.\nBenefits of Joining      Mission-driven, fast-paced and entrepreneurial environmentCompetitive stipend as compensationA collaborative and flat company cultureA job offer depending on your performance during the internship\nRead our Engineering Blog to learn about our technology, culture, and engineering practices: https://crafted.branch.co/We’re looking for more than just qualifications -- if you’re unsure that you meet the criteria but identify with our vision of providing equal opportunity to everyone to access financial services, please do not hesitate to apply!Branch International is an Equal Opportunity Employer. The company does not and will not discriminate in employment on any basis prohibited by applicable law.",
+      "requirementsText": "and deliver features end to end. You will support the team in successfully delivering its goals and initiatives.Supporting integrations with third-party services such as payments, authentication systems, analytics, and marketing. You will help maintain and improve these integrations as the product grows.Participating in code reviews, technical discussions, and team collaboration activities. You will contribute ideas, learn from others, and help maintain good engineering practices within the team.Taking ownership of features and projects from development to release. You will be responsible for delivering quality work and ensuring a smooth rollout to users.Contributing to improving code quality, testing, and maintainability of the Android codebase. You will help the team build a strong and scalable mobile application over time.\nQualifications      Have some experience building native Android applications that are more than just toy projects. Applications with real users or an open-source",
+      "aiAgentSignals": {
+        "detected": true,
+        "confidence": "high",
+        "requirementStrength": "required",
+        "tools": [],
+        "categories": [
+          "llm_dev_workflow"
+        ],
+        "snippets": [
+          {
+            "source": "description",
+            "text": "...gy stack beyond mobile development when needed.Demonstrated fluency with modern AI-assisted development workflows and a point of view on their effectiveness for..."
+          }
+        ]
+      }
+    },
+    {
+      "jobId": "4446223226",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4446223226&f_E=1&f_JT=I&f_WT=2&keywords=frontend%20developer%20intern&sortBy=DD",
+      "title": "AI Engineer Intern Remote",
+      "companyName": "M0",
+      "companyUrl": "https://www.linkedin.com/company/m0ventures/life",
+      "locationText": "India",
+      "postedAtText": null,
+      "postedAtIso": null,
+      "jobType": "Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "About the job Web3 marked a new era of innovation with breakthroughs in decentralized finance (DeFi), NFTs, the Metaverse, and DAOs, redefining digital ownership, trust, and interoperability. Today, the next wave of transformation is being driven by AI, intelligent automation, and SaaS, revolutionizing how people build, work, and scale businesses.M0 is an AI, blockchain, and Web3 technology company exploring bold ideas across generative AI, intelligent SaaS, digital identity, ownership, utility, DeFi, and interoperability. We build products that leverage AI and decentralized technologies to solve real-world problems and shape the future of software.We're looking for builders, hackers, innovators, entrepreneurs, visionaries, and creatives who thrive on ownership and want to create products with meaningful impact. This isn't a typical job at M0—you'll be challenged to bring your best ideas to life, build alongside exceptional people, and help define the next generation of AI-powered and decentralized technologies. Whether you're passionate about AI, SaaS, or Web3, you'll have the opportunity to push boundaries and build the future with us. Requirements:• Hands-on experience in developing LLM-based applications for both front-end and back-end development using JavaScript, Typescript, Nest and Next js.• Hands-on experience on design, and optimizing LLM, RAGS, natural language processing (NLP) systems, frameworks, and tools.• Hands-on AI/ML modelling experience of complex datasets combined with a strong understanding of the theoretical foundations of AI/ML both short term and long-term memory-based models. • Experience in creating and deploying code libraries using functions and classes in Python and JavaScript MERN AI product-focused development.• Comfortable working in the cloud and high-performance computing environments (eg, vector DBs, MLops, AWS/Azure/ GCP, ELK).• Well-versed in software development and code quality best industry practices.• Experience working with Agile Development methodologies. Responsibilities:- Prototypes and do proof of concepts (PoC) in one or all the following areas: LLMS. Type: Remote Internship (PAN India)Duration: 6 MonthsStipend: Unpaid / PaidFull Time Opportunity Based on Performance.Perks:Letter of Recommendation (LOR)Internship Completion CertificateHands-on experience with real-world AI SaaS product design",
+      "requirementsText": "• Hands-on experience in developing LLM-based applications for both front-end and back-end development using JavaScript, Typescript, Nest and Next js.• Hands-on experience on design, and optimizing LLM, RAGS, natural language processing (NLP) systems, frameworks, and tools.• Hands-on AI/ML modelling experience of complex datasets combined with a strong understanding of the theoretical foundations of AI/ML both short term and long-term memory-based models. • Experience in creating and deploying code libraries using functions and classes in Python and JavaScript MERN AI product-focused development.• Comfortable working in the cloud and high-performance computing environments (eg, vector DBs, MLops, AWS/Azure/ GCP, ELK).• Well-versed in software development and code quality best industry practices.• Experience working with Agile Development methodologies. Responsibilities:- Prototypes and do proof of concepts (PoC) in one or all the following areas: LLMS. Type: Remote Internship (PAN Indi",
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4446220238",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4446220238&f_E=1&f_JT=I&f_WT=2&keywords=frontend%20developer%20intern&sortBy=DD",
+      "title": "Frontend Developer Intern Remote",
+      "companyName": "M0",
+      "companyUrl": "https://www.linkedin.com/company/m0ventures/life",
+      "locationText": "India",
+      "postedAtText": null,
+      "postedAtIso": null,
+      "jobType": "Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "About The Company: Web3 marked a new era of innovation with breakthroughs in decentralized finance (DeFi), NFTs, the Metaverse, and DAOs, redefining digital ownership, trust, and interoperability. Today, the next wave of transformation is being driven by AI, intelligent automation, and SaaS, revolutionizing how people build, work, and scale businesses.M0 is an AI, blockchain, and Web3 technology company exploring bold ideas across generative AI, intelligent SaaS, digital identity, ownership, utility, DeFi, and interoperability. We build products that leverage AI and decentralized technologies to solve real-world problems and shape the future of software.We're looking for builders, hackers, innovators, entrepreneurs, visionaries, and creatives who thrive on ownership and want to create products with meaningful impact. This isn't a typical job at M0—you'll be challenged to bring your best ideas to life, build alongside exceptional people, and help define the next generation of AI-powered and decentralized technologies. Whether you're passionate about AI, SaaS, or Web3, you'll have the opportunity to push boundaries and build the future with us. Requirements:      Extensive experience with system design, Backend and Next.js frameworks for building full stack scalable and responsive web applications.Experience in building backends using Nest.js, Supa base framework.Experience working with Typescript and strong proficiency in frontend development using HTML, CSS, and JavaScript.Experience with Supa base, Next.js, Prisma, TRPC, Zustand, LLM's.Strong NodeJS knowledge and their understanding of the ecosystems.Familiarity with server-side rendering and routing in Next.js, and ability to leverage these features effectively.Experience with testing frameworks and tools for frontend and backend applications.Proficiency in version control systems like Git.Excellent problem-solving and debugging skills.Strong communication and collaboration skills to work effectively within a team environment.Experience with Redux.js, LLMS, Vector DB.\n Responsibilities:      Building progressive webapps using Next.js, Zustand.Creating and integrating backend built using Prisma, Supabase, Trpc, LLMS to progressive webapps.Write code according to our best practices and define new best practices.Write unit tests and conduct end-to-end testing to ensure the quality and stability of the codebase.Continuously improve code quality, maintainability, and scalability of the codebase.\n Type: Remote Internship (PAN India)Duration: 6 MonthsStipend: Unpaid / PaidFull Time opportunity based on performance.Perks:Letter of Recommendation (LOR)Internship Completion CertificateHands-on experience with real-world digital product design",
+      "requirementsText": "Extensive experience with system design, Backend and Next.js frameworks for building full stack scalable and responsive web applications.Experience in building backends using Nest.js, Supa base framework.Experience working with Typescript and strong proficiency in frontend development using HTML, CSS, and JavaScript.Experience with Supa base, Next.js, Prisma, TRPC, Zustand, LLM's.Strong NodeJS knowledge and their understanding of the ecosystems.Familiarity with server-side rendering and routing in Next.js, and ability to leverage these features effectively.Experience with testing frameworks and tools for frontend and backend applications.Proficiency in version control systems like Git.Excellent problem-solving and debugging skills.Strong communication and collaboration skills to work effectively within a team environment.Experience with Redux.js, LLMS, Vector DB.\n Responsibilities:      Building progressive webapps using Next.js, Zustand.Creating and integrating backend built using Pri",
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4446220238",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4446220238&f_E=1&f_JT=I&f_WT=2&keywords=frontend%20developer%20intern&sortBy=DD",
+      "title": "Frontend Developer Intern Remote",
+      "companyName": "M0",
+      "companyUrl": "https://www.linkedin.com/company/m0ventures/life",
+      "locationText": "India",
+      "postedAtText": null,
+      "postedAtIso": null,
+      "jobType": "Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "About The Company: Web3 marked a new era of innovation with breakthroughs in decentralized finance (DeFi), NFTs, the Metaverse, and DAOs, redefining digital ownership, trust, and interoperability. Today, the next wave of transformation is being driven by AI, intelligent automation, and SaaS, revolutionizing how people build, work, and scale businesses.M0 is an AI, blockchain, and Web3 technology company exploring bold ideas across generative AI, intelligent SaaS, digital identity, ownership, utility, DeFi, and interoperability. We build products that leverage AI and decentralized technologies to solve real-world problems and shape the future of software.We're looking for builders, hackers, innovators, entrepreneurs, visionaries, and creatives who thrive on ownership and want to create products with meaningful impact. This isn't a typical job at M0—you'll be challenged to bring your best ideas to life, build alongside exceptional people, and help define the next generation of AI-powered and decentralized technologies. Whether you're passionate about AI, SaaS, or Web3, you'll have the opportunity to push boundaries and build the future with us. Requirements:      Extensive experience with system design, Backend and Next.js frameworks for building full stack scalable and responsive web applications.Experience in building backends using Nest.js, Supa base framework.Experience working with Typescript and strong proficiency in frontend development using HTML, CSS, and JavaScript.Experience with Supa base, Next.js, Prisma, TRPC, Zustand, LLM's.Strong NodeJS knowledge and their understanding of the ecosystems.Familiarity with server-side rendering and routing in Next.js, and ability to leverage these features effectively.Experience with testing frameworks and tools for frontend and backend applications.Proficiency in version control systems like Git.Excellent problem-solving and debugging skills.Strong communication and collaboration skills to work effectively within a team environment.Experience with Redux.js, LLMS, Vector DB.\n Responsibilities:      Building progressive webapps using Next.js, Zustand.Creating and integrating backend built using Prisma, Supabase, Trpc, LLMS to progressive webapps.Write code according to our best practices and define new best practices.Write unit tests and conduct end-to-end testing to ensure the quality and stability of the codebase.Continuously improve code quality, maintainability, and scalability of the codebase.\n Type: Remote Internship (PAN India)Duration: 6 MonthsStipend: Unpaid / PaidFull Time opportunity based on performance.Perks:Letter of Recommendation (LOR)Internship Completion CertificateHands-on experience with real-world digital product design",
+      "requirementsText": "Extensive experience with system design, Backend and Next.js frameworks for building full stack scalable and responsive web applications.Experience in building backends using Nest.js, Supa base framework.Experience working with Typescript and strong proficiency in frontend development using HTML, CSS, and JavaScript.Experience with Supa base, Next.js, Prisma, TRPC, Zustand, LLM's.Strong NodeJS knowledge and their understanding of the ecosystems.Familiarity with server-side rendering and routing in Next.js, and ability to leverage these features effectively.Experience with testing frameworks and tools for frontend and backend applications.Proficiency in version control systems like Git.Excellent problem-solving and debugging skills.Strong communication and collaboration skills to work effectively within a team environment.Experience with Redux.js, LLMS, Vector DB.\n Responsibilities:      Building progressive webapps using Next.js, Zustand.Creating and integrating backend built using Pri",
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4459006878",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4459006878&f_E=1&f_JT=I&f_WT=2&keywords=frontend%20developer%20intern&sortBy=DD",
+      "title": "Python Developer Intern",
+      "companyName": "Zenithbyte",
+      "companyUrl": "https://www.linkedin.com/company/zenith-byte/life",
+      "locationText": "India",
+      "postedAtText": "18 hours ago",
+      "postedAtIso": "2026-08-25T19:49:13.412Z",
+      "jobType": "Up to 7,500 INR/month\n            \n            \n              Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "About the CompanyZenithbyte is dedicated to providing innovative IT solutions that empower businesses to thrive in the digital age. Our mission is to deliver high-quality technology solutions while fostering a culture of collaboration, creativity, and continuous improvement.About the RoleWe are looking for a motivated Python Developer Intern to join our development team. In this role, you will work on backend development, automation, and data-driven applications using Python. This internship offers hands-on experience in building real-world projects while working alongside experienced developers.Key Responsibilities      Write clean, efficient, and optimized Python code.Develop backend services and automation scripts.Work with Python frameworks such as Django or Flask.Integrate third-party APIs and support system development.Debug, test, and maintain existing applications.Collaborate with the development team to build scalable solutions.\nQualifications      Currently pursuing or recently completed a degree in Computer Science, Information Technology, or a related field.Strong understanding of Python fundamentals and Object-Oriented Programming (OOP).Passion for software development and problem-solving.\nRequired Skills      PythonObject-Oriented Programming (OOP)SQL (Basic)REST APIsGit/GitHub\nPreferred Skills      Experience with Django or Flask.Knowledge of database management.Familiarity with backend architecture and deployment concepts.\nStipendPerformance-based stipend of up to ₹7,500 per month.Why Join Us?      Work on real-world development projects.Receive mentorship from experienced developers.Gain practical industry experience.Build a strong portfolio to enhance your career opportunities.Opportunity for a full-time role based on performance.\nEqual Opportunity EmployerZenithbyte is committed to creating a diverse and inclusive workplace. We are proud to be an equal opportunity employer and consider all qualified applicants without regard to protected characteristic.Apply NowKickstart your software development career with hands-on Python experience. Join Zenithbyte and build solutions that make an impact while strengthening your technical skills and professional portfolio.",
+      "requirementsText": "Currently pursuing or recently completed a degree in Computer Science, Information Technology, or a related field.Strong understanding of Python fundamentals and Object-Oriented Programming (OOP).Passion for software development and problem-solving.\nRequired Skills      PythonObject-Oriented Programming (OOP)SQL (Basic)REST APIsGit/GitHub\nPreferred Skills      Experience with Django or Flask.Knowledge of database management.Familiarity with backend architecture and deployment concepts.\nStipendPerformance-based stipend of up to ₹7,500 per month.Why Join Us?      Work on real-world development projects.Receive mentorship from experienced developers.Gain practical industry experience.Build a strong portfolio to enhance your career opportunities.Opportunity for a full-time role based on performance.\nEqual Opportunity EmployerZenithbyte is committed to creating a diverse and inclusive workplace. We are proud to be an equal opportunity employer and consider all qualified applicants without r",
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    }
+  ]
+}

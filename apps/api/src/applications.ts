@@ -22,7 +22,10 @@ export interface ApplicationRecord {
   title: string | null;
   url: string | null;
   variant: string | null;
+  /** When the application was submitted. Carried forward unchanged by status changes. */
   appliedAt: string;
+  /** When this individual record was appended. */
+  recordedAt: string;
   source: string;
   status: ApplicationStatus;
 }

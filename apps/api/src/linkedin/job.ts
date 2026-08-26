@@ -1,4 +1,5 @@
 import type { Page } from 'playwright';
+import { type ScrapeContext, debugShot } from './context.ts';
 import { detectAiAgentSignals, emptyAiAgentSignals } from '../ai-agent-detector.ts';
 import { detectLocationConflict } from '../location-conflict.ts';
 import { classifyPay, emptyPay } from '../pay.ts';
@@ -21,10 +22,10 @@ const SELECTORS = {
 export async function extractJobDetailsFromView(
   page: Page,
   jobIndex: number,
-  debug: boolean = false,
+  ctx: ScrapeContext,
 ): Promise<JobListing> {
-  if (debug) {
-    console.log(`Extracting details for job ${jobIndex + 1}...`);
+  if (ctx.debug) {
+    ctx.onLog(`Extracting details for job ${jobIndex + 1}...`);
   }
 
   try {
@@ -37,7 +38,7 @@ export async function extractJobDetailsFromView(
     }
 
     // Extract title - try to find the job title
-    const title = await extractText(page, '.job-details-jobs-unified-top-card__job-title', debug);
+    const title = await extractText(page, '.job-details-jobs-unified-top-card__job-title', ctx);
 
     // Extract company name and URL
     const companyNameElement = await page.$(SELECTORS.companyName);
@@ -45,30 +46,30 @@ export async function extractJobDetailsFromView(
     const companyUrl = companyNameElement ? await companyNameElement.getAttribute('href') : null;
 
     // Extract location
-    const locationText = await extractText(page, SELECTORS.location, debug);
+    const locationText = await extractText(page, SELECTORS.location, ctx);
 
     // Extract posted time
-    let postedAtText = await extractText(page, SELECTORS.postedAgo, debug);
+    let postedAtText = await extractText(page, SELECTORS.postedAgo, ctx);
 
     // Fallback: try other selectors
     if (!postedAtText) {
-      postedAtText = await extractPostedTime(page, debug);
+      postedAtText = await extractPostedTime(page, ctx);
     }
 
     const postedAtIso = postedAtText ? parsePostedTime(postedAtText) : null;
 
     // Extract job type/preferences
-    const jobType = await extractText(page, SELECTORS.jobType, debug);
+    const jobType = await extractText(page, SELECTORS.jobType, ctx);
 
     // Extract alumni count (if exists)
-    const alumniCount = await extractAlumniCount(page, debug);
+    const alumniCount = await extractAlumniCount(page, ctx);
 
     // Extract job description
-    let descriptionText = await extractText(page, SELECTORS.description, debug);
+    let descriptionText = await extractText(page, SELECTORS.description, ctx);
 
     // Fallback: try alternative description selector
     if (!descriptionText) {
-      descriptionText = await extractText(page, '.jobs-description__content', debug);
+      descriptionText = await extractText(page, '.jobs-description__content', ctx);
     }
 
     // Try to expand description if "Show more" button exists
@@ -80,9 +81,9 @@ export async function extractJobDetailsFromView(
         await showMoreButton.click();
         await page.waitForTimeout(500);
         // Re-extract description after expanding
-        descriptionText = await extractText(page, SELECTORS.description, debug);
+        descriptionText = await extractText(page, SELECTORS.description, ctx);
         if (!descriptionText) {
-          descriptionText = await extractText(page, '.jobs-description__content', debug);
+          descriptionText = await extractText(page, '.jobs-description__content', ctx);
         }
       }
     } catch {
@@ -90,7 +91,7 @@ export async function extractJobDetailsFromView(
     }
 
     // Extract requirements (heuristic from description)
-    const requirementsText = extractRequirements(descriptionText, debug);
+    const requirementsText = extractRequirements(descriptionText, ctx);
     const aiAgentSignals = detectAiAgentSignals({
       title,
       requirementsText,
@@ -120,9 +121,9 @@ export async function extractJobDetailsFromView(
       }),
     };
   } catch (error) {
-    if (debug) {
-      console.error(`Error extracting job details:`, error);
-      await page.screenshot({ path: `debug-job-error-${jobIndex}.png` });
+    if (ctx.debug) {
+      ctx.onLog(`Error extracting job details: ${String(error)}`);
+      await debugShot(ctx, page, `debug-job-error-${jobIndex}.png`);
     }
 
     // Return partial data on error
@@ -146,7 +147,11 @@ export async function extractJobDetailsFromView(
   }
 }
 
-async function extractText(page: Page, selector: string, debug: boolean): Promise<string | null> {
+async function extractText(
+  page: Page,
+  selector: string,
+  ctx: ScrapeContext,
+): Promise<string | null> {
   try {
     const element = await page.$(selector);
     if (!element) return null;
@@ -154,14 +159,14 @@ async function extractText(page: Page, selector: string, debug: boolean): Promis
     const text = await element.textContent();
     return text?.trim() || null;
   } catch (error) {
-    if (debug) {
-      console.error(`Error extracting text for selector ${selector}:`, error);
+    if (ctx.debug) {
+      ctx.onLog(`Error extracting text for selector ${selector}:: ${String(error)}`);
     }
     return null;
   }
 }
 
-async function extractPostedTime(page: Page, debug: boolean): Promise<string | null> {
+async function extractPostedTime(page: Page, ctx: ScrapeContext): Promise<string | null> {
   try {
     // Try multiple selectors for posted time
     const selectors = [
@@ -171,7 +176,7 @@ async function extractPostedTime(page: Page, debug: boolean): Promise<string | n
     ];
 
     for (const selector of selectors) {
-      const text = await extractText(page, selector, debug);
+      const text = await extractText(page, selector, ctx);
       if (text?.includes('ago')) {
         return text;
       }
@@ -183,7 +188,7 @@ async function extractPostedTime(page: Page, debug: boolean): Promise<string | n
   }
 }
 
-async function extractAlumniCount(page: Page, debug: boolean): Promise<string | null> {
+async function extractAlumniCount(page: Page, ctx: ScrapeContext): Promise<string | null> {
   try {
     // Look for alumni information - try multiple patterns
     const selectors = [
@@ -204,14 +209,14 @@ async function extractAlumniCount(page: Page, debug: boolean): Promise<string | 
 
     return null;
   } catch (error) {
-    if (debug) {
-      console.error('Error extracting alumni count:', error);
+    if (ctx.debug) {
+      ctx.onLog(`Error extracting alumni count: ${String(error)}`);
     }
     return null;
   }
 }
 
-function extractRequirements(descriptionText: string | null, debug: boolean): string | null {
+function extractRequirements(descriptionText: string | null, ctx: ScrapeContext): string | null {
   if (!descriptionText) return null;
 
   try {
@@ -244,8 +249,8 @@ function extractRequirements(descriptionText: string | null, debug: boolean): st
 
     return null;
   } catch (error) {
-    if (debug) {
-      console.error('Error extracting requirements:', error);
+    if (ctx.debug) {
+      ctx.onLog(`Error extracting requirements: ${String(error)}`);
     }
     return null;
   }

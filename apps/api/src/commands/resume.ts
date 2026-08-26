@@ -56,14 +56,20 @@ async function buildOne(
   }
 
   const extraction = await checkExtraction(result.pdf, variant, project.resume.basics.name);
-  if (extraction && !extraction.ok) {
+  if (!extraction) {
+    throw new CliError(
+      'DEPENDENCY',
+      'pdftotext not found, so the text extraction gate cannot run. ' +
+        'Install poppler-utils, or run is-dl doctor for details.',
+    );
+  }
+  if (!extraction.ok) {
     throw new CliError(
       'ERROR',
       `Variant "${name}" produced a PDF where ${extraction.missing.length} text probe(s) are not extractable: ` +
         `${extraction.missing.slice(0, 3).join(' | ')}`,
     );
   }
-  if (!extraction) ctx.log('pdftotext not found, skipping the text extraction gate.');
 
   return { variant: name, pdf: result.pdf, pages: result.pages, extraction };
 }

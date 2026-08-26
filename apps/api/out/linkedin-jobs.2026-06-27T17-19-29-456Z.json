@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "query": "Frontend Engineer",
+    "location": "United States",
+    "filters": {
+      "remoteOnly": false
+    },
+    "scrapedAt": "2026-06-27T17:19:29.456Z",
+    "source": "linkedin",
+    "count": 1,
+    "aiAgentSummary": {
+      "detectedCount": 0,
+      "highCount": 0,
+      "mediumCount": 0,
+      "lowCount": 0
+    }
+  },
+  "jobs": [
+    {
+      "jobId": "4430684715",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4430684715&keywords=Frontend%20Engineer&location=United%20States&sortBy=DD",
+      "title": "Front End Developer",
+      "companyName": "Haystack",
+      "companyUrl": "https://www.linkedin.com/company/wearehaystack/life",
+      "locationText": "San Antonio, TX",
+      "postedAtText": "3 hours ago",
+      "postedAtIso": "2026-06-27T14:19:27.362Z",
+      "jobType": "$100K/yr - $130K/yr\n            \n            \n              Remote\n            \n            \n              Full-time",
+      "alumniCount": null,
+      "descriptionText": "We're hiring on behalf of a Haystack partner!The Role       Provide subject matter expertise for assigned tasks. Utilize analytical skills to support process improvement and define requirements. Perform front-end design and development, including creating mockups, wireframes, and GUIs. Optimize system navigation and user-facing features for ease of use. Engage in agile, user-centric application design, adhering to best-of-breed UI/UX standards. Experience integrating data between unclassified and classified application deployments.\nWhat You'll Need       Active TS/SCI security clearance. Bachelor’s degree in a related field (Master’s may substitute for 2 years of experience). 7 years of experience in the functional area and 7 years of software development experience. 3 years of experience with bug tracking software (e.g., Jira) and web-based application testing. 5 years of experience with Jenkins and GitLab. Proficiency with at least five of the following: Apache, Ember, JavaScript, Jaguar, Java, Cricket, Node.\nWhat's On Offer       Opportunity to work on significant government projects. Competitive salary range of $100,000.00 - $130,000.00 annually. Comprehensive benefits package including health insurance, retirement savings, and paid time off. Potential for professional growth within a reputable organization.\nApply via Haystack today!",
+      "requirementsText": ". Perform front-end design and development, including creating mockups, wireframes, and GUIs. Optimize system navigation and user-facing features for ease of use. Engage in agile, user-centric application design, adhering to best-of-breed UI/UX standards. Experience integrating data between unclassified and classified application deployments.\nWhat You'll Need       Active TS/SCI security clearance. Bachelor’s degree in a related field (Master’s may substitute for 2 years of experience). 7 years of experience in the functional area and 7 years of software development experience. 3 years of experience with bug tracking software (e.g., Jira) and web-based application testing. 5 years of experience with Jenkins and GitLab. Proficiency with at least five of the following: Apache, Ember, JavaScript, Jaguar, Java, Cricket, Node.\nWhat's On Offer       Opportunity to work on significant government projects. Competitive salary range of $100,000.00 - $130,000.00 annually. Comprehensive benefits p",
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    }
+  ]
+}

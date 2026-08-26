@@ -1,6 +1,7 @@
 import { join } from 'node:path';
 import { summarizeAiAgentSignals } from './ai-agent-detector.ts';
 import { closeBrowser, launchBrowser } from './linkedin/browser.ts';
+import type { ScrapeContext } from './linkedin/context.ts';
 import { extractJobDetailsFromView } from './linkedin/job.ts';
 import {
   clickJobCard,
@@ -46,6 +47,12 @@ export async function runScraper(
   onLog: (msg: string) => void = console.error,
   signal?: AbortSignal,
 ): Promise<ScraperOutput> {
+  const ctx: ScrapeContext = {
+    debug: options.debug ?? false,
+    onLog,
+    debugDir: options.debugDir,
+  };
+
   onLog('LinkedIn Internship Scraper\n');
 
   checkAbort(signal);
@@ -86,7 +93,7 @@ export async function runScraper(
     }
 
     // Get pagination info
-    const paginationInfo = await getPaginationInfo(session.page, options.debug);
+    const paginationInfo = await getPaginationInfo(session.page, ctx);
     if (paginationInfo) {
       onLog(`Pagination: Page ${paginationInfo.current} of ${paginationInfo.total}`);
     }
@@ -103,11 +110,7 @@ export async function runScraper(
       onLog(`\n=== Processing Page ${currentPage} ===\n`);
 
       // Get the count of available job cards on current page
-      const jobCount = await getJobCardCount(
-        session.page,
-        options.limit - totalProcessed,
-        options.debug,
-      );
+      const jobCount = await getJobCardCount(session.page, options.limit - totalProcessed, ctx);
 
       onLog(`Found ${jobCount} jobs on page ${currentPage}`);
 
@@ -126,10 +129,10 @@ export async function runScraper(
 
         try {
           // Click on the job card to load its details
-          await clickJobCard(session.page, i, options.debug);
+          await clickJobCard(session.page, i, ctx);
 
           // Extract details from the loaded view
-          const jobDetails = await extractJobDetailsFromView(session.page, i, options.debug);
+          const jobDetails = await extractJobDetailsFromView(session.page, i, ctx);
           jobs.push(jobDetails);
 
           if (options.debug) {
@@ -149,7 +152,7 @@ export async function runScraper(
       if (totalProcessed < options.limit) {
         checkAbort(signal);
         onLog('\nAttempting to navigate to next page...');
-        const hasNextPage = await goToNextPage(session.page, options.debug);
+        const hasNextPage = await goToNextPage(session.page, ctx);
 
         if (!hasNextPage) {
           onLog('No more pages available.');

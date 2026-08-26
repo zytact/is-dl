@@ -117,6 +117,28 @@ describe('variant resolution', () => {
     expect(first.kind === 'entry' && first.bullets.map((bullet) => bullet.id)).toEqual(['a1']);
   });
 
+  test('a tag filter drops text items whose own tags do not match', () => {
+    const withSkills = resolveVariant(resume, {
+      ...variants.lean!,
+      sections: ['work', 'skills'],
+      drop: [],
+      tags: ['c++'],
+    });
+    const skills = withSkills.sections.find((section) => section.id === 'skills');
+    expect(skills?.items.map((item) => item.id) ?? []).toEqual([]);
+  });
+
+  test('a tag filter keeps text items whose own tags match', () => {
+    const withSkills = resolveVariant(resume, {
+      ...variants.lean!,
+      sections: ['work', 'skills'],
+      drop: [],
+      tags: ['rust'],
+    });
+    const skills = withSkills.sections.find((section) => section.id === 'skills');
+    expect(skills?.items.map((item) => item.id) ?? []).toEqual(['s']);
+  });
+
   test('a tag filter keeps only bullets carrying one of those tags', () => {
     const resolved = resolveVariant(resume, { ...variants.lean!, drop: [], tags: ['c++'] });
     const entry = resolved.sections[0]!.items.find((item) => item.id === 'a')!;

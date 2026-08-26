@@ -191,7 +191,9 @@ export async function checkExtraction(
         out += chunk.toString();
       });
       child.on('error', reject);
-      child.on('close', () => resolve(out));
+      child.on('close', (code) =>
+        code === 0 ? resolve(out) : reject(new Error(`pdftotext exited ${code}`)),
+      );
     });
   } catch {
     return null;

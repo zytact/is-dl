@@ -1,11 +1,19 @@
 import { createReadStream } from 'node:fs';
-import { readdir, readFile, unlink } from 'node:fs/promises';
+
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { join } from 'node:path';
 import { PassThrough, Readable } from 'node:stream';
 import archiver from 'archiver';
 import type { AppPaths } from './paths.ts';
-import { ensureDir, newRunId, saveRun } from './runs.ts';
+import {
+  ensureDir,
+  listRuns,
+  newRunId,
+  readRun,
+  removeRun,
+  runIdFromFilename,
+  saveRun,
+} from './runs.ts';
 import { runScraper } from './scraper.ts';
 import type { SearchOptions } from './types.ts';
 
@@ -175,31 +183,21 @@ async function handleRequest(req: Request, paths: AppPaths) {
   if (url.pathname === '/api/results' && req.method === 'GET') {
     try {
       await ensureDir(outputDir);
-      const files = await readdir(outputDir);
-      const jsonFiles = files.filter((f) => f.endsWith('.json') && f !== 'index.json');
 
       const results = [];
-      for (const file of jsonFiles) {
+      for (const run of await listRuns(paths)) {
         try {
-          const content = await readFile(join(outputDir, file), 'utf-8');
-          const data = JSON.parse(content);
+          const data = await readRun(paths, run.runId);
           results.push({
-            filename: file,
-            meta: data.meta || {},
-            count: data.jobs?.length || 0,
-            aiAgentSummary: data.meta?.aiAgentSummary || {
-              detectedCount: 0,
-              highCount: 0,
-              mediumCount: 0,
-              lowCount: 0,
-            },
+            filename: `${run.runId}.json`,
+            meta: data.meta,
+            count: data.jobs.length,
+            aiAgentSummary: data.meta.aiAgentSummary,
           });
         } catch {
-          // Ignore malformed JSON files
+          // A run file that will not parse is skipped, as before.
         }
       }
-
-      results.sort((a, b) => b.meta.scrapedAt?.localeCompare(a.meta.scrapedAt || '') || 0);
 
       return new Response(JSON.stringify({ results }), {
         headers: { 'Access-Control-Allow-Origin': '*' },
@@ -214,8 +212,7 @@ async function handleRequest(req: Request, paths: AppPaths) {
   if (url.pathname === '/api/results/export' && req.method === 'GET') {
     try {
       await ensureDir(outputDir);
-      const files = await readdir(outputDir);
-      const jsonFiles = files.filter((f) => f.endsWith('.json') && f !== 'index.json');
+      const jsonFiles = (await listRuns(paths)).map((run) => `${run.runId}.json`);
 
       if (jsonFiles.length === 0) {
         return new Response('No results to export', {
@@ -268,7 +265,7 @@ async function handleRequest(req: Request, paths: AppPaths) {
     }
 
     try {
-      await unlink(join(outputDir, filename));
+      await removeRun(paths, runIdFromFilename(filename));
       return new Response(JSON.stringify({ success: true }), {
         headers: {
           'Content-Type': 'application/json',
@@ -277,7 +274,7 @@ async function handleRequest(req: Request, paths: AppPaths) {
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete';
-      const status = message.includes('no such file') ? 404 : 500;
+      const status = message.includes('Run not found') ? 404 : 500;
       return new Response(message, {
         status,
         headers: { 'Access-Control-Allow-Origin': '*' },
@@ -295,8 +292,8 @@ async function handleRequest(req: Request, paths: AppPaths) {
     }
 
     try {
-      const content = await readFile(join(outputDir, filename), 'utf-8');
-      return new Response(content, {
+      const output = await readRun(paths, runIdFromFilename(filename));
+      return new Response(JSON.stringify(output), {
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',

@@ -1,6 +1,12 @@
 import { parseArgs } from 'node:util';
 import { buildCtx, type CliBase, type Ctx } from '../cli-context.ts';
-import { coerceConfigValue, resolveSearch, resolveServe, writeUserConfigValue } from '../config.ts';
+import {
+  camel,
+  coerceConfigValue,
+  resolveSearch,
+  resolveServe,
+  writeUserConfigValue,
+} from '../config.ts';
 import { CliError } from '../errors.ts';
 import { GLOBAL_OPTIONS, usage } from './shared.ts';
 
@@ -20,10 +26,6 @@ function pick(view: unknown, keyPath: string[]): unknown {
     cursor = (cursor as Record<string, unknown>)[segment];
   }
   return cursor;
-}
-
-function camel(key: string): string {
-  return key.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
 }
 
 export async function configCommand(base: CliBase, argv: string[]): Promise<void> {

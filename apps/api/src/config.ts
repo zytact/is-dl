@@ -87,7 +87,7 @@ type SearchFieldKey = keyof typeof SEARCH_FIELDS;
 /** `keywords` as a global default would silently run the wrong search. */
 const TOP_LEVEL_FORBIDDEN: readonly SearchFieldKey[] = ['keywords'];
 
-function camel(key: string): string {
+export function camel(key: string): string {
   return key.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
 }
 

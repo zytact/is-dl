@@ -267,6 +267,7 @@ export function resolveVariant(resume: Resume, variant: Variant): ResolvedVarian
 
     const items = section.items
       .filter((item) => !dropped.has(item.id))
+      .filter((item) => textItemMatchesTags(item, variant.tags))
       .map((item) => filterBullets(item, variant.tags, dropped))
       .filter((item) => item.kind === 'text' || item.bullets.length > 0 || item.tags.length === 0);
 
@@ -284,6 +285,15 @@ export function resolveVariant(resume: Resume, variant: Variant): ResolvedVarian
 function rank(leadRank: Map<string, number>, entry: { item: Item; index: number }): number {
   const lead = leadRank.get(entry.item.id);
   return lead === undefined ? 1000 + entry.index : lead;
+}
+
+/**
+ * Text items carry no bullets, so a tag filter has to match their own tags.
+ * Entry items are already narrowed by their bullets.
+ */
+function textItemMatchesTags(item: Item, tags: string[]): boolean {
+  if (item.kind !== 'text') return true;
+  return !tags.length || !item.tags.length || item.tags.some((tag) => tags.includes(tag));
 }
 
 function filterBullets(item: Item, tags: string[], dropped: Set<string>): Item {
