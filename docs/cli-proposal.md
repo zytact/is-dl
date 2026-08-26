@@ -281,3 +281,22 @@ No change to the Go code. One change to how it starts: `scripts/start-api-tui.sh
 
 - TOML parser dependency versus JSON config. I lean TOML for the comments, but if the dependency is unwelcome, JSON with no comments is survivable.
 - Whether `runs` needs pruning. A run file is a few hundred KB, so probably not until someone complains, at which point `is-dl runs prune --keep 50`.
+
+## Superseded
+
+This document records the proposal as written. Two decisions since then changed
+it, and the code is the source of truth where they disagree.
+
+- **Scoring is gone.** A `score` command and a `gaps` command shipped and were
+  then removed. Tag-presence matching approximated judgment badly: listings name
+  few skills, the user has most of them, so nearly everything scored 100%. is-dl
+  now reports only what it can establish as fact.
+- **Resume storage is platform-native, not cwd.** Inputs (`resume.yaml`,
+  `variants.yaml`, `preamble.tex`) live in the config dir under `resume/`.
+  Generated `.tex`, `.pdf` and `.log` live in the data dir under `resume/build/`.
+  `resume.dir` overrides the input location, `--out` the output location, and
+  `is-dl resume path` prints both. This follows section 3's rule that the tool
+  never writes to cwd by default.
+- **macOS is not XDG-by-default.** Section 3 argued for XDG everywhere. The
+  shipped `paths.ts` uses `~/Library` on macOS and `%APPDATA%` on Windows, with
+  `XDG_*` still winning on every platform when set.

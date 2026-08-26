@@ -13,6 +13,10 @@ export interface AppPaths {
   runsIndex: string;
   applicationsLog: string;
   sessionFile: string;
+  /** User-edited resume.yaml, variants.yaml and preamble.tex. */
+  resumeDir: string;
+  /** Generated .tex, .pdf and .log. */
+  resumeBuildDir: string;
 }
 
 type BaseDirs = Pick<AppPaths, 'config' | 'data' | 'state' | 'cache'>;
@@ -92,6 +96,8 @@ export function resolvePaths(
     runsIndex: join(data, 'runs', 'index.json'),
     applicationsLog: join(data, 'applications.jsonl'),
     sessionFile: join(state, 'storageState.json'),
+    resumeDir: join(config, 'resume'),
+    resumeBuildDir: join(data, 'resume', 'build'),
   };
 }
 

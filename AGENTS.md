@@ -46,16 +46,28 @@ Published as `is-dl`. `vp pack` builds `dist/cli.mjs` (the `is-dl` bin) and `dis
 - **Pay:** `src/pay.ts` classifies each listing as paid, token, unpaid or unstated with the matched snippet as evidence. `search --exclude-unpaid` drops unpaid and token only.
 - **Location:** `src/location-conflict.ts` flags a Remote tag whose body text demands attendance. Never filtered, only surfaced.
 - **Applications:** append-only JSONL at the data dir (`src/applications.ts`). The last record for a jobId is its state. `search --exclude-seen` skips anything already logged.
-- **Scoring:** `src/scoring.ts` matches a fixed skill vocabulary against listing text and the tags in resume.yaml. No weights, no model, no network.
-- is-dl never submits an application. Search, filter, score, log, build a PDF.
+- No scoring. Tag matching was removed because it scored nearly every listing at 100% and dressed up a guess as a number. is-dl reports facts and leaves fit to the reader.
+- is-dl never submits an application. Search, filter, log, build a PDF.
 
 ### Resume pipeline
 
 - `src/resume/` holds the schema, the single LaTeX escape function, and the tectonic build.
-- Project dir comes from config `resume.dir`, default cwd. It holds `preamble.tex` (frozen), `resume.yaml` (superset of facts) and `variants.yaml` (headline, section order, lead/drop/tags).
+- Inputs live in the config dir under `resume/`, next to `config.toml`: `preamble.tex` (frozen), `resume.yaml` (superset of facts) and `variants.yaml` (headline, section order, lead/drop/tags). Config `resume.dir`, `IS_DL_RESUME_DIR` or `--dir` overrides it.
+- Outputs land in the data dir under `resume/build/`, next to runs. `--out <dir>` overrides it. `is-dl resume path` prints both.
+- `tags` on an item or bullet is a selector for the `tags` variant filter. Nothing requires it.
 - The pipeline selects. It never writes prose: every sentence in a built PDF is copied verbatim from resume.yaml.
 - Two gates on every build: page count parsed from the LaTeX log (>1 page fails and names the section), and a pdftotext extraction check. FontAwesome icons garble the text stream under both engines and are not a regression.
 - Engine is tectonic (XeTeX). The preamble picks XCharter via fontspec under non-pdfTeX so bold survives, and `\AND` is a plain `\textbar` emitted only between contact items.
+
+### Resume workflow
+
+```bash
+is-dl resume path                  # where inputs and builds live
+is-dl resume init                  # scaffold the three input files
+$EDITOR "$(is-dl resume path --json | jq -r .input)/resume.yaml"
+is-dl resume check                 # what each variant would include
+is-dl resume build --all           # every variant, each gated at 1 page
+```
 
 ## apps/web
 

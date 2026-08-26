@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { buildCtx, type CliBase, type Ctx } from '../cli-context.ts';
 import { resolveResumeDir } from '../config.ts';
@@ -17,6 +17,7 @@ import {
 } from '../resume/build.ts';
 import { resolveVariant } from '../resume/schema.ts';
 import { TEMPLATE_PREAMBLE, TEMPLATE_RESUME, TEMPLATE_VARIANTS } from '../resume/template.ts';
+import { expandHome } from '../paths.ts';
 import { ensureDir } from '../runs.ts';
 import { GLOBAL_OPTIONS, usage } from './shared.ts';
 
@@ -67,7 +68,7 @@ async function buildOne(
   return { variant: name, pdf: result.pdf, pages: result.pages, extraction };
 }
 
-async function initProject(ctx: Ctx, dir: string): Promise<void> {
+async function initProject(ctx: Ctx, dir: string, buildDir: string): Promise<void> {
   await ensureDir(dir);
   const files = [
     [RESUME_FILES.preamble, TEMPLATE_PREAMBLE],
@@ -89,12 +90,11 @@ async function initProject(ctx: Ctx, dir: string): Promise<void> {
 
   ctx.emit(
     [
-      written.length ? `Created ${written.join(', ')} in ${dir}` : `Nothing to create in ${dir}`,
-      skipped.length ? `Left existing ${skipped.join(', ')} alone.` : '',
-    ]
-      .filter(Boolean)
-      .join('\n'),
-    () => ({ ok: true, dir, written, skipped }),
+      ...written.map((name) => `created ${join(dir, name)}`),
+      ...skipped.map((name) => `kept    ${join(dir, name)}`),
+      `builds go to ${buildDir}`,
+    ].join('\n'),
+    () => ({ ok: true, dir, buildDir, written, skipped }),
   );
 }
 
@@ -107,11 +107,23 @@ export async function resumeCommand(base: CliBase, argv: string[]): Promise<void
     }),
   );
   const ctx = await buildCtx(base, values);
-  const dir = resolveResumeDir(ctx.config, ctx.env, values.dir, ctx.cwd);
+  const dir = resolveResumeDir({
+    config: ctx.config,
+    env: ctx.env,
+    flag: values.dir,
+    cwd: ctx.cwd,
+    fallback: ctx.paths.resumeDir,
+  });
+  const outDir = values.out ? resolve(ctx.cwd, expandHome(values.out)) : ctx.paths.resumeBuildDir;
   const sub = positionals[0];
 
+  if (sub === 'path') {
+    ctx.emit(`input   ${dir}\noutput  ${outDir}`, () => ({ ok: true, input: dir, output: outDir }));
+    return;
+  }
+
   if (sub === 'init') {
-    await initProject(ctx, dir);
+    await initProject(ctx, dir, outDir);
     return;
   }
 
@@ -146,7 +158,6 @@ export async function resumeCommand(base: CliBase, argv: string[]): Promise<void
         throw new CliError('USAGE', 'Pass --variant <name> or --all.');
       }
 
-      const outDir = values.out ? join(ctx.cwd, values.out) : join(dir, 'build');
       const built: BuildResult[] = [];
       for (const name of names) built.push(await buildOne(ctx, project, name, outDir));
 
@@ -157,6 +168,9 @@ export async function resumeCommand(base: CliBase, argv: string[]): Promise<void
       return;
     }
     default:
-      throw new CliError('USAGE', `Unknown resume subcommand "${sub}". Try init, build, or check.`);
+      throw new CliError(
+        'USAGE',
+        `Unknown resume subcommand "${sub}". Try init, build, check, or path.`,
+      );
   }
 }

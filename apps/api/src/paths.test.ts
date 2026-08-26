@@ -12,6 +12,8 @@ describe('resolvePaths', () => {
     expect(paths.runsDir).toBe(join(HOME, '.local', 'share', 'is-dl', 'runs'));
     expect(paths.sessionFile).toBe(join(HOME, '.local', 'state', 'is-dl', 'storageState.json'));
     expect(paths.cache).toBe(join(HOME, '.cache', 'is-dl'));
+    expect(paths.resumeDir).toBe(join(HOME, '.config', 'is-dl', 'resume'));
+    expect(paths.resumeBuildDir).toBe(join(HOME, '.local', 'share', 'is-dl', 'resume', 'build'));
   });
 
   test('uses Library directories on macOS', () => {
@@ -22,6 +24,10 @@ describe('resolvePaths', () => {
       join(HOME, 'Library', 'Application Support', 'is-dl', 'storageState.json'),
     );
     expect(paths.cache).toBe(join(HOME, 'Library', 'Caches', 'is-dl'));
+    expect(paths.resumeDir).toBe(join(HOME, 'Library', 'Application Support', 'is-dl', 'resume'));
+    expect(paths.resumeBuildDir).toBe(
+      join(HOME, 'Library', 'Application Support', 'is-dl', 'resume', 'build'),
+    );
   });
 
   test('uses APPDATA and LOCALAPPDATA on windows', () => {
@@ -33,6 +39,8 @@ describe('resolvePaths', () => {
     expect(paths.runsDir).toBe(join(roaming, 'is-dl', 'Data', 'runs'));
     expect(paths.sessionFile).toBe(join(local, 'is-dl', 'State', 'storageState.json'));
     expect(paths.cache).toBe(join(local, 'is-dl', 'Cache'));
+    expect(paths.resumeDir).toBe(join(roaming, 'is-dl', 'Config', 'resume'));
+    expect(paths.resumeBuildDir).toBe(join(roaming, 'is-dl', 'Data', 'resume', 'build'));
   });
 
   test('XDG variables win on macOS and windows too', () => {
@@ -41,6 +49,14 @@ describe('resolvePaths', () => {
       const paths = resolvePaths({ XDG_STATE_HOME: custom }, HOME, os);
       expect(paths.sessionFile).toBe(join(custom, 'is-dl', 'storageState.json'));
     }
+  });
+
+  test('XDG_CONFIG_HOME moves the resume inputs but not the build output', () => {
+    const custom = join('/', 'srv', 'xdg');
+    const paths = resolvePaths({ XDG_CONFIG_HOME: custom }, HOME, 'linux');
+
+    expect(paths.resumeDir).toBe(join(custom, 'is-dl', 'resume'));
+    expect(paths.resumeBuildDir).toBe(join(HOME, '.local', 'share', 'is-dl', 'resume', 'build'));
   });
 
   test('ignores blank XDG variables', () => {

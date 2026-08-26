@@ -26,6 +26,16 @@ export interface ResumeSettings {
   dir: string;
 }
 
+export interface ResolveResumeDirInput {
+  config: LoadedConfig;
+  env: NodeJS.ProcessEnv;
+  flag?: string;
+  cwd: string;
+  /** Used when nothing overrides it, normally `paths.resumeDir`. */
+  fallback: string;
+  home?: string;
+}
+
 export interface ServeSettings {
   port: number;
   host: string;
@@ -312,15 +322,9 @@ export function envServeLayer(env: NodeJS.ProcessEnv): Partial<ServeSettings> {
   });
 }
 
-export function resolveResumeDir(
-  config: LoadedConfig,
-  env: NodeJS.ProcessEnv,
-  flag: string | undefined,
-  cwd: string,
-  home?: string,
-): string {
-  const dir = flag ?? envString(env, 'RESUME_DIR') ?? config.resume.dir;
-  return dir ? resolve(cwd, expandHome(dir, home)) : cwd;
+export function resolveResumeDir(input: ResolveResumeDirInput): string {
+  const dir = input.flag ?? envString(input.env, 'RESUME_DIR') ?? input.config.resume.dir;
+  return dir ? resolve(input.cwd, expandHome(dir, input.home)) : input.fallback;
 }
 
 export interface ResolveSearchInput {

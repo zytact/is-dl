@@ -7,7 +7,6 @@ import { configCommand } from './commands/config.ts';
 import { doctorCommand } from './commands/doctor.ts';
 import { resumeCommand } from './commands/resume.ts';
 import { runsCommand } from './commands/runs.ts';
-import { gapsCommand, scoreCommand } from './commands/score.ts';
 import { searchCommand } from './commands/search.ts';
 import { serveCommand } from './commands/serve.ts';
 import { CliError, ExitCode } from './errors.ts';
@@ -26,8 +25,6 @@ const COMMANDS: Record<string, Command> = {
   serve: serveCommand,
   doctor: doctorCommand,
   apps: appsCommand,
-  score: scoreCommand,
-  gaps: gapsCommand,
   resume: resumeCommand,
 };
 
@@ -43,9 +40,8 @@ Commands:
   runs list|show|rm         Inspect past runs
   config get|set|path       Read or write configuration
   apps add|status|list|show Track applications in an append-only log
-  score <runId|latest>      Score a run against the tagged bullets in resume.yaml
-  gaps                      Aggregate unmatched tags across the application log
-  resume init|build|check   Build resume variants with tectonic
+  resume init|build|check|path
+                            Build resume variants with tectonic
   serve                     Run the REST API used by the web UI and TUI
   doctor                    Check node, playwright, browser, session, paths
 
@@ -83,8 +79,15 @@ apps flags:
 resume flags:
       --variant <name>              Variant to build
       --all                         Build every variant
-      --dir <path>                  Resume project dir (config: resume.dir)
-  -o, --out <dir>                   Build output dir (default <resume dir>/build)
+      --dir <path>                  Resume input dir (config: resume.dir)
+  -o, --out <dir>                   Build output dir
+
+Resume storage:
+  Inputs  resume.yaml, variants.yaml and preamble.tex live next to config.toml
+          in the config dir, under resume/. Override with resume.dir or --dir.
+  Outputs the generated .tex, .pdf and .log land in the data dir under
+          resume/build/. Override with --out. Run "is-dl resume path" to print
+          both resolved locations.
 
 runs list flags:   --limit <n>  --since <date>
 serve flags:       --port <n>   --host <addr>
@@ -99,8 +102,8 @@ Examples:
   is-dl search -k "intern" --exclude-unpaid --exclude-seen
   is-dl resume build --variant ai
 
-is-dl never submits an application. It searches, filters, scores, logs and
-builds a PDF. Applying is always yours to do.
+is-dl never submits an application. It searches, filters, logs and builds a
+PDF. Judging whether a listing fits you is yours to do, as is applying.
 `;
 
 /** The command is the first bare token; only --config consumes a value before it. */

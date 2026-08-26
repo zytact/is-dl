@@ -108,28 +108,39 @@ describe('config validation', () => {
   });
 });
 
+const resumeFallback = join('/', 'config', 'is-dl', 'resume');
+
 describe('resume dir resolution', () => {
-  test('flag beats env beats config, and cwd is the fallback', async () => {
+  test('flag beats env beats config', async () => {
     await writeUser('[resume]\ndir = "/from/config"\n');
     const config = await loadConfig({ cwd: projectDir, userConfigFile });
 
-    expect(resolveResumeDir(config, {}, undefined, projectDir)).toBe('/from/config');
-    expect(resolveResumeDir(config, { IS_DL_RESUME_DIR: '/from/env' }, undefined, projectDir)).toBe(
-      '/from/env',
-    );
+    const base = { config, cwd: projectDir, fallback: resumeFallback };
+    expect(resolveResumeDir({ ...base, env: {} })).toBe('/from/config');
+    expect(resolveResumeDir({ ...base, env: { IS_DL_RESUME_DIR: '/from/env' } })).toBe('/from/env');
     expect(
-      resolveResumeDir(config, { IS_DL_RESUME_DIR: '/from/env' }, '/from/flag', projectDir),
+      resolveResumeDir({ ...base, env: { IS_DL_RESUME_DIR: '/from/env' }, flag: '/from/flag' }),
     ).toBe('/from/flag');
   });
 
-  test('an unset resume dir means the current directory', async () => {
+  test('an unset resume dir means the config resume dir, not the cwd', async () => {
     const config = await loadConfig({ cwd: projectDir, userConfigFile });
-    expect(resolveResumeDir(config, {}, undefined, projectDir)).toBe(projectDir);
+    expect(resolveResumeDir({ config, env: {}, cwd: projectDir, fallback: resumeFallback })).toBe(
+      resumeFallback,
+    );
   });
 
   test('a relative dir resolves against cwd', async () => {
     const config = await loadConfig({ cwd: projectDir, userConfigFile });
-    expect(resolveResumeDir(config, {}, 'resume', projectDir)).toBe(join(projectDir, 'resume'));
+    expect(
+      resolveResumeDir({
+        config,
+        env: {},
+        flag: 'resume',
+        cwd: projectDir,
+        fallback: resumeFallback,
+      }),
+    ).toBe(join(projectDir, 'resume'));
   });
 
   test('an unknown resume key is a config error', async () => {
