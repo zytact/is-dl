@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 import { createRequire } from 'node:module';
 import type { CliBase } from './cli-context.ts';
+import { appsCommand } from './commands/apps.ts';
 import { loginCommand, logoutCommand } from './commands/auth.ts';
 import { configCommand } from './commands/config.ts';
 import { doctorCommand } from './commands/doctor.ts';
 import { runsCommand } from './commands/runs.ts';
+import { gapsCommand, scoreCommand } from './commands/score.ts';
 import { searchCommand } from './commands/search.ts';
 import { serveCommand } from './commands/serve.ts';
 import { CliError, ExitCode } from './errors.ts';
@@ -22,6 +24,9 @@ const COMMANDS: Record<string, Command> = {
   config: configCommand,
   serve: serveCommand,
   doctor: doctorCommand,
+  apps: appsCommand,
+  score: scoreCommand,
+  gaps: gapsCommand,
 };
 
 const HELP = `is-dl ${version} - LinkedIn job scraper
@@ -35,6 +40,9 @@ Commands:
   logout                    Delete the stored session
   runs list|show|rm         Inspect past runs
   config get|set|path       Read or write configuration
+  apps add|status|list|show Track applications in an append-only log
+  score <runId|latest>      Score a run against the tagged bullets in resume.yaml
+  gaps                      Aggregate unmatched tags across the application log
   serve                     Run the REST API used by the web UI and TUI
   doctor                    Check node, playwright, browser, session, paths
 
@@ -60,6 +68,14 @@ search flags:
       --headless / --no-headless
       --debug / --no-debug
       --timeout <ms>                Navigation timeout (default 30000)
+      --exclude-unpaid              Drop unpaid and token-stipend listings
+      --exclude-seen                Drop listings already in the application log
+
+apps flags:
+      --variant <name>              Which resume variant was sent
+      --from-run <runId>            Look the job up in one run instead of all
+      --status <status>             Filter apps list
+      --older-than <10d>            Filter apps list by age
 
 runs list flags:   --limit <n>  --since <date>
 serve flags:       --port <n>   --host <addr>
@@ -71,6 +87,10 @@ Examples:
   is-dl login
   is-dl search -k "frontend intern" -l Remote --limit 20 --json
   is-dl runs show latest --json
+  is-dl search -k "intern" --exclude-unpaid --exclude-seen
+
+is-dl never submits an application. It searches, filters, scores, logs and
+builds a PDF. Applying is always yours to do.
 `;
 
 /** The command is the first bare token; only --config consumes a value before it. */

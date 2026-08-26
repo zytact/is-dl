@@ -21,6 +21,11 @@ export interface SearchSettings {
   debug: boolean;
 }
 
+export interface ResumeSettings {
+  /** Where preamble.tex, resume.yaml and variants.yaml live. */
+  dir: string;
+}
+
 export interface ServeSettings {
   port: number;
   host: string;
@@ -32,6 +37,7 @@ export interface ConfigLayer {
   base: SearchLayer;
   profiles: Record<string, SearchLayer>;
   serve: Partial<ServeSettings>;
+  resume: Partial<ResumeSettings>;
 }
 
 export interface LoadedConfig extends ConfigLayer {
@@ -91,7 +97,7 @@ function readSearchLayer(
   const layer: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(raw)) {
-    if (key === 'profiles' || key === 'serve') continue;
+    if (key === 'profiles' || key === 'serve' || key === 'resume') continue;
 
     if (!(key in SEARCH_FIELDS)) {
       throw new CliError(
@@ -138,6 +144,23 @@ function readServe(raw: unknown, where: string): Partial<ServeSettings> {
   return serve;
 }
 
+function readResume(raw: unknown, where: string): Partial<ResumeSettings> {
+  if (raw === undefined) return {};
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+    throw new CliError('CONFIG', `"resume" in ${where} must be a table.`);
+  }
+
+  const resume: Partial<ResumeSettings> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (key === 'dir' && typeof value === 'string') {
+      resume.dir = value;
+    } else {
+      throw new CliError('CONFIG', `Invalid "resume.${key}" in ${where}.`);
+    }
+  }
+  return resume;
+}
+
 function readProfiles(raw: unknown, where: string): Record<string, SearchLayer> {
   if (raw === undefined) return {};
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
@@ -172,6 +195,7 @@ export function parseConfigLayer(text: string, where: string): ConfigLayer {
     base: readSearchLayer(record, where, false),
     profiles: readProfiles(record.profiles, where),
     serve: readServe(record.serve, where),
+    resume: readResume(record.resume, where),
   };
 }
 
@@ -203,7 +227,7 @@ export interface LoadConfigOptions {
  * file that sets `limit` keeps `location` from the user file.
  */
 export async function loadConfig(options: LoadConfigOptions): Promise<LoadedConfig> {
-  const empty: LoadedConfig = { file: null, base: {}, profiles: {}, serve: {} };
+  const empty: LoadedConfig = { file: null, base: {}, profiles: {}, serve: {}, resume: {} };
   if (options.noConfig) return empty;
 
   if (options.explicitPath) {
@@ -225,6 +249,7 @@ export async function loadConfig(options: LoadConfigOptions): Promise<LoadedConf
     merged.file = file;
     merged.base = { ...merged.base, ...layer.base };
     merged.serve = { ...merged.serve, ...layer.serve };
+    merged.resume = { ...merged.resume, ...layer.resume };
     for (const [name, profile] of Object.entries(layer.profiles)) {
       merged.profiles[name] = { ...merged.profiles[name], ...profile };
     }
@@ -285,6 +310,17 @@ export function envServeLayer(env: NodeJS.ProcessEnv): Partial<ServeSettings> {
     port: envNumber(env, 'SERVE_PORT'),
     host: envString(env, 'SERVE_HOST'),
   });
+}
+
+export function resolveResumeDir(
+  config: LoadedConfig,
+  env: NodeJS.ProcessEnv,
+  flag: string | undefined,
+  cwd: string,
+  home?: string,
+): string {
+  const dir = flag ?? envString(env, 'RESUME_DIR') ?? config.resume.dir;
+  return dir ? resolve(cwd, expandHome(dir, home)) : cwd;
 }
 
 export interface ResolveSearchInput {
@@ -350,10 +386,15 @@ const SERVE_FIELDS = { port: 'number', host: 'string' } as const satisfies Recor
   FieldType
 >;
 
+const RESUME_FIELDS = { dir: 'string' } as const satisfies Record<string, FieldType>;
+
 function fieldTypeFor(keyPath: string[]): FieldType {
   const [head, ...rest] = keyPath;
   if (head === 'serve' && rest.length === 1 && rest[0]! in SERVE_FIELDS) {
     return SERVE_FIELDS[rest[0] as keyof typeof SERVE_FIELDS];
+  }
+  if (head === 'resume' && rest.length === 1 && rest[0]! in RESUME_FIELDS) {
+    return RESUME_FIELDS[rest[0] as keyof typeof RESUME_FIELDS];
   }
   const leaf =
     head === 'profiles' && rest.length === 2 ? rest[1]! : keyPath.length === 1 ? head! : '';

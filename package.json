@@ -19,7 +19,8 @@
     "prepare": "vp config"
   },
   "dependencies": {
-    "smol-toml": "^1.8.0"
+    "smol-toml": "^1.8.0",
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

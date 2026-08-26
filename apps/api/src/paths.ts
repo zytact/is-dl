@@ -11,6 +11,7 @@ export interface AppPaths {
   configFile: string;
   runsDir: string;
   runsIndex: string;
+  applicationsLog: string;
   sessionFile: string;
 }
 
@@ -89,6 +90,7 @@ export function resolvePaths(
     configFile: join(config, 'config.toml'),
     runsDir: join(data, 'runs'),
     runsIndex: join(data, 'runs', 'index.json'),
+    applicationsLog: join(data, 'applications.jsonl'),
     sessionFile: join(state, 'storageState.json'),
   };
 }

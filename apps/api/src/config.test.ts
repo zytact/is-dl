@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, test } from 'vite-plus/test';
-import { loadConfig, parseConfigLayer, resolveSearch } from './config.ts';
+import { loadConfig, parseConfigLayer, resolveResumeDir, resolveSearch } from './config.ts';
 import { CliError } from './errors.ts';
 
 let root = '';
@@ -105,5 +105,35 @@ describe('config validation', () => {
     expect(() => resolveSearch({ config, env: {}, flags: {}, profile: 'missing' })).toThrow(
       /Available profiles: fe/,
     );
+  });
+});
+
+describe('resume dir resolution', () => {
+  test('flag beats env beats config, and cwd is the fallback', async () => {
+    await writeUser('[resume]\ndir = "/from/config"\n');
+    const config = await loadConfig({ cwd: projectDir, userConfigFile });
+
+    expect(resolveResumeDir(config, {}, undefined, projectDir)).toBe('/from/config');
+    expect(resolveResumeDir(config, { IS_DL_RESUME_DIR: '/from/env' }, undefined, projectDir)).toBe(
+      '/from/env',
+    );
+    expect(
+      resolveResumeDir(config, { IS_DL_RESUME_DIR: '/from/env' }, '/from/flag', projectDir),
+    ).toBe('/from/flag');
+  });
+
+  test('an unset resume dir means the current directory', async () => {
+    const config = await loadConfig({ cwd: projectDir, userConfigFile });
+    expect(resolveResumeDir(config, {}, undefined, projectDir)).toBe(projectDir);
+  });
+
+  test('a relative dir resolves against cwd', async () => {
+    const config = await loadConfig({ cwd: projectDir, userConfigFile });
+    expect(resolveResumeDir(config, {}, 'resume', projectDir)).toBe(join(projectDir, 'resume'));
+  });
+
+  test('an unknown resume key is a config error', async () => {
+    await writeUser('[resume]\nfolder = "x"\n');
+    await expect(loadConfig({ cwd: projectDir, userConfigFile })).rejects.toThrow(CliError);
   });
 });

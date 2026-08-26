@@ -1,11 +1,14 @@
 import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
+import { currentState, readApplications } from '../applications.ts';
 import { buildCtx, type CliBase } from '../cli-context.ts';
 import { resolveSearch, type SearchLayer } from '../config.ts';
 import { CliError } from '../errors.ts';
 import { migrateLegacySession } from '../linkedin/browser.ts';
+import { summarizePay } from '../pay.ts';
 import { newRunId, saveRun, writeRunTo } from '../runs.ts';
 import { runScraper } from '../scraper.ts';
+import type { ScraperOutput } from '../types.ts';
 import { GLOBAL_OPTIONS, usage } from './shared.ts';
 
 const SEARCH_OPTIONS = {
@@ -24,6 +27,8 @@ const SEARCH_OPTIONS = {
   debug: { type: 'boolean' },
   'no-debug': { type: 'boolean' },
   timeout: { type: 'string' },
+  'exclude-unpaid': { type: 'boolean' },
+  'exclude-seen': { type: 'boolean' },
 } as const;
 
 function toggle(on: boolean | undefined, off: boolean | undefined): boolean | undefined {
@@ -44,6 +49,38 @@ function num(value: string | undefined, flag: string): number | undefined {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) throw new CliError('USAGE', `${flag} must be a number.`);
   return parsed;
+}
+
+/**
+ * `unstated` is never dropped: good listings routinely omit pay entirely.
+ */
+function applyTriage(
+  output: ScraperOutput,
+  options: { excludeUnpaid: boolean; seen: Set<string> },
+): { output: ScraperOutput; droppedUnpaid: number; droppedSeen: number } {
+  let droppedUnpaid = 0;
+  let droppedSeen = 0;
+
+  const jobs = output.jobs.filter((job) => {
+    if (options.excludeUnpaid && (job.pay.kind === 'unpaid' || job.pay.kind === 'token')) {
+      droppedUnpaid++;
+      return false;
+    }
+    if (job.jobId && options.seen.has(job.jobId)) {
+      droppedSeen++;
+      return false;
+    }
+    return true;
+  });
+
+  return {
+    output: {
+      meta: { ...output.meta, count: jobs.length, paySummary: summarizePay(jobs) },
+      jobs,
+    },
+    droppedUnpaid,
+    droppedSeen,
+  };
 }
 
 export async function searchCommand(base: CliBase, argv: string[]): Promise<void> {
@@ -78,7 +115,7 @@ export async function searchCommand(base: CliBase, argv: string[]): Promise<void
 
   await migrateLegacySession(ctx.paths.sessionFile, ctx.cwd, ctx.log);
 
-  const output = await runScraper(
+  const scraped = await runScraper(
     {
       keywords: settings.keywords,
       location: settings.location,
@@ -96,6 +133,22 @@ export async function searchCommand(base: CliBase, argv: string[]): Promise<void
     ctx.log,
     base.signal,
   );
+
+  const seen = values['exclude-seen']
+    ? new Set(
+        [...currentState(await readApplications(ctx.paths.applicationsLog)).keys()].filter(Boolean),
+      )
+    : new Set<string>();
+
+  const triaged = applyTriage(scraped, {
+    excludeUnpaid: values['exclude-unpaid'] ?? false,
+    seen,
+  });
+  const output = triaged.output;
+
+  if (triaged.droppedUnpaid) ctx.log(`Dropped ${triaged.droppedUnpaid} unpaid or token listings.`);
+  if (triaged.droppedSeen)
+    ctx.log(`Dropped ${triaged.droppedSeen} already in the application log.`);
 
   const runId = newRunId();
   const outDir = settings.outDir;

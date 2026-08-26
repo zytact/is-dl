@@ -1,5 +1,7 @@
 import type { Page } from 'playwright';
 import { detectAiAgentSignals, emptyAiAgentSignals } from '../ai-agent-detector.ts';
+import { detectLocationConflict } from '../location-conflict.ts';
+import { classifyPay, emptyPay } from '../pay.ts';
 import { parsePostedTime } from '../normalize.ts';
 import type { JobListing } from '../types.ts';
 
@@ -109,6 +111,13 @@ export async function extractJobDetailsFromView(
       descriptionText: descriptionText?.trim() || null,
       requirementsText,
       aiAgentSignals,
+      pay: classifyPay({ descriptionText, requirementsText }),
+      locationConflict: detectLocationConflict({
+        jobType,
+        locationText,
+        descriptionText,
+        requirementsText,
+      }),
     };
   } catch (error) {
     if (debug) {
@@ -131,6 +140,8 @@ export async function extractJobDetailsFromView(
       descriptionText: null,
       requirementsText: null,
       aiAgentSignals: emptyAiAgentSignals(),
+      pay: emptyPay(),
+      locationConflict: null,
     };
   }
 }

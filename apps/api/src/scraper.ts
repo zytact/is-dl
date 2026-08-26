@@ -9,6 +9,7 @@ import {
   goToNextPage,
 } from './linkedin/search.ts';
 import { buildSearchUrl } from './linkedin/search-url.ts';
+import { summarizePay } from './pay.ts';
 import { ensureDir } from './runs.ts';
 import type { JobListing, ScraperOutput, SearchOptions } from './types.ts';
 
@@ -164,6 +165,7 @@ export async function runScraper(
 
     onLog(`\nSuccessfully extracted ${jobs.length} jobs.\n`);
     const aiAgentSummary = summarizeAiAgentSignals(jobs);
+    const paySummary = summarizePay(jobs);
 
     output = {
       meta: {
@@ -179,12 +181,16 @@ export async function runScraper(
         source: 'linkedin',
         count: jobs.length,
         aiAgentSummary,
+        paySummary,
       },
       jobs,
     };
 
     onLog('\nScraping completed successfully!');
     onLog(`Total jobs scraped: ${jobs.length}`);
+    onLog(
+      `Pay: ${paySummary.paid} paid, ${paySummary.token} token, ${paySummary.unpaid} unpaid, ${paySummary.unstated} unstated`,
+    );
     onLog(
       `AI agent signals: ${aiAgentSummary.detectedCount} detected (${aiAgentSummary.highCount} high, ${aiAgentSummary.mediumCount} medium, ${aiAgentSummary.lowCount} low)`,
     );
