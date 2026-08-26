@@ -1,0 +1,2 @@
+~/apps/api$ lsof -i :3000 | grep LISTEN | awk '{print $2}' | xargs -r kill -9 || true; tsx watch src/server.ts ⊘ cache disabled
+API Server running at http://localhost:3000

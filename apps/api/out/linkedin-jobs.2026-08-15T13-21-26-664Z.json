@@ -1,0 +1,133 @@
+{
+  "meta": {
+    "query": "software engineer intern",
+    "location": "India",
+    "filters": {
+      "experienceLevel": [
+        "Internship"
+      ],
+      "postedWithin": "Past week"
+    },
+    "scrapedAt": "2026-08-15T13:21:26.664Z",
+    "source": "linkedin",
+    "count": 5,
+    "aiAgentSummary": {
+      "detectedCount": 0,
+      "highCount": 0,
+      "mediumCount": 0,
+      "lowCount": 0
+    }
+  },
+  "jobs": [
+    {
+      "jobId": "4453933086",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4453933086&f_E=1&f_TPR=r604800&keywords=software%20engineer%20intern&location=India&sortBy=DD",
+      "title": "Java Developer Intern (Core Java, Spring Boot, REST APIs)",
+      "companyName": "MediNex Workforce",
+      "companyUrl": "https://www.linkedin.com/company/medinex-workforce/life",
+      "locationText": "India",
+      "postedAtText": "22 minutes ago",
+      "postedAtIso": null,
+      "jobType": "Remote\n            \n            \n              Full-time",
+      "alumniCount": null,
+      "descriptionText": "Java Developer Intern (Core Java, Spring Boot, REST APIs)Medinex Workforce is seeking a Java Developer Intern to support backend application development and software engineering assignments. This opportunity is designed for candidates who want to apply Java fundamentals in practical projects while learning professional development, testing, and API integration practices.Job Type: Full-Time InternshipWork Mode: RemoteDuration: 1–3 MonthsStipend: ₹15,500 per monthKey Responsibilities* Assist with development of Java-based application features* Implement basic backend functionality under developer guidance* Support REST API development and integration tasks* Work with relational databases for application data operations* Test application components and investigate reported issues* Assist with improving existing code and resolving defects* Maintain technical notes and documentation for assigned modules* Participate in development discussions and code reviewsQualifications* Pursuing or recently completed a degree in Computer Science, Information Technology, Software Engineering, or a related field* Working knowledge of Core Java and object-oriented programming* Basic understanding of SQL and database concepts* Familiarity with Spring Boot or REST APIs is beneficial* Academic or personal Java projects are an advantageSkills* Strong programming fundamentals* Logical reasoning and debugging ability* Attention to detail* Understanding of software development practices* Clear communication and collaborative working style* Willingness to learn backend technologiesWhat You Can Expect* Practical exposure to Java application development* Experience with backend services and REST API workflows* Opportunity to strengthen database and debugging skills* Guidance from experienced software developers* Internship certificate subject to successful completion of the internship",
+      "requirementsText": "* Pursuing or recently completed a degree in Computer Science, Information Technology, Software Engineering, or a related field* Working knowledge of Core Java and object-oriented programming* Basic understanding of SQL and database concepts* Familiarity with Spring Boot or REST APIs is beneficial* Academic or personal Java projects are an advantageSkills* Strong programming fundamentals* Logical reasoning and debugging ability* Attention to detail* Understanding of software development practices* Clear communication and collaborative working style* Willingness to learn backend technologiesWhat You Can Expect* Practical exposure to Java application development* Experience with backend services and REST API workflows* Opportunity to strengthen database and debugging skills* Guidance from experienced software developers* Internship certificate subject to successful completion of the internship",
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4453919194",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4453919194&f_E=1&f_TPR=r604800&keywords=software%20engineer%20intern&location=India&sortBy=DD",
+      "title": "Full Stack Web Developer",
+      "companyName": "RecruitPoolz",
+      "companyUrl": "https://www.linkedin.com/company/recruitpoolz/life",
+      "locationText": "India",
+      "postedAtText": "28 minutes ago",
+      "postedAtIso": null,
+      "jobType": "Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "Fullstack Web Developer InternCompany: RecruitPoolzLocation: RemoteDuration: Up to 6 monthsBatch Start Date: 20th AugustAbout the ProgramAt RecruitPoolz, we're doing things differently. This isn't a traditional job or a standard internship—it’s an open collaboration program designed for aspiring fullstack web developers to gain hands-on, real-world experience. If you are self-taught, a boot-camp graduate, a student, or transitioning careers, this is a space for you to write actual production code, connect the frontend with the backend, build your portfolio, and learn by doing alongside our team.What You’ll Do      End-to-End Development: Build responsive user interfaces on the frontend and connect them seamlessly to server-side logic and databases on the backend.API Design & Integration: Create, maintain, and consume robust RESTful or GraphQL APIs to ensure smooth data communication across the stack.Database Management: Design database schemas, write efficient queries, and ensure efficient, secure storage of application data.Collaborate & Deploy: Use Git and GitHub to manage version control, participate in collaborative code reviews, and assist in deploying updates to live environments.\nWho You Are      Passionate about full-stack engineering and eager to learn (no specific computer science degree required).Comfortable writing code on both sides of the stack (e.g., HTML/CSS/JavaScript for frontend; Node.js, Python, or Java for backend).Familiar with relational or non-relational databases (such as MySQL, PostgreSQL, or MongoDB).Bonus points: If you have built projects using modern stacks (like MERN, PERN, or Django+React), understand authentication patterns, or have deployed a live application to AWS, Vercel, or Render.Curious, driven, and comfortable asking questions.\nWhat You Get      Remote & Flexible: Contribute from anywhere, on a schedule that works for you.Real Portfolio Projects: Leave with fully functional, end-to-end web applications running live in production to show future employers, stepping far beyond basic tutorials.Direct Mentorship: Get honest code reviews, architectural feedback, and technical guidance from our core engineering team.Proof of Impact: A certificate of completion and a strong letter of recommendation for active contributors.\nApplication Deadline: 16th August. Fill the form and join our WhatsApp community for the joining process.",
+      "requirementsText": null,
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4453921183",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4453921183&f_E=1&f_TPR=r604800&keywords=software%20engineer%20intern&location=India&sortBy=DD",
+      "title": "Back End Developer",
+      "companyName": "Uni.AiHUb",
+      "companyUrl": "https://www.linkedin.com/company/uni-aihub/life",
+      "locationText": "India",
+      "postedAtText": "29 minutes ago",
+      "postedAtIso": null,
+      "jobType": "Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "Backend Developer InternCompany: Uni.AiHUbLocation: RemoteDuration: Up to 6 monthsBatch Start Date: 20 AugustAbout the ProgramAt Uni.AiHUb, we're doing things differently. This isn't a traditional job or a standard internship—it’s an open collaboration program designed for aspiring backend developers to gain hands-on, real-world experience. If you are self-taught, a boot-camp graduate, a student, or transitioning careers, this is a space for you to write actual production code, build your portfolio, and learn by doing alongside our team.What You’ll Do      Build APIs & Architecture: Design, develop, and maintain robust RESTful APIs and server-side logic to power web applications.Manage Databases: Set up and manage databases, write efficient queries, and ensure data security and integrity.Debug & Optimise: Troubleshoot server-side issues, fix bugs, and optimize application performance and scalability.Collaborate on Code: Use Git and GitHub to manage version control, push backend updates, and participate in code reviews with the team.\nWho You Are      Passionate about backend development and eager to learn (no specific computer science degree required).Solid grasp of at least one server-side programming language (such as Node.js, Python, Java, or PHP).Familiar with the basics of relational (SQL) or non-relational (NoSQL) databases.Bonus points: If you have hands-on experience with backend frameworks (like Express, Django, or Spring Boot), API testing tools like Postman, or basic cloud deployment.Curious, driven, and comfortable asking questions.\nWhat You Get      Remote & Flexible: Contribute from anywhere, on a schedule that works for you.Real Portfolio Projects: Leave with functional APIs, well-structured database schemas, and scalable backend systems to show future employers, stepping beyond standard tutorials.Direct Mentorship: Get honest code reviews, architectural feedback, and guidance from our core development team.Proof of Impact: A certificate of completion and a strong letter of recommendation for active contributors.\nApplication Deadline: 16th August. Fill the form and join our WhatsApp community for the joining process.",
+      "requirementsText": null,
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4455100557",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4455100557&f_E=1&f_TPR=r604800&keywords=software%20engineer%20intern&location=India&sortBy=DD",
+      "title": "Python Developer Intern",
+      "companyName": "WEBBOOST SOLUTION IT SERVICES",
+      "companyUrl": "https://www.linkedin.com/company/webboostsolutionait/life",
+      "locationText": "India",
+      "postedAtText": "2 hours ago",
+      "postedAtIso": "2026-08-15T11:21:21.088Z",
+      "jobType": "Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "About the CompanyWEBBOOST SOLUTION IT SERVICES is dedicated to providing innovative IT solutions that empower businesses to thrive in the digital age. Our mission is to deliver high-quality technology solutions while fostering a culture of collaboration, creativity, and continuous improvement.About the RoleWe are looking for a motivated Python Developer Intern to join our development team. In this role, you will work on backend development, automation, and data-driven applications using Python. This internship offers hands-on experience in building real-world projects while working alongside experienced developers.Key Responsibilities      Write clean, efficient, and optimized Python code.Develop backend services and automation scripts.Work with Python frameworks such as Django or Flask.Integrate third-party APIs and support system development.Debug, test, and maintain existing applications.Collaborate with the development team to build scalable solutions.\nQualifications      Currently pursuing or recently completed a degree in Computer Science, Information Technology, or a related field.Strong understanding of Python fundamentals and Object-Oriented Programming (OOP).Passion for software development and problem-solving.\nRequired Skills      PythonObject-Oriented Programming (OOP)SQL (Basic)REST APIsGit/GitHub\nPreferred Skills      Experience with Django or Flask.Knowledge of database management.Familiarity with backend architecture and deployment concepts.\nPerformance-based stipend of up to ₹7,500 per month.Why Join Us?      Work on real-world development projects.Receive mentorship from experienced developers.Gain practical industry experience.Build a strong portfolio to enhance your career opportunities.Opportunity for a full-time role based on performance.\nEqual Opportunity EmployerWEBBOOST SOLUTION IT SERVICES is committed to creating a diverse and inclusive workplace. We are proud to be an equal opportunity employer and consider all qualified applicants without regard to race, religion, gender, gender identity or expression, sexual orientation, national origin, disability, age, veteran status, or any other protected characteristic.Apply NowKickstart your software development career with hands-on Python experience. Join WEBBOOST SOLUTION IT SERVICES and build solutions that make an impact while strengthening your technical skills and professional portfolio.",
+      "requirementsText": "Currently pursuing or recently completed a degree in Computer Science, Information Technology, or a related field.Strong understanding of Python fundamentals and Object-Oriented Programming (OOP).Passion for software development and problem-solving.\nRequired Skills      PythonObject-Oriented Programming (OOP)SQL (Basic)REST APIsGit/GitHub\nPreferred Skills      Experience with Django or Flask.Knowledge of database management.Familiarity with backend architecture and deployment concepts.\nPerformance-based stipend of up to ₹7,500 per month.Why Join Us?      Work on real-world development projects.Receive mentorship from experienced developers.Gain practical industry experience.Build a strong portfolio to enhance your career opportunities.Opportunity for a full-time role based on performance.\nEqual Opportunity EmployerWEBBOOST SOLUTION IT SERVICES is committed to creating a diverse and inclusive workplace. We are proud to be an equal opportunity employer and consider all qualified applican",
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4453797926",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4453797926&f_E=1&f_TPR=r604800&keywords=software%20engineer%20intern&location=India&sortBy=DD",
+      "title": "Full Stack Engineer",
+      "companyName": "Zetheta Algorithms Private Limited",
+      "companyUrl": "https://www.linkedin.com/company/zetheta/life",
+      "locationText": "India",
+      "postedAtText": "2 hours ago",
+      "postedAtIso": "2026-08-15T11:21:25.018Z",
+      "jobType": "Remote\n            \n            \n              Internship",
+      "alumniCount": null,
+      "descriptionText": "About the CompanyZeTheta Algorithms Private Limited is a FinTech start-up which has been recently set up and is developing innovative AI tools. https://www.instagram.com/zetheta.officialAbout the RoleThe Full Stack Engineer Intern will be responsible for developing the online platforms which shall include frontend, backend, APIs, and data processing logic. This includes wireframing, building the website's home page, password authentication, dashboards post login, and AI features integration. Extensive model building with algorithms is involved.ResponsibilitiesDevelop responsive web interfaces using HTML, CSS, and PHP. Develop interactive UI using React.js with Tailwind CSS or alternatives such as Vue.js and Angular. Design UI for multiple AI features. Utilize UI libraries like Bootstrap or Material UI for styling. Design, build, and implement secure RESTful APIs using Node.js with Express.js. Implement authentication systems using Firebase free tier or PostgreSQL with Supabase. Store and retrieve intern, employer, and job data on MongoDB Atlas (free tier). Connect APIs with the frontend and collaborate with team members to integrate frontend components with server-side logic. Develop a blockchain-based certificate verification system. Develop and maintain server-side applications using frameworks such as Django, Flask, Express (Node.js), Rails (Ruby), Spring (Java), or Laravel (PHP). Troubleshoot and optimize backend performance.QualificationsBasic proficiency in one or more backend frameworks. Strong programming skills in HTML, CSS, React.js, Tailwind CSS, PHP, Python, JavaScript, and Ruby. Understanding of API integration using Axios or Fetch. Familiarity with MongoDB, PostgreSQL, SQLite, and NoSQL databases. Ability to work independently in a remote setting.BenefitsOpportunity to build practical skills with modern backend technologies. Enhance your professional portfolio. Exposure to real-world development projects in a remote work environment.Internship DetailsDuration: Self-paced. Options of 15 days, 1 month, 2 months, 3 months, 4 months, or 6 months. Type: Unpaid.Application ProcessJoin us through online enrolment — simply submit your updated CV. We do not conduct any interview or assessment. All motivated early career talent are welcome to take up the role.",
+      "requirementsText": "Basic proficiency in one or more backend frameworks. Strong programming skills in HTML, CSS, React.js, Tailwind CSS, PHP, Python, JavaScript, and Ruby. Understanding of API integration using Axios or Fetch. Familiarity with MongoDB, PostgreSQL, SQLite, and NoSQL databases. Ability to work independently in a remote setting.BenefitsOpportunity to build practical skills with modern backend technologies. Enhance your professional portfolio. Exposure to real-world development projects in a remote work environment.Internship DetailsDuration: Self-paced. Options of 15 days, 1 month, 2 months, 3 months, 4 months, or 6 months. Type: Unpaid.Application ProcessJoin us through online enrolment — simply submit your updated CV. We do not conduct any interview or assessment. All motivated early career talent are welcome to take up the role.",
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    }
+  ]
+}

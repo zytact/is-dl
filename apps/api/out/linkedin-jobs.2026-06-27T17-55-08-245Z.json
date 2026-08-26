@@ -1,0 +1,67 @@
+{
+  "meta": {
+    "query": "Frontend Developer",
+    "location": "India",
+    "filters": {
+      "experienceLevel": [
+        "Internship"
+      ],
+      "remoteOnly": false
+    },
+    "scrapedAt": "2026-06-27T17:55:08.245Z",
+    "source": "linkedin",
+    "count": 2,
+    "aiAgentSummary": {
+      "detectedCount": 0,
+      "highCount": 0,
+      "mediumCount": 0,
+      "lowCount": 0
+    }
+  },
+  "jobs": [
+    {
+      "jobId": "4430618082",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4430618082&f_E=1&keywords=Frontend%20Developer&location=India&sortBy=DD",
+      "title": "Full Stack Developer Intern",
+      "companyName": "TTFA Academy",
+      "companyUrl": "https://www.linkedin.com/company/ttfa-academy/life",
+      "locationText": "Noida, Uttar Pradesh, India",
+      "postedAtText": null,
+      "postedAtIso": null,
+      "jobType": "Hybrid\n            \n            \n              Full-time",
+      "alumniCount": null,
+      "descriptionText": "Company: TTFA Academy (TTFA Consultancy OPC Pvt. Ltd.) Location: Noida (Hybrid) Internship Stipend: ₹12,000 – ₹18,000 per month Open Positions: 3About TTFA AcademyTTFA Academy is an industry-focused learning platform dedicated to preparing learners for careers in Data Analytics, AI, and Software Development through hands-on, project-based learning. We build scalable digital products and learning platforms that impact thousands of learners.We're looking for passionate Full Stack Developer Interns who love building products, solving real-world problems, and learning modern web technologies.Responsibilities      Develop and maintain scalable web applications using the MERN Stack.Build responsive and high-performance user interfaces with React.js and Next.js.Develop RESTful APIs using Node.js and Express.js.Design and manage MongoDB databases.Integrate third-party APIs and authentication systems.Deploy and maintain applications on AWS.Write clean, reusable, and maintainable code.Participate in code reviews and team discussions.Debug, optimize, and improve application performance.Collaborate with UI/UX designers, product managers, and other developers.\nRequired Skills      Good understanding of JavaScript (ES6+)React.jsNext.jsNode.jsExpress.jsMongoDBHTML5, CSS3Tailwind CSS or BootstrapREST APIsGit & GitHubBasic knowledge of AWS services (EC2, S3, IAM, Amplify, or similar)Understanding of authentication (JWT/OAuth)Basic understanding of deployment pipelines\nPreferred Skills      TypeScriptRedux / Context APIFirebaseDockerCI/CD conceptsPostgreSQL or MySQLPrisma ORM or MongooseVercel deploymentBasic understanding of System DesignFamiliarity with Agile/Scrum methodology\nEligibility      Final-year students or recent graduates in Computer Science, IT, or related fields.Strong problem-solving and analytical skills.Good communication skills.Passion for learning new technologies.Portfolio or GitHub projects will be an added advantage.\nWhat You'll Gain      Work on real production projects.Mentorship from experienced developers.Exposure to modern software development practices.Experience with cloud deployment and scalable applications.Opportunity for a full-time role based on performance.Internship Certificate and Experience Letter upon successful completion.\nInternship Details      Role: Full Stack Developer InternMode: HybridLocation: Noida Sec 62Duration: 6 MonthsStipend: ₹12,000 – ₹18,000 per monthOpenings: 3\nApply If You      Enjoy building full-stack applications.Love solving real-world technical challenges.Want hands-on experience with modern web technologies.Are eager to grow into a professional Full Stack Developer.Tech Stack: MERN Stack • Next.js • AWS • Git • REST APIs • Tailwind CSS • MongoDB • Express.js • Node.js • React.js",
+      "requirementsText": null,
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    },
+    {
+      "jobId": "4430696523",
+      "jobUrl": "https://www.linkedin.com/jobs/search/?currentJobId=4430696523&f_E=1&keywords=Frontend%20Developer&location=India&sortBy=DD",
+      "title": "Software Engineer Intern",
+      "companyName": "Augle AI",
+      "companyUrl": "https://www.linkedin.com/company/augle-ai/life",
+      "locationText": "Pune Division, Maharashtra, India",
+      "postedAtText": "3 hours ago",
+      "postedAtIso": "2026-06-27T14:55:06.042Z",
+      "jobType": "On-site\n            \n            \n              Full-time",
+      "alumniCount": null,
+      "descriptionText": "About Augle AIAugle AI is a deep-tech startup founded by IIT Bombay alumni, building AI and 3D Vision-powered Robotics and Automation Systems for manufacturing companies. We are developing the next generation of manufacturing technology — flexible, intelligent, and adaptable to rapidly changing consumer demand. Our solutions enable manufacturers to achieve new levels of efficiency by automating processes that were previously impossible with conventional technologies. We serve a diverse range of industries including Automotive, Medical Devices, Renewables, Aerospace, Semiconductors, and Electronics. Our systems are trusted and deployed by leading organizations such as Tata Motors, Borosil Renewables, Aurolab, and suppliers to Mahindra, Blue Star, and Godrej, among many others. Website: https://www.augle.ai/Role OverviewAugle AI seeks a Software Developer to build intelligent automation and robotics systems for advanced manufacturing. You’ll design scalable software and APIs using Python, integrating with real-world hardware and 3D vision systems. Join us to develop cutting-edge technology powering the factories of the future. Key Responsibilities:       Develop, test, deploy, and maintain scalable applications using Python and JavaScript.Build and maintain responsive user interfaces with modern frontend frameworks.Design, implement, and consume RESTful APIs and integrations.Model and maintain relational database schemas for application dataDebug, write unit tests, and optimize application performance.Produce and maintain technical documentation and API specs.Collaborate cross-functionally on software–hardware integration when required. \nQualifications:      Bachelor’s or Master’s degree in Computer Science, Software Engineering, or a related field, or currently in the final year of a Bachelor’s program.Experience: 0–2 years. Open to freshers with strong project backgrounds and technical expertise. Proficiency in Python  Experience with frontend frameworks: React, Next.js, Angular, or PyQt5. Experience with backend frameworks: Node.js, Django, Typescript or FastAPI. Solid understanding of RESTful APIs, web technologies, and client-server architecture.Familiar with databases: Cloud Database, MySQL and PostgreSQL. Excellent problem-solving skills and the ability to learn quickly in a fast-paced environment. Bonus: Knowledge of PLC communication protocols \nWhy Join Augle AI?       Competitive salary: We offer a competitive salary package that reflects your skills and experience. Innovative Environment: Work with cutting-edge AI and robotics technology. Professional Growth: Gain hands-on experience within the AI and manufacturing sectors. PPO Opportunity: Offered based on performance during the internship. Collaborative Team: Join a team of passionate professionals committed to innovation and excellence. Impactful Work: Contribute to projects that drive significant advancements in manufacturing technology. \nInternship Details:      Location: Bhosari, Pune (On-site, Full-time) Duration: 6 Months Workdays: Monday to Saturday Working Hours: 10:00 AM – 6:30 PM Stipend: As per the skills & experience of the candidate. If you’re excited to build software that drives intelligent robots and factory automation, apply now and help redefine how modern factories operate!",
+      "requirementsText": "Bachelor’s or Master’s degree in Computer Science, Software Engineering, or a related field, or currently in the final year of a Bachelor’s program.Experience: 0–2 years. Open to freshers with strong project backgrounds and technical expertise. Proficiency in Python  Experience with frontend frameworks: React, Next.js, Angular, or PyQt5. Experience with backend frameworks: Node.js, Django, Typescript or FastAPI. Solid understanding of RESTful APIs, web technologies, and client-server architecture.Familiar with databases: Cloud Database, MySQL and PostgreSQL. Excellent problem-solving skills and the ability to learn quickly in a fast-paced environment. Bonus: Knowledge of PLC communication protocols \nWhy Join Augle AI?       Competitive salary: We offer a competitive salary package that reflects your skills and experience. Innovative Environment: Work with cutting-edge AI and robotics technology. Professional Growth: Gain hands-on experience within the AI and manufacturing sectors. PPO",
+      "aiAgentSignals": {
+        "detected": false,
+        "confidence": null,
+        "requirementStrength": null,
+        "tools": [],
+        "categories": [],
+        "snippets": []
+      }
+    }
+  ]
+}

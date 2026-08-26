@@ -1,10 +1,19 @@
 import { createReadStream } from 'node:fs';
-import { readdir, readFile } from 'node:fs/promises';
+
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { PassThrough, Readable } from 'node:stream';
-import { fileURLToPath } from 'node:url';
 import archiver from 'archiver';
+import type { AppPaths } from './paths.ts';
+import {
+  ensureDir,
+  listRuns,
+  newRunId,
+  readRun,
+  removeRun,
+  runIdFromFilename,
+  saveRun,
+} from './runs.ts';
 import { runScraper } from './scraper.ts';
 import type { SearchOptions } from './types.ts';
 
@@ -12,7 +21,6 @@ let currentLogs: string[] = [];
 let isScraping = false;
 let scrapeAbortController: AbortController | null = null;
 const sseControllers: Set<(data: string) => void> = new Set();
-const outputDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'out');
 
 const addLog = (msg: string) => {
   currentLogs.push(msg);
@@ -38,7 +46,8 @@ const notifyStatus = (status: boolean) => {
   }
 };
 
-async function handleRequest(req: Request) {
+async function handleRequest(req: Request, paths: AppPaths) {
+  const outputDir = paths.runsDir;
   const url = new URL(req.url);
 
   if (req.method === 'OPTIONS') {
@@ -100,7 +109,9 @@ async function handleRequest(req: Request) {
         keywords: typeof body.keywords === 'string' ? body.keywords : '',
         location: typeof body.location === 'string' ? body.location : '',
         limit: typeof body.limit === 'number' ? body.limit : Number(body.limit) || 50,
-        outDir: outputDir,
+        sessionFile: paths.sessionFile,
+        debugDir: paths.cache,
+        timeout: 30000,
         headless: typeof body.headless === 'boolean' ? body.headless : true,
         debug: typeof body.debug === 'boolean' ? body.debug : false,
         remoteOnly: typeof body.remoteOnly === 'boolean' ? body.remoteOnly : false,
@@ -129,15 +140,9 @@ async function handleRequest(req: Request) {
       scrapeAbortController = new AbortController();
       const signal = scrapeAbortController.signal;
 
-      runScraper(
-        options,
-        (msg) => {
-          console.log(`[API] ${msg}`);
-          addLog(msg);
-        },
-        signal,
-      )
-        .then((outPath) => {
+      runScraper(options, addLog, signal)
+        .then(async (output) => {
+          const outPath = await saveRun(paths, newRunId(), output);
           addLog(`\n--- SCRAPE FINISHED: ${outPath} ---`);
           notifyStatus(false);
           scrapeAbortController = null;
@@ -178,31 +183,21 @@ async function handleRequest(req: Request) {
   if (url.pathname === '/api/results' && req.method === 'GET') {
     try {
       await ensureDir(outputDir);
-      const files = await readdir(outputDir);
-      const jsonFiles = files.filter((f) => f.endsWith('.json'));
 
       const results = [];
-      for (const file of jsonFiles) {
+      for (const run of await listRuns(paths)) {
         try {
-          const content = await readFile(join(outputDir, file), 'utf-8');
-          const data = JSON.parse(content);
+          const data = await readRun(paths, run.runId);
           results.push({
-            filename: file,
-            meta: data.meta || {},
-            count: data.jobs?.length || 0,
-            aiAgentSummary: data.meta?.aiAgentSummary || {
-              detectedCount: 0,
-              highCount: 0,
-              mediumCount: 0,
-              lowCount: 0,
-            },
+            filename: `${run.runId}.json`,
+            meta: data.meta,
+            count: data.jobs.length,
+            aiAgentSummary: data.meta.aiAgentSummary,
           });
         } catch {
-          // Ignore malformed JSON files
+          // A run file that will not parse is skipped, as before.
         }
       }
-
-      results.sort((a, b) => b.meta.scrapedAt?.localeCompare(a.meta.scrapedAt || '') || 0);
 
       return new Response(JSON.stringify({ results }), {
         headers: { 'Access-Control-Allow-Origin': '*' },
@@ -217,8 +212,7 @@ async function handleRequest(req: Request) {
   if (url.pathname === '/api/results/export' && req.method === 'GET') {
     try {
       await ensureDir(outputDir);
-      const files = await readdir(outputDir);
-      const jsonFiles = files.filter((f) => f.endsWith('.json'));
+      const jsonFiles = (await listRuns(paths)).map((run) => `${run.runId}.json`);
 
       if (jsonFiles.length === 0) {
         return new Response('No results to export', {
@@ -230,8 +224,8 @@ async function handleRequest(req: Request) {
       const archive = archiver('zip', { zlib: { level: 9 } });
       const passThrough = new PassThrough();
 
-      archive.on('error', (err) => {
-        console.error('Zip export failed', err);
+      archive.on('error', () => {
+        // The stream ends; the client sees a truncated archive.
       });
 
       archive.pipe(passThrough);
@@ -271,8 +265,7 @@ async function handleRequest(req: Request) {
     }
 
     try {
-      const { unlink } = await import('node:fs/promises');
-      await unlink(join(outputDir, filename));
+      await removeRun(paths, runIdFromFilename(filename));
       return new Response(JSON.stringify({ success: true }), {
         headers: {
           'Content-Type': 'application/json',
@@ -281,7 +274,7 @@ async function handleRequest(req: Request) {
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete';
-      const status = message.includes('no such file') ? 404 : 500;
+      const status = message.includes('Run not found') ? 404 : 500;
       return new Response(message, {
         status,
         headers: { 'Access-Control-Allow-Origin': '*' },
@@ -299,8 +292,8 @@ async function handleRequest(req: Request) {
     }
 
     try {
-      const content = await readFile(join(outputDir, filename), 'utf-8');
-      return new Response(content, {
+      const output = await readRun(paths, runIdFromFilename(filename));
+      return new Response(JSON.stringify(output), {
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
@@ -320,26 +313,47 @@ async function handleRequest(req: Request) {
   });
 }
 
-createServer((req, res) => {
-  void respond(req, res);
-}).listen(3000, () => {
-  console.log('API Server running at http://localhost:3000');
-});
+export interface ServerOptions {
+  port: number;
+  host: string;
+  paths: AppPaths;
+  onLog?: (msg: string) => void;
+}
 
-async function respond(req: IncomingMessage, res: ServerResponse) {
+/** Resolves with the listening address once the socket is bound. */
+export function startServer(options: ServerOptions): Promise<string> {
+  const log = options.onLog ?? ((msg: string) => process.stderr.write(`${msg}\n`));
+  const server = createServer((req, res) => {
+    void respond(req, res, options.paths, log);
+  });
+
+  return new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(options.port, options.host, () => {
+      resolve(`http://${options.host}:${options.port}`);
+    });
+  });
+}
+
+async function respond(
+  req: IncomingMessage,
+  res: ServerResponse,
+  paths: AppPaths,
+  log: (msg: string) => void,
+) {
   const abortController = new AbortController();
   req.on('close', () => abortController.abort());
 
   try {
     const request = nodeRequestToFetchRequest(req, abortController.signal);
-    const response = await handleRequest(request);
+    const response = await handleRequest(request, paths);
     await writeFetchResponse(res, response);
   } catch (err) {
     if (abortController.signal.aborted) {
       return;
     }
 
-    console.error('Request failed', err);
+    log(`Request failed: ${err instanceof Error ? err.message : String(err)}`);
     res.writeHead(500, { 'Access-Control-Allow-Origin': '*' });
     res.end('Internal server error');
   }
@@ -391,13 +405,4 @@ async function writeFetchResponse(res: ServerResponse, response: Response) {
       .on('end', resolve)
       .pipe(res);
   });
-}
-
-async function ensureDir(path: string) {
-  try {
-    await readdir(path);
-  } catch {
-    const fs = await import('node:fs/promises');
-    await fs.mkdir(path, { recursive: true });
-  }
 }

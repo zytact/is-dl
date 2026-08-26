@@ -1,24 +1,36 @@
 {
-  "name": "@repo/api",
-  "private": true,
+  "name": "is-dl",
+  "version": "0.1.0",
+  "description": "LinkedIn job scraper CLI",
+  "bin": {
+    "is-dl": "./dist/cli.mjs"
+  },
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "scripts": {
-    "dev": "lsof -i :3000 | grep LISTEN | awk '{print $2}' | xargs -r kill -9 || true; tsx watch src/server.ts",
-    "cli": "tsx src/index.ts",
-    "build": "tsc --noEmit",
+    "dev": "tsx watch src/cli.ts serve",
+    "cli": "tsx src/cli.ts",
+    "build": "vp pack",
     "lint": "vp lint",
     "format": "vp fmt",
     "typecheck": "tsc --noEmit",
     "test": "vp test run",
-    "start": "tsx src/server.ts"
+    "start": "tsx src/cli.ts serve"
   },
   "dependencies": {
     "archiver": "^6.0.2",
-    "playwright": "^1.58.0"
+    "playwright": "^1.58.0",
+    "smol-toml": "^1.8.0",
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@types/archiver": "^6.0.3",
     "@types/node": "^24.10.1",
     "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=24"
   }
 }

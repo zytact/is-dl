@@ -94,12 +94,14 @@ The backend runs at `http://localhost:3000`:
 Run the scraper CLI:
 
 ```bash
-vp run --filter @repo/api cli -- --keywords "software engineer intern" --location "United States" --limit 30
+vp run --filter is-dl cli -- search --keywords "software engineer intern" --location "United States" --limit 30
 ```
 
 ### First Run (Authentication)
 
-On the first run, the scraper will open a browser window and prompt you to log in to LinkedIn. After logging in, press Enter in the terminal. Your session will be saved to `storageState.json` for future runs.
+Run `is-dl login` once, at a terminal. It opens a browser window; log in to LinkedIn and press Enter. The session is stored outside the repo (`~/.local/state/is-dl/storageState.json` on Linux, `~/Library/Application Support/is-dl` on macOS, `%LOCALAPPDATA%\\is-dl\\State` on Windows) with `0600` permissions where the OS supports them.
+
+Every other command refuses to prompt. Without a session they exit `3` immediately instead of blocking on stdin.
 
 ### Command-Line Options
 
@@ -111,7 +113,10 @@ On the first run, the scraper will open a browser window and prompt you to log i
 --remote-only                    Only show remote jobs
 --posted-within <timeframe>      Filter by posting date
 --job-type <types>               Comma-separated job types
--o, --out <directory>            Output directory (default: ./out)
+-p, --profile <name>             Use a saved profile from config
+-o, --out <dir|->                Output directory, or "-" for stdout
+--timeout <ms>                   Navigation timeout (default: 30000)
+--json                           JSON on stdout, logs on stderr
 --debug                          Enable debug mode
 --no-headless                    Show browser window
 -h, --help                       Show help message
@@ -122,20 +127,18 @@ On the first run, the scraper will open a browser window and prompt you to log i
 **Search for remote internships:**
 
 ```bash
-vp run --filter @repo/api cli -- -k "data science" -l "Remote" --remote-only --posted-within "Past week"
+vp run --filter is-dl cli -- search -k "data science" -l "Remote" --remote-only --posted-within "Past week"
 ```
 
 **Search for frontend developer positions with browser visible:**
 
 ```bash
-vp run --filter @repo/api cli -- -k "frontend developer" -l "San Francisco" --experience-level "Internship" --no-headless
+vp run --filter is-dl cli -- search -k "frontend developer" -l "San Francisco" --experience-level "Internship" --no-headless
 ```
 
 ## Output
 
-The scraper generates JSON files in `apps/api/out`:
-
-- `linkedin-jobs.<timestamp>.json` - Job data in JSON format
+Runs are written to the user data directory (`~/.local/share/is-dl/runs` on Linux) as `<runId>.json`, alongside an `index.json` listing. Use `is-dl runs list`, `is-dl runs show latest`, or `--out <dir>` to write somewhere explicit.
 
 Each job includes `aiAgentSignals` for rules-based detection of AI coding-agent/tool mentions. `meta.aiAgentSummary` includes detected/high/medium/low counts for quick LLM review.
 
