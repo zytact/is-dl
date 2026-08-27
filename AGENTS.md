@@ -36,16 +36,43 @@ Published as `is-dl`. `vp pack` builds `dist/cli.mjs` (the `is-dl` bin) and `dis
 - **Paths:** `src/paths.ts` is the only place config/data/state/cache directories are resolved. Linux uses XDG, macOS uses `~/Library`, Windows uses `%APPDATA%`/`%LOCALAPPDATA%`. `XDG_*` wins everywhere when set.
 - **Config:** `src/config.ts`; TOML. Precedence is flags > `IS_DL_*` env > project `.is-dl.toml` > user `config.toml` > defaults.
 - **Server:** `src/server.ts` exports `startServer()`; routes all under `/api/`, manual `if url.pathname === ...`.
-- **Scraper:** `src/scraper.ts`; `runScraper()` handles pagination, details, abort signal, 1-3s rate limit, and returns `ScraperOutput` without writing.
+- **Sources:** `src/sources.ts` defines `SourceRunner` and `runSources()`, which runs every selected source concurrently and merges the results. `src/scraper.ts` only builds runners from a `ScrapeRequest` and hands them over. Neither writes anything.
 - **Runs:** `src/runs.ts` owns the run files and `index.json` in the data directory.
 - **Browser:** `src/linkedin/browser.ts`; the session file is a parameter, and it refuses to prompt without a TTY.
 - **Exit codes:** `src/errors.ts`; 0 ok, 1 error, 2 usage, 3 auth, 4 dependency, 5 aborted, 6 config.
 
+### Sources
+
+`search` queries LinkedIn and Unstop together by default and merges them into one `ScraperOutput`.
+
+- **Selecting:** `--source linkedin`, `--source unstop`, or a comma-separated subset. Config key `sources`, env `IS_DL_SOURCES`, same precedence as everything else. An unknown name is a config error.
+- **Adding one:** write a factory returning `SourceRunner` (`src/linkedin/source.ts`, `src/unstop/source.ts`). The factory captures whatever that source needs, so LinkedIn's Playwright options never reach Unstop and vice versa. `SearchQuery` holds only what every source is asked for.
+- **Partial failure is normal.** LinkedIn throws `AUTH_REQUIRED` with no session; Unstop needs no auth. A failing source is logged and recorded in `meta.sources[]`, and the command still exits 0 as long as one source succeeded. Only when every source fails does the command fail, and a lone failing source keeps its own exit code, so a LinkedIn-only search with no session still exits 3.
+- **`--limit` is per source**, not a total.
+- **Merge order:** newest first by `postedAtIso`, undated last, ties broken by source then job id. A single source keeps its own ordering.
+- **Logs** from concurrent sources are prefixed `[linkedin]` / `[unstop]`.
+- **`meta.source`** is the comma-joined list of sources that returned jobs; `meta.sources[]` carries the per-source status, count and error. Run files written before this existed have `source` but no `sources`, and readers must not assume it is there.
+
+### Unstop
+
+`src/unstop/`. Plain `fetch` against `https://unstop.com/api/public/opportunity/search-result`, which needs no auth, no cookies and no user-agent spoofing. robots.txt has `Allow: /api/public/*`.
+
+- **`api.ts`** builds the URL and parses the Laravel paginator. Always `oppstatus=open` and `per_page=100`; above 100 the endpoint silently drops rows.
+- **`--unstop-opportunity`** picks the corpus: jobs, internships, hackathons, competitions. They are separate, not filters over one set.
+- **`--unstop-roles`** takes work function slugs (`software-development`, `frontend-development`, `backend-development`, `full-stack-development`). This is the only filter that actually narrows the corpus, and the tech slice is small: about 72 jobs of 1055, which fits one page.
+- **`searchTerm` is not used.** It matches titles only and returns nothing for `typescript`, `django`, `kubernetes` and most other tech terms. `--keywords` is matched here instead, as an AND over the title, employer-stated skills and the description. `--location` and `--remote-only` are also applied locally, because `location=`, `city=` and friends are silently ignored by the endpoint.
+- **No detail fetch.** Every row ships `details`, the full description as HTML. `map.ts` converts it to text before `pay.ts` and `ai-agent-detector.ts` see it.
+- **Pagination is unstable** across the full corpus: rows repeat and others are never shown. The source dedupes on `id` and logs a warning when the unique count is short of the reported total rather than implying it saw everything.
+- **Pay comes from `jobDetail`.** Top-level `isPaid` is about registration fees and must never be read as compensation. Figures are only reported when `show_salary === 1` and `not_disclosed` is false, and they land in `PayInfo.amount` rather than being re-derived from prose. `paid_unpaid: "unpaid"` is taken at face value; `"paid"` without figures falls back to the prose classifier first.
+- **AI-generated skills are dropped.** `required_skills[].pivot.ai_generated` is often true, and those are Unstop's guesses. Only employer-stated skills reach `requirementsText`.
+- **`approved_date`** is `"2026-08-27 17:41:42 GMT+0530"`, which `Date` will not parse. `parseApprovedDate` handles it.
+- The live corpus contains test listings, for example "DO NOT REGISTER" rows from "Unstop Testing".
+
 ### Triage
 
 - **Pay:** `src/pay.ts` classifies each listing as paid, token, unpaid or unstated with the matched snippet as evidence. `search --exclude-unpaid` drops unpaid and token only.
-- **Location:** `src/location-conflict.ts` flags a Remote tag whose body text demands attendance. Never filtered, only surfaced.
-- **Applications:** append-only JSONL at the data dir (`src/applications.ts`). The last record for a jobId is its state. `search --exclude-seen` skips anything already logged.
+- **Location:** `src/location-conflict.ts` flags a Remote tag whose body text demands attendance. Never filtered, only surfaced. Sources that publish the workplace as data pass `workplace` instead of leaving it to be read out of tag text.
+- **Applications:** append-only JSONL at the data dir (`src/applications.ts`). The last record for a job is its state, keyed by `source:jobId` because two boards hand out colliding numeric ids. `ApplicationRecord.jobSource` names the board; records written before Unstop have none and are read as LinkedIn. `ApplicationRecord.source` is unrelated provenance, a runId or `manual`. `apps status` and `apps show` take `--source` when one id exists on both boards. `search --exclude-seen` skips anything already logged.
 - No scoring. Tag matching was removed because it scored nearly every listing at 100% and dressed up a guess as a number. is-dl reports facts and leaves fit to the reader.
 - is-dl never submits an application. Search, filter, log, build a PDF.
 
@@ -87,11 +114,14 @@ is-dl resume build --all           # every variant, each gated at 1 page
 ## CLI
 
 ```bash
-vp run --filter is-dl cli -- search --keywords "..." --location "..."
+vp run --filter is-dl cli search --keywords "..." --location "..."
 is-dl search -k "..." --json    # after npm i -g is-dl
+is-dl search -k developer --source unstop --unstop-roles software-development --json
 ```
 
-Agents should always pass `--json`, parse stdout only, and treat exit 3 as "ask a human to run `is-dl login`" and exit 4 as "run `npx playwright install chromium`".
+`vp run --filter is-dl cli` forwards a literal `--`, which `parseArgs` then treats as the start of positionals. Pass the subcommand directly, with no `--` separator.
+
+Agents should always pass `--json`, parse stdout only, and treat exit 3 as "ask a human to run `is-dl login`" and exit 4 as "run `npx playwright install chromium`". Check `meta.sources[]` before trusting a count: exit 0 does not mean every source ran.
 
 ## Tech notes
 
