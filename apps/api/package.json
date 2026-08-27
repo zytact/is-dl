@@ -1,6 +1,6 @@
 {
   "name": "is-dl",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "LinkedIn job scraper CLI",
   "bin": {
     "is-dl": "./dist/cli.mjs"

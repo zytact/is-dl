@@ -19,6 +19,15 @@ const SELECTORS = {
     '#main > div > div.scaffold-layout__list-detail-inner.scaffold-layout__list-detail-inner--grow > div.scaffold-layout__detail.overflow-x-hidden.jobs-search__job-details > div > div.jobs-search__job-details--container > div > div.job-view-layout.jobs-details > div:nth-child(1) > div > div:nth-child(1) > div > div.relative.job-details-jobs-unified-top-card__container--two-pane > div > div.job-details-jobs-unified-top-card__primary-description-container > div > span > span.tvm__text.tvm__text--positive > strong > span',
 };
 
+function linkedinJobId(currentUrl: string): string | null {
+  return currentUrl.match(/[?&]currentJobId=(\d+)(?:&|$)/)?.[1] ?? null;
+}
+
+export function linkedinJobUrl(currentUrl: string): string {
+  const jobId = linkedinJobId(currentUrl);
+  return jobId ? `https://www.linkedin.com/jobs/view/${jobId}/` : currentUrl;
+}
+
 export async function extractJobDetailsFromView(
   page: Page,
   jobIndex: number,
@@ -31,11 +40,7 @@ export async function extractJobDetailsFromView(
   try {
     // Get current URL to extract job ID
     const currentUrl = page.url();
-    let jobId: string | null = null;
-    const urlMatch = currentUrl.match(/currentJobId=(\d+)/);
-    if (urlMatch?.[1]) {
-      jobId = urlMatch[1];
-    }
+    const jobId = linkedinJobId(currentUrl);
 
     // Extract title - try to find the job title
     const title = await extractText(page, '.job-details-jobs-unified-top-card__job-title', ctx);
@@ -101,7 +106,7 @@ export async function extractJobDetailsFromView(
     return {
       source: 'linkedin',
       jobId,
-      jobUrl: currentUrl,
+      jobUrl: linkedinJobUrl(currentUrl),
       title: title?.trim() || null,
       companyName: companyName?.trim() || null,
       companyUrl,
@@ -127,11 +132,13 @@ export async function extractJobDetailsFromView(
       await debugShot(ctx, page, `debug-job-error-${jobIndex}.png`);
     }
 
+    const currentUrl = page.url();
+
     // Return partial data on error
     return {
       source: 'linkedin',
-      jobId: null,
-      jobUrl: page.url(),
+      jobId: linkedinJobId(currentUrl),
+      jobUrl: linkedinJobUrl(currentUrl),
       title: null,
       companyName: null,
       companyUrl: null,
