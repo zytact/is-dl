@@ -17,12 +17,15 @@ import {
 import { type ScrapeRequest, runScraper } from './scraper.ts';
 import { isJobSource, isUnstopOpportunity, JOB_SOURCES, type JobSource } from './types.ts';
 
+/** Accepts either a JSON array or a comma-joined string. */
 function csv(value: unknown): string[] | undefined {
-  if (typeof value !== 'string' || !value) return undefined;
-  return value
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
+  const parts = Array.isArray(value)
+    ? value.filter((item) => typeof item === 'string')
+    : typeof value === 'string'
+      ? value.split(',')
+      : undefined;
+  const items = parts?.map((item) => item.trim()).filter(Boolean);
+  return items?.length ? items : undefined;
 }
 
 /** Unknown names in a request body are ignored; an empty result means both. */
