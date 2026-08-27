@@ -77,8 +77,8 @@ interface Meta {
   filters?: Record<string, unknown>;
   scrapedAt?: string;
   source?: string;
-  /** Absent on runs recorded before multi-source search. */
-  sources?: SourceRun[];
+  /** Absent or null on runs recorded before multi-source search. */
+  sources?: SourceRun[] | null;
   count?: number;
 }
 
@@ -129,18 +129,25 @@ export function ResultsInspector({ filename, onBack, onDeleted }: ResultsInspect
   }, [filename]);
 
   const jobs = useMemo(() => data?.jobs || [], [data]);
-  const sourceRuns = useMemo(() => readSourceRuns(data?.meta, jobs), [data, jobs]);
-  const sourceFilters = useMemo(() => buildSourceFilters(jobs), [jobs]);
+  const fallbackSource = useMemo(() => legacyFallbackSource(data?.meta), [data]);
+  const sourceRuns = useMemo(
+    () => readSourceRuns(data?.meta, jobs, fallbackSource),
+    [data, jobs, fallbackSource],
+  );
+  const sourceFilters = useMemo(
+    () => buildSourceFilters(jobs, fallbackSource),
+    [jobs, fallbackSource],
+  );
   const filteredJobs = useMemo(
     () =>
       jobs.filter((job) => {
-        if (sourceFilter !== 'all' && job.source !== sourceFilter) return false;
+        if (sourceFilter !== 'all' && sourceOf(job, fallbackSource) !== sourceFilter) return false;
         const signals = normalizeAiAgentSignals(job.aiAgentSignals);
         if (aiAgentFilter === 'all') return true;
         if (aiAgentFilter === 'matches') return signals.detected;
         return signals.confidence === aiAgentFilter;
       }),
-    [jobs, aiAgentFilter, sourceFilter],
+    [jobs, aiAgentFilter, sourceFilter, fallbackSource],
   );
 
   useEffect(() => {
@@ -444,7 +451,7 @@ export function ResultsInspector({ filename, onBack, onDeleted }: ResultsInspect
                 >
                   <div className="flex justify-between items-start mb-2">
                     <span className="text-[10px] uppercase tracking-widest border border-brand-border bg-brand-dark px-1 text-brand-muted">
-                      {job.source ? SOURCE_LABELS[job.source] : 'Unknown source'}
+                      {label(sourceOf(job, fallbackSource))}
                     </span>
                     <span className="text-[10px] text-brand-ok">
                       {job.postedAtText || 'UNKNOWN'}
@@ -554,7 +561,7 @@ export function ResultsInspector({ filename, onBack, onDeleted }: ResultsInspect
                     <span className="text-brand-border">|</span>
                     <div className="flex items-center gap-2 text-brand-muted">
                       <Server className="w-4 h-4" />
-                      {selectedJob.source ? SOURCE_LABELS[selectedJob.source] : 'Unknown source'}
+                      {label(sourceOf(selectedJob, fallbackSource))}
                     </div>
                   </div>
 
@@ -752,24 +759,52 @@ function normalizeAiAgentSignals(signals: AiAgentSignals | undefined): AiAgentSi
 }
 
 /** Runs recorded before multi-source search only have the comma-joined name. */
-function readSourceRuns(meta: Meta | undefined, jobs: Job[]): SourceRun[] {
-  if (meta?.sources?.length) return meta.sources;
+function legacySourceNames(meta: Meta | undefined): JobSource[] {
   return (meta?.source || '')
     .split(',')
     .map((name) => name.trim())
-    .filter(isJobSource)
-    .map((source) => ({
-      source,
-      status: 'ok' as const,
-      count: jobs.filter((job) => job.source === source).length,
-      error: null,
-    }));
+    .filter(isJobSource);
 }
 
-function buildSourceFilters(jobs: Job[]): Array<{ source: JobSource; count: number }> {
+/**
+ * Legacy job records carry no `source`. Every job in a run that names one
+ * source belongs to it; a legacy merged run cannot be split up after the fact.
+ */
+function legacyFallbackSource(meta: Meta | undefined): JobSource | null {
+  const names = legacySourceNames(meta);
+  return names.length === 1 ? names[0]! : null;
+}
+
+function sourceOf(job: Job, fallback: JobSource | null): JobSource | null {
+  return job.source ?? fallback;
+}
+
+function label(source: JobSource | null): string {
+  return source ? SOURCE_LABELS[source] : 'Unknown source';
+}
+
+function readSourceRuns(
+  meta: Meta | undefined,
+  jobs: Job[],
+  fallback: JobSource | null,
+): SourceRun[] {
+  if (meta?.sources?.length) return meta.sources;
+  return legacySourceNames(meta).map((source) => ({
+    source,
+    status: 'ok' as const,
+    count: jobs.filter((job) => sourceOf(job, fallback) === source).length,
+    error: null,
+  }));
+}
+
+function buildSourceFilters(
+  jobs: Job[],
+  fallback: JobSource | null,
+): Array<{ source: JobSource; count: number }> {
   const counts = new Map<JobSource, number>();
   for (const job of jobs) {
-    if (job.source) counts.set(job.source, (counts.get(job.source) ?? 0) + 1);
+    const source = sourceOf(job, fallback);
+    if (source) counts.set(source, (counts.get(source) ?? 0) + 1);
   }
   return [...counts].map(([source, count]) => ({ source, count }));
 }
