@@ -126,13 +126,14 @@ export interface SearchQuery {
   location: string;
   /** Per source, not across all of them. */
   limit: number;
-  experienceLevel?: string[];
   remoteOnly?: boolean;
-  postedWithin?: string;
-  jobType?: string[];
 }
 
-/** Playwright and a stored session, needed by LinkedIn and nothing else. */
+/**
+ * Playwright, a stored session and the search-URL filters, all needed by
+ * LinkedIn and nothing else. `experienceLevel`, `postedWithin` and `jobType`
+ * are LinkedIn's own taxonomy and become `f_E`, `f_TPR` and `f_JT`.
+ */
 export interface LinkedInOptions {
   debug?: boolean;
   headless?: boolean;
@@ -140,6 +141,9 @@ export interface LinkedInOptions {
   sessionFile: string;
   /** Where debug screenshots land. Never the current working directory. */
   debugDir: string;
+  experienceLevel?: string[];
+  postedWithin?: string;
+  jobType?: string[];
 }
 
 export const UNSTOP_OPPORTUNITIES = ['jobs', 'internships', 'hackathons', 'competitions'] as const;

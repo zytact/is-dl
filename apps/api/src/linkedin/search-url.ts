@@ -1,21 +1,21 @@
-import type { SearchQuery } from '../types.ts';
+import type { LinkedInOptions, SearchQuery } from '../types.ts';
 
-export function buildSearchUrl(options: SearchQuery): string {
+export function buildSearchUrl(query: SearchQuery, options: LinkedInOptions): string {
   const baseUrl = 'https://www.linkedin.com/jobs/search/';
   const params = new URLSearchParams();
 
   // Keywords
-  if (options.keywords) {
-    params.set('keywords', options.keywords);
+  if (query.keywords) {
+    params.set('keywords', query.keywords);
   }
 
   // Location (can be remote, country, city, etc.)
-  if (options.location) {
-    params.set('location', options.location);
+  if (query.location) {
+    params.set('location', query.location);
   }
 
   // Filter: Remote only
-  if (options.remoteOnly) {
+  if (query.remoteOnly) {
     params.set('f_WT', '2'); // 2 = Remote
   }
 

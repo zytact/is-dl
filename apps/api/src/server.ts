@@ -133,10 +133,6 @@ async function handleRequest(req: Request, paths: AppPaths) {
           location: typeof body.location === 'string' ? body.location : '',
           limit: typeof body.limit === 'number' ? body.limit : Number(body.limit) || 50,
           remoteOnly: typeof body.remoteOnly === 'boolean' ? body.remoteOnly : false,
-          experienceLevel: csv(body.experienceLevel),
-          jobType: csv(body.jobType),
-          postedWithin:
-            typeof body.postedWithin === 'string' ? body.postedWithin || undefined : undefined,
         },
         sources: readSources(body.sources),
         linkedin: {
@@ -145,6 +141,10 @@ async function handleRequest(req: Request, paths: AppPaths) {
           timeout: 30000,
           headless: typeof body.headless === 'boolean' ? body.headless : true,
           debug: typeof body.debug === 'boolean' ? body.debug : false,
+          experienceLevel: csv(body.experienceLevel),
+          jobType: csv(body.jobType),
+          postedWithin:
+            typeof body.postedWithin === 'string' ? body.postedWithin || undefined : undefined,
         },
         unstop: { opportunity, roles: csv(body.unstopRoles) },
       };

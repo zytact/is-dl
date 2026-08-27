@@ -29,7 +29,7 @@ async function scrape(
   });
 
   try {
-    const searchUrl = buildSearchUrl(query);
+    const searchUrl = buildSearchUrl(query, options);
     onLog(`Navigating to: ${searchUrl}`);
 
     await session.page.goto(searchUrl, {

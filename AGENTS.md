@@ -46,7 +46,7 @@ Published as `is-dl`. `vp pack` builds `dist/cli.mjs` (the `is-dl` bin) and `dis
 `search` queries LinkedIn and Unstop together by default and merges them into one `ScraperOutput`.
 
 - **Selecting:** `--source linkedin`, `--source unstop`, or a comma-separated subset. Config key `sources`, env `IS_DL_SOURCES`, same precedence as everything else. An unknown name is a config error.
-- **Adding one:** write a factory returning `SourceRunner` (`src/linkedin/source.ts`, `src/unstop/source.ts`). The factory captures whatever that source needs, so LinkedIn's Playwright options never reach Unstop and vice versa. `SearchQuery` holds only what every source is asked for.
+- **Adding one:** write a factory returning `SourceRunner` (`src/linkedin/source.ts`, `src/unstop/source.ts`). The factory captures whatever that source needs, so LinkedIn's Playwright options never reach Unstop and vice versa. `SearchQuery` holds only what every source is asked for: keywords, location, limit, remote-only. `--experience-level`, `--job-type` and `--posted-within` are LinkedIn URL filters and live in `LinkedInOptions`, though `meta.filters` still records them for every run.
 - **Partial failure is normal.** LinkedIn throws `AUTH_REQUIRED` with no session; Unstop needs no auth. A failing source is logged and recorded in `meta.sources[]`, and the command still exits 0 as long as one source succeeded. Only when every source fails does the command fail, and a lone failing source keeps its own exit code, so a LinkedIn-only search with no session still exits 3.
 - **`--limit` is per source**, not a total.
 - **Merge order:** newest first by `postedAtIso`, undated last, ties broken by source then job id. A single source keeps its own ordering.

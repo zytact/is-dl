@@ -1,7 +1,14 @@
 import { summarizeAiAgentSignals } from './ai-agent-detector.ts';
 import { CliError } from './errors.ts';
 import { summarizePay } from './pay.ts';
-import type { JobListing, JobSource, ScraperOutput, SearchQuery, SourceRun } from './types.ts';
+import type {
+  JobListing,
+  JobSource,
+  ScraperOutput,
+  SearchMeta,
+  SearchQuery,
+  SourceRun,
+} from './types.ts';
 
 export interface SourceContext {
   onLog: (msg: string) => void;
@@ -89,6 +96,13 @@ function failure(failed: Array<{ source: JobSource; error: unknown }>): unknown 
   return new CliError(shared, `Every source failed. ${detail}`);
 }
 
+export interface RunSourcesOptions {
+  /** Recorded verbatim as `meta.filters`. Per-source filters are the caller's to assemble. */
+  filters: SearchMeta['filters'];
+  onLog?: (msg: string) => void;
+  signal?: AbortSignal;
+}
+
 /**
  * Runs every source concurrently and merges the results. One source failing is
  * normal, not fatal: a user with no LinkedIn session still gets Unstop. The
@@ -97,9 +111,10 @@ function failure(failed: Array<{ source: JobSource; error: unknown }>): unknown 
 export async function runSources(
   query: SearchQuery,
   runners: SourceRunner[],
-  onLog: (msg: string) => void = console.error,
-  signal?: AbortSignal,
+  options: RunSourcesOptions,
 ): Promise<ScraperOutput> {
+  const { filters, signal } = options;
+  const onLog = options.onLog ?? console.error;
   if (!runners.length) throw new CliError('USAGE', 'No sources selected.');
 
   onLog('Search configuration:');
@@ -158,12 +173,7 @@ export async function runSources(
     meta: {
       query: query.keywords,
       location: query.location,
-      filters: {
-        experienceLevel: query.experienceLevel,
-        remoteOnly: query.remoteOnly,
-        postedWithin: query.postedWithin,
-        jobType: query.jobType,
-      },
+      filters,
       scrapedAt: new Date().toISOString(),
       source: ok.map(({ runner }) => runner.source).join(','),
       sources: runs,
