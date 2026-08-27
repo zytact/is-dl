@@ -6,9 +6,13 @@
     "is-dl": "./dist/cli.mjs"
   },
   "files": [
-    "dist"
+    "dist",
+    "src/types.ts"
   ],
   "type": "module",
+  "exports": {
+    "./types": "./src/types.ts"
+  },
   "scripts": {
     "dev": "tsx watch src/cli.ts serve",
     "cli": "tsx src/cli.ts",

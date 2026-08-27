@@ -101,7 +101,8 @@ is-dl resume build --all           # every variant, each gated at 1 page
 
 - **Router:** TanStack Router, code routes in `src/router.tsx`.
 - **Routes:** `/`, `/results`.
-- **API:** Direct `fetch` to `http://localhost:3000/api/*`.
+- **API:** Direct `fetch` to `http://localhost:3000/api/*`. List fields go over the wire as JSON arrays.
+- **Types:** the board contracts (`JobSource`, `PayInfo`, `SourceRun` and friends) are the API's. `apps/api` exports `is-dl/types`, which maps to `src/types.ts` and nothing else, and `apps/web/src/types.ts` re-exports it alongside the browser-only labels. Keep `src/types.ts` free of Node imports or the web bundle pulls in Playwright. The root workspace package is `is-dl-workspace` so that `is-dl` names one package.
 - **Styling:** Tailwind CSS v4 via `@tailwindcss/vite`.
 
 ## apps/tui
