@@ -5,8 +5,8 @@ export function parsePostedTime(postedText: string): string | null {
   const text = postedText.toLowerCase().trim();
 
   try {
-    // Match patterns like "3 hours ago", "2 days ago", "1 week ago", "1 month ago"
-    const match = text.match(/(\d+)\s+(hour|day|week|month)s?\s+ago/);
+    // LinkedIn shows anything from "1 minute ago" to "3 months ago".
+    const match = text.match(/(\d+)\s+(second|minute|hour|day|week|month)s?\s+ago/);
     if (!match) return null;
 
     const amount = Number.parseInt(match[1] ?? '0', 10);
@@ -15,6 +15,12 @@ export function parsePostedTime(postedText: string): string | null {
     const timestamp = new Date(now);
 
     switch (unit) {
+      case 'second':
+        timestamp.setSeconds(timestamp.getSeconds() - amount);
+        break;
+      case 'minute':
+        timestamp.setMinutes(timestamp.getMinutes() - amount);
+        break;
       case 'hour':
         timestamp.setHours(timestamp.getHours() - amount);
         break;
