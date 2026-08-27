@@ -37,16 +37,19 @@ function claim(text: string): { kind: WorkplaceClaim; evidence: string } | null 
 }
 
 /**
- * Only reported when LinkedIn tagged the job Remote and the body text says
+ * Only reported when the source tagged the job Remote and the body text says
  * otherwise. Nothing is filtered on this, it is surfaced for the reader.
  */
 export function detectLocationConflict(input: {
+  /** Set when the source publishes the workplace as data instead of a badge. */
+  workplace?: WorkplaceClaim | null;
   jobType: string | null;
   locationText: string | null;
   descriptionText: string | null;
   requirementsText: string | null;
 }): LocationConflict | null {
-  if (tagged(input.jobType, input.locationText) !== 'remote') return null;
+  const tag = input.workplace ?? tagged(input.jobType, input.locationText);
+  if (tag !== 'remote') return null;
 
   const text = [input.descriptionText, input.requirementsText].filter(Boolean).join('\n');
   const claimed = text.trim() ? claim(text) : null;

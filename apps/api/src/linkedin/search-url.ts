@@ -1,6 +1,6 @@
-import type { SearchOptions } from '../types.ts';
+import type { SearchQuery } from '../types.ts';
 
-export function buildSearchUrl(options: SearchOptions): string {
+export function buildSearchUrl(options: SearchQuery): string {
   const baseUrl = 'https://www.linkedin.com/jobs/search/';
   const params = new URLSearchParams();
 

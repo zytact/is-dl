@@ -14,8 +14,22 @@ import {
   runIdFromFilename,
   saveRun,
 } from './runs.ts';
-import { runScraper } from './scraper.ts';
-import type { SearchOptions } from './types.ts';
+import { type ScrapeRequest, runScraper } from './scraper.ts';
+import { isJobSource, isUnstopOpportunity, JOB_SOURCES, type JobSource } from './types.ts';
+
+function csv(value: unknown): string[] | undefined {
+  if (typeof value !== 'string' || !value) return undefined;
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+/** Unknown names in a request body are ignored; an empty result means both. */
+function readSources(value: unknown): JobSource[] {
+  const names = csv(value)?.filter(isJobSource) ?? [];
+  return names.length ? [...new Set(names)] : [...JOB_SOURCES];
+}
 
 let currentLogs: string[] = [];
 let isScraping = false;
@@ -105,29 +119,34 @@ async function handleRequest(req: Request, paths: AppPaths) {
 
     try {
       const body = (await req.json()) as Record<string, unknown>;
-      const options: SearchOptions = {
-        keywords: typeof body.keywords === 'string' ? body.keywords : '',
-        location: typeof body.location === 'string' ? body.location : '',
-        limit: typeof body.limit === 'number' ? body.limit : Number(body.limit) || 50,
-        sessionFile: paths.sessionFile,
-        debugDir: paths.cache,
-        timeout: 30000,
-        headless: typeof body.headless === 'boolean' ? body.headless : true,
-        debug: typeof body.debug === 'boolean' ? body.debug : false,
-        remoteOnly: typeof body.remoteOnly === 'boolean' ? body.remoteOnly : false,
-        experienceLevel:
-          typeof body.experienceLevel === 'string' && body.experienceLevel
-            ? body.experienceLevel.split(',').map((s) => s.trim())
-            : undefined,
-        jobType:
-          typeof body.jobType === 'string' && body.jobType
-            ? body.jobType.split(',').map((s) => s.trim())
-            : undefined,
-        postedWithin:
-          typeof body.postedWithin === 'string' ? body.postedWithin || undefined : undefined,
+      const opportunity =
+        typeof body.unstopOpportunity === 'string' && isUnstopOpportunity(body.unstopOpportunity)
+          ? body.unstopOpportunity
+          : 'jobs';
+
+      const request: ScrapeRequest = {
+        query: {
+          keywords: typeof body.keywords === 'string' ? body.keywords : '',
+          location: typeof body.location === 'string' ? body.location : '',
+          limit: typeof body.limit === 'number' ? body.limit : Number(body.limit) || 50,
+          remoteOnly: typeof body.remoteOnly === 'boolean' ? body.remoteOnly : false,
+          experienceLevel: csv(body.experienceLevel),
+          jobType: csv(body.jobType),
+          postedWithin:
+            typeof body.postedWithin === 'string' ? body.postedWithin || undefined : undefined,
+        },
+        sources: readSources(body.sources),
+        linkedin: {
+          sessionFile: paths.sessionFile,
+          debugDir: paths.cache,
+          timeout: 30000,
+          headless: typeof body.headless === 'boolean' ? body.headless : true,
+          debug: typeof body.debug === 'boolean' ? body.debug : false,
+        },
+        unstop: { opportunity, roles: csv(body.unstopRoles) },
       };
 
-      if (!options.keywords) {
+      if (!request.query.keywords) {
         return new Response(JSON.stringify({ error: 'Keywords are required' }), {
           status: 400,
           headers: { 'Access-Control-Allow-Origin': '*' },
@@ -140,7 +159,7 @@ async function handleRequest(req: Request, paths: AppPaths) {
       scrapeAbortController = new AbortController();
       const signal = scrapeAbortController.signal;
 
-      runScraper(options, addLog, signal)
+      runScraper(request, addLog, signal)
         .then(async (output) => {
           const outPath = await saveRun(paths, newRunId(), output);
           addLog(`\n--- SCRAPE FINISHED: ${outPath} ---`);

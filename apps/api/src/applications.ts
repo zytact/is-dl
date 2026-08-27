@@ -3,6 +3,7 @@ import { appendFile, readFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { CliError } from './errors.ts';
 import { ensureDir } from './runs.ts';
+import type { JobSource } from './types.ts';
 
 export const APPLICATION_STATUSES = [
   'applied',
@@ -18,6 +19,8 @@ export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
 
 export interface ApplicationRecord {
   jobId: string;
+  /** Which board the id belongs to. Absent in logs written before Unstop. */
+  jobSource?: JobSource;
   company: string | null;
   title: string | null;
   url: string | null;
@@ -26,6 +29,7 @@ export interface ApplicationRecord {
   appliedAt: string;
   /** When this individual record was appended. */
   recordedAt: string;
+  /** Where the record came from: a runId, or "manual". Not the job board. */
   source: string;
   status: ApplicationStatus;
 }
@@ -55,15 +59,33 @@ export async function readApplications(file: string): Promise<ApplicationRecord[
   return records;
 }
 
-/** The last record for a jobId is its current state. */
+/** Every record written before Unstop existed is a LinkedIn one. */
+export function recordSource(record: ApplicationRecord): JobSource {
+  return record.jobSource ?? 'linkedin';
+}
+
+/** Job ids are only unique within a board, so the key carries both. */
+export function seenKey(source: JobSource, jobId: string): string {
+  return `${source}:${jobId}`;
+}
+
+/** The last record for a job is its current state, keyed by source and id. */
 export function currentState(records: ApplicationRecord[]): Map<string, ApplicationRecord> {
   const byJob = new Map<string, ApplicationRecord>();
-  for (const record of records) byJob.set(record.jobId, record);
+  for (const record of records) {
+    byJob.set(seenKey(recordSource(record), record.jobId), record);
+  }
   return byJob;
 }
 
-export function historyFor(records: ApplicationRecord[], jobId: string): ApplicationRecord[] {
-  return records.filter((record) => record.jobId === jobId);
+export function historyFor(
+  records: ApplicationRecord[],
+  jobId: string,
+  source?: JobSource,
+): ApplicationRecord[] {
+  return records.filter(
+    (record) => record.jobId === jobId && (!source || recordSource(record) === source),
+  );
 }
 
 const DURATION = /^(\d+)([dwmh])$/;

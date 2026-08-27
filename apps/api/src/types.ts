@@ -34,22 +34,43 @@ export interface AiAgentSummary {
 
 export type PayKind = 'paid' | 'token' | 'unpaid' | 'unstated';
 
+export type PayPeriod = 'monthly' | 'annually' | 'unknown';
+
+/** Figures a source published as data, never numbers parsed out of prose. */
+export interface PayAmount {
+  min: number | null;
+  max: number | null;
+  currency: string;
+  period: PayPeriod;
+}
+
 export interface PayInfo {
   kind: PayKind;
   /** The exact snippet the classification came from, so a human can spot-check it. */
   evidence: string | null;
+  /** Null when the source only offered prose, or withheld the figures. */
+  amount: PayAmount | null;
 }
 
 export type WorkplaceClaim = 'remote' | 'onsite' | 'hybrid';
 
 export interface LocationConflict {
-  /** What the LinkedIn workplace tag says. */
+  /** What the source's own workplace tag or field says. */
   tagged: WorkplaceClaim;
   /** What the description text asserts, with the snippet that asserts it. */
   claimed: { kind: WorkplaceClaim; evidence: string };
 }
 
+export const JOB_SOURCES = ['linkedin', 'unstop'] as const;
+
+export type JobSource = (typeof JOB_SOURCES)[number];
+
+export function isJobSource(value: string): value is JobSource {
+  return (JOB_SOURCES as readonly string[]).includes(value);
+}
+
 export interface JobListing {
+  source: JobSource;
   jobId: string | null;
   jobUrl: string;
   title: string | null;
@@ -59,12 +80,21 @@ export interface JobListing {
   postedAtText: string | null; // "3 days ago"
   postedAtIso: string | null; // best-effort ISO timestamp
   jobType: string | null; // From job details preferences
-  alumniCount: string | null; // "X alumni work here"
+  alumniCount: string | null; // "X alumni work here", LinkedIn only
   descriptionText: string | null;
   requirementsText: string | null;
   aiAgentSignals: AiAgentSignals;
   pay: PayInfo;
   locationConflict: LocationConflict | null;
+}
+
+/** One source's outcome. A failure here does not fail the whole search. */
+export interface SourceRun {
+  source: JobSource;
+  status: 'ok' | 'failed';
+  count: number;
+  /** The failure message, null when the source succeeded. */
+  error: string | null;
 }
 
 export interface SearchMeta {
@@ -77,7 +107,9 @@ export interface SearchMeta {
     jobType?: string[];
   };
   scrapedAt: string;
+  /** Comma-joined names of the sources that returned jobs. */
   source: string;
+  sources: SourceRun[];
   count: number;
   aiAgentSummary: AiAgentSummary;
   paySummary: Record<PayKind, number>;
@@ -88,18 +120,39 @@ export interface ScraperOutput {
   jobs: JobListing[];
 }
 
-export interface SearchOptions {
+/** What every source is asked for. Nothing source-specific belongs here. */
+export interface SearchQuery {
   keywords: string;
   location: string;
+  /** Per source, not across all of them. */
   limit: number;
   experienceLevel?: string[];
   remoteOnly?: boolean;
   postedWithin?: string;
   jobType?: string[];
+}
+
+/** Playwright and a stored session, needed by LinkedIn and nothing else. */
+export interface LinkedInOptions {
   debug?: boolean;
   headless?: boolean;
   timeout: number;
   sessionFile: string;
   /** Where debug screenshots land. Never the current working directory. */
   debugDir: string;
+}
+
+export const UNSTOP_OPPORTUNITIES = ['jobs', 'internships', 'hackathons', 'competitions'] as const;
+
+export type UnstopOpportunity = (typeof UNSTOP_OPPORTUNITIES)[number];
+
+export function isUnstopOpportunity(value: string): value is UnstopOpportunity {
+  return (UNSTOP_OPPORTUNITIES as readonly string[]).includes(value);
+}
+
+/** Plain HTTP against a public endpoint. No browser, no session. */
+export interface UnstopOptions {
+  opportunity: UnstopOpportunity;
+  /** Work function slugs, for example "software-development". */
+  roles?: string[];
 }
