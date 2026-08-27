@@ -1,6 +1,7 @@
 import { AlertTriangle, Database, Download, FileJson, Sparkles, Trash2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
+import { SOURCE_LABELS, type SourceRun } from '../types';
 import { ResultsInspector } from './ResultsInspector';
 
 interface ApiFileEntry {
@@ -9,6 +10,7 @@ interface ApiFileEntry {
     location?: string;
     scrapedAt?: string;
     query?: string;
+    sources?: SourceRun[];
   };
   count: number;
   aiAgentSummary?: {
@@ -29,6 +31,7 @@ interface ResultEntry {
   count: number;
   filename: string;
   hasAiAgentSignals: boolean;
+  skippedSources: SourceRun[];
 }
 
 export function ResultsDashboard() {
@@ -55,6 +58,7 @@ export function ResultsDashboard() {
         count: file.count,
         filename: file.filename,
         hasAiAgentSignals: (file.aiAgentSummary?.detectedCount || 0) > 0,
+        skippedSources: (file.meta?.sources || []).filter((run) => run.status === 'failed'),
       }));
       setResults(parsed);
     } catch (err) {
@@ -265,6 +269,15 @@ export function ResultsDashboard() {
                           <span className="bg-[#1a1a1a] px-3 py-1 border border-brand-border group-hover/row:border-brand-cyan transition-colors text-brand-text">
                             {job.count} TARGETS
                           </span>
+                          {job.skippedSources.map((run) => (
+                            <span
+                              key={run.source}
+                              className="ml-2 inline-block border border-brand-accent bg-brand-accent/10 px-2 py-1 text-[10px] text-brand-accent tracking-widest align-middle"
+                              title={run.error || 'No reason recorded'}
+                            >
+                              {SOURCE_LABELS[run.source].toUpperCase()} SKIPPED
+                            </span>
+                          ))}
                         </td>
                         <td className="p-4 flex items-center gap-2 mt-1">
                           {job.location === 'Remote' ||

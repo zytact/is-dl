@@ -1,5 +1,7 @@
 import {
+  AlertTriangle,
   ArrowLeft,
+  Banknote,
   Calendar,
   ChevronRight,
   Database,
@@ -16,6 +18,14 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useMemo, useState } from 'react';
+import {
+  isJobSource,
+  type JobSource,
+  type PayAmount,
+  type PayInfo,
+  SOURCE_LABELS,
+  type SourceRun,
+} from '../types';
 
 type AiAgentConfidence = 'high' | 'medium' | 'low';
 type AiAgentRequirementStrength = 'required' | 'preferred' | 'mentioned';
@@ -41,7 +51,11 @@ interface AiAgentSignals {
   snippets: AiAgentSnippet[];
 }
 
+type SourceFilter = 'all' | JobSource;
+
 interface Job {
+  source?: JobSource;
+  pay?: PayInfo;
   jobId: string | null;
   jobUrl: string;
   title: string | null;
@@ -63,6 +77,8 @@ interface Meta {
   filters?: Record<string, unknown>;
   scrapedAt?: string;
   source?: string;
+  /** Absent on runs recorded before multi-source search. */
+  sources?: SourceRun[];
   count?: number;
 }
 
@@ -86,6 +102,8 @@ export function ResultsInspector({ filename, onBack, onDeleted }: ResultsInspect
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [aiAgentFilter, setAiAgentFilter] = useState<AiAgentFilter>('all');
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
+  const [openSourceError, setOpenSourceError] = useState<JobSource | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -111,15 +129,18 @@ export function ResultsInspector({ filename, onBack, onDeleted }: ResultsInspect
   }, [filename]);
 
   const jobs = useMemo(() => data?.jobs || [], [data]);
+  const sourceRuns = useMemo(() => readSourceRuns(data?.meta, jobs), [data, jobs]);
+  const sourceFilters = useMemo(() => buildSourceFilters(jobs), [jobs]);
   const filteredJobs = useMemo(
     () =>
       jobs.filter((job) => {
+        if (sourceFilter !== 'all' && job.source !== sourceFilter) return false;
         const signals = normalizeAiAgentSignals(job.aiAgentSignals);
         if (aiAgentFilter === 'all') return true;
         if (aiAgentFilter === 'matches') return signals.detected;
         return signals.confidence === aiAgentFilter;
       }),
-    [jobs, aiAgentFilter],
+    [jobs, aiAgentFilter, sourceFilter],
   );
 
   useEffect(() => {
@@ -236,7 +257,31 @@ export function ResultsInspector({ filename, onBack, onDeleted }: ResultsInspect
           </div>
           <div className="flex items-center gap-2">
             <Server className="w-4 h-4 text-brand-cyan" />
-            <span className="text-brand-text">SRC:</span> {meta.source?.toUpperCase() || 'UNKNOWN'}
+            <span className="text-brand-text">SRC:</span>
+            {sourceRuns.length === 0 && <span>UNKNOWN</span>}
+            {sourceRuns.map((run) =>
+              run.status === 'ok' ? (
+                <span
+                  key={run.source}
+                  className="border border-brand-border bg-brand-dark px-2 py-1 text-brand-text"
+                >
+                  {SOURCE_LABELS[run.source]} {run.count}
+                </span>
+              ) : (
+                <button
+                  key={run.source}
+                  type="button"
+                  onClick={() =>
+                    setOpenSourceError((current) => (current === run.source ? null : run.source))
+                  }
+                  className="border border-brand-accent bg-brand-accent/10 px-2 py-1 text-brand-accent hover:bg-brand-accent/20 transition-colors flex items-center gap-1"
+                  title="Show why this source was skipped"
+                >
+                  <AlertTriangle className="w-3 h-3" />
+                  {SOURCE_LABELS[run.source]} SKIPPED
+                </button>
+              ),
+            )}
           </div>
           <div className="flex items-center gap-2 bg-brand-dark border border-brand-border px-3 py-1 brutal-shadow-cyan text-brand-cyan">
             <span className="w-2 h-2 bg-brand-cyan inline-block rounded-none animate-pulse" />
@@ -286,6 +331,18 @@ export function ResultsInspector({ filename, onBack, onDeleted }: ResultsInspect
         </div>
       </div>
 
+      {openSourceError && (
+        <div className="border-b border-brand-accent bg-brand-accent/5 px-4 py-2 text-xs font-mono text-brand-accent shrink-0">
+          <span className="uppercase tracking-widest">
+            {SOURCE_LABELS[openSourceError]} returned nothing:
+          </span>{' '}
+          <span className="text-brand-text/80">
+            {sourceRuns.find((run) => run.source === openSourceError)?.error ||
+              'No reason recorded'}
+          </span>
+        </div>
+      )}
+
       {/* Main Content: Master Detail Split */}
       <div className="flex-1 flex min-h-0 relative overflow-hidden">
         <AnimatePresence>
@@ -326,6 +383,29 @@ export function ResultsInspector({ filename, onBack, onDeleted }: ResultsInspect
             <span>INDEXED_ENTITIES</span>
             <span className="text-brand-text">{filteredJobs.length} FOUND</span>
           </div>
+          {sourceFilters.length > 1 && (
+            <div className="border-b border-brand-border bg-brand-dark p-2 shrink-0">
+              <div className="mb-2 flex items-center gap-1 font-mono text-[10px] uppercase tracking-widest text-brand-cyan">
+                <Server className="w-3 h-3" />
+                Source Filter
+              </div>
+              <div className="flex gap-1">
+                <FilterButton
+                  label="All"
+                  active={sourceFilter === 'all'}
+                  onClick={() => setSourceFilter('all')}
+                />
+                {sourceFilters.map((entry) => (
+                  <FilterButton
+                    key={entry.source}
+                    label={`${SOURCE_LABELS[entry.source]} ${entry.count}`}
+                    active={sourceFilter === entry.source}
+                    onClick={() => setSourceFilter(entry.source)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
           <div className="border-b border-brand-border bg-brand-dark p-2 shrink-0">
             <div className="mb-2 flex items-center justify-between font-mono text-[10px] uppercase tracking-widest">
               <span className="flex items-center gap-1 text-brand-accent">
@@ -338,18 +418,12 @@ export function ResultsInspector({ filename, onBack, onDeleted }: ResultsInspect
             </div>
             <div className="grid grid-cols-5 gap-1">
               {AI_AGENT_FILTERS.map((filter) => (
-                <button
+                <FilterButton
                   key={filter.value}
-                  type="button"
+                  label={filter.label}
+                  active={aiAgentFilter === filter.value}
                   onClick={() => setAiAgentFilter(filter.value)}
-                  className={`border px-2 py-1 text-[10px] font-mono uppercase tracking-widest transition-colors ${
-                    aiAgentFilter === filter.value
-                      ? 'border-brand-accent bg-brand-accent/10 text-brand-accent'
-                      : 'border-brand-border text-brand-muted hover:border-brand-cyan hover:text-brand-cyan'
-                  }`}
-                >
-                  {filter.label}
-                </button>
+                />
               ))}
             </div>
           </div>
@@ -369,7 +443,9 @@ export function ResultsInspector({ filename, onBack, onDeleted }: ResultsInspect
                   }`}
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <span className="text-[10px] opacity-70">ID: {getJobKey(job).slice(-6)}</span>
+                    <span className="text-[10px] uppercase tracking-widest border border-brand-border bg-brand-dark px-1 text-brand-muted">
+                      {job.source ? SOURCE_LABELS[job.source] : 'Unknown source'}
+                    </span>
                     <span className="text-[10px] text-brand-ok">
                       {job.postedAtText || 'UNKNOWN'}
                     </span>
@@ -475,6 +551,11 @@ export function ResultsInspector({ filename, onBack, onDeleted }: ResultsInspect
                       <Calendar className="w-4 h-4" />
                       {selectedJob.postedAtText || 'Unknown'}
                     </div>
+                    <span className="text-brand-border">|</span>
+                    <div className="flex items-center gap-2 text-brand-muted">
+                      <Server className="w-4 h-4" />
+                      {selectedJob.source ? SOURCE_LABELS[selectedJob.source] : 'Unknown source'}
+                    </div>
                   </div>
 
                   <div className="mt-8 flex gap-4">
@@ -496,6 +577,8 @@ export function ResultsInspector({ filename, onBack, onDeleted }: ResultsInspect
 
                 {/* Detail Content */}
                 <div className="p-8 flex flex-col gap-8 font-mono text-sm leading-relaxed shrink-0">
+                  {selectedJob.pay && <PayPanel pay={selectedJob.pay} />}
+
                   {normalizeAiAgentSignals(selectedJob.aiAgentSignals).detected && (
                     <AiAgentSignalsPanel
                       signals={normalizeAiAgentSignals(selectedJob.aiAgentSignals)}
@@ -549,6 +632,54 @@ const AI_AGENT_FILTERS: Array<{ value: AiAgentFilter; label: string }> = [
   { value: 'medium', label: 'Medium' },
   { value: 'low', label: 'Low' },
 ];
+
+function FilterButton({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`border px-2 py-1 text-[10px] font-mono uppercase tracking-widest transition-colors ${
+        active
+          ? 'border-brand-accent bg-brand-accent/10 text-brand-accent'
+          : 'border-brand-border text-brand-muted hover:border-brand-cyan hover:text-brand-cyan'
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function PayPanel({ pay }: { pay: PayInfo }) {
+  const amount = pay.amount && formatPayAmount(pay.amount);
+  return (
+    <div className="space-y-3 border border-brand-border bg-brand-dark/50 p-4">
+      <h3 className="text-xl font-display text-brand-ok tracking-widest font-bold flex items-center gap-2">
+        <Banknote className="w-5 h-5" /> PAY
+      </h3>
+      <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-widest">
+        <span className={`border px-3 py-1 ${payBadgeClass(pay.kind)}`}>{pay.kind}</span>
+        {amount ? (
+          <span className="text-brand-text">{amount}</span>
+        ) : (
+          <span className="text-brand-muted">No figures published</span>
+        )}
+      </div>
+      {pay.evidence && (
+        <div className="border-l-2 border-brand-border bg-brand-dark/70 p-3 text-brand-text/80">
+          {pay.evidence}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function AiAgentSignalsPanel({ signals }: { signals: AiAgentSignals }) {
   return (
@@ -618,6 +749,44 @@ function normalizeAiAgentSignals(signals: AiAgentSignals | undefined): AiAgentSi
       snippets: [],
     }
   );
+}
+
+/** Runs recorded before multi-source search only have the comma-joined name. */
+function readSourceRuns(meta: Meta | undefined, jobs: Job[]): SourceRun[] {
+  if (meta?.sources?.length) return meta.sources;
+  return (meta?.source || '')
+    .split(',')
+    .map((name) => name.trim())
+    .filter(isJobSource)
+    .map((source) => ({
+      source,
+      status: 'ok' as const,
+      count: jobs.filter((job) => job.source === source).length,
+      error: null,
+    }));
+}
+
+function buildSourceFilters(jobs: Job[]): Array<{ source: JobSource; count: number }> {
+  const counts = new Map<JobSource, number>();
+  for (const job of jobs) {
+    if (job.source) counts.set(job.source, (counts.get(job.source) ?? 0) + 1);
+  }
+  return [...counts].map(([source, count]) => ({ source, count }));
+}
+
+function formatPayAmount(amount: PayAmount): string | null {
+  const figures = [amount.min, amount.max].filter((value) => value !== null);
+  if (figures.length === 0) return null;
+  const range = [...new Set(figures)].map((value) => value.toLocaleString()).join(' - ');
+  const period = amount.period === 'unknown' ? '' : ` / ${amount.period}`;
+  return `${amount.currency} ${range}${period}`;
+}
+
+function payBadgeClass(kind: PayInfo['kind']): string {
+  if (kind === 'paid') return 'border-brand-ok bg-brand-ok/10 text-brand-ok';
+  if (kind === 'unpaid') return 'border-brand-error bg-brand-error/10 text-brand-error';
+  if (kind === 'token') return 'border-brand-accent bg-brand-accent/10 text-brand-accent';
+  return 'border-brand-border bg-brand-dark text-brand-muted';
 }
 
 function getJobKey(job: Job): string {
