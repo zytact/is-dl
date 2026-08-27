@@ -120,6 +120,20 @@ export interface ScraperOutput {
   jobs: JobListing[];
 }
 
+export interface PersistedMeta extends Omit<SearchMeta, 'sources'> {
+  /**
+   * Null in run files written before per-source outcomes were recorded. Nothing
+   * can reconstruct them afterwards: the file never knew which sources ran.
+   */
+  sources: SourceRun[] | null;
+}
+
+/** A run file as it is on disk, which is not always what the current code writes. */
+export interface PersistedRun {
+  meta: PersistedMeta;
+  jobs: JobListing[];
+}
+
 /** What every source is asked for. Nothing source-specific belongs here. */
 export interface SearchQuery {
   keywords: string;

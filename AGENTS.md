@@ -51,7 +51,7 @@ Published as `is-dl`. `vp pack` builds `dist/cli.mjs` (the `is-dl` bin) and `dis
 - **`--limit` is per source**, not a total.
 - **Merge order:** newest first by `postedAtIso`, undated last, ties broken by source then job id. A single source keeps its own ordering.
 - **Logs** from concurrent sources are prefixed `[linkedin]` / `[unstop]`.
-- **`meta.source`** is the comma-joined list of sources that returned jobs; `meta.sources[]` carries the per-source status, count and error. Run files written before this existed have `source` but no `sources`, and readers must not assume it is there.
+- **`meta.source`** is the comma-joined list of sources that returned jobs; `meta.sources[]` carries the per-source status, count and error. Run files written before this existed have `source` but no `sources`, and readers must not assume it is there. `readRun` and `listRuns` return `PersistedRun`, not `ScraperOutput`: a missing `sources` is normalized to `null`, which the type forces callers to handle. It is never filled in, because a legacy file cannot say which sources ran.
 
 ### Unstop
 
