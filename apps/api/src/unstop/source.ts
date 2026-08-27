@@ -1,6 +1,6 @@
 import { checkAbort, type SourceContext, type SourceRunner, waitOrAbort } from '../sources.ts';
 import type { JobListing, SearchQuery, UnstopOptions } from '../types.ts';
-import { fetchPage, type UnstopItem } from './api.ts';
+import { fetchPage } from './api.ts';
 import { toJobListing } from './map.ts';
 
 /**
@@ -37,11 +37,14 @@ async function scrape(
   if (options.roles?.length) onLog(`Roles: ${options.roles.join(', ')}`);
 
   const seen = new Set<number>();
-  const items: UnstopItem[] = [];
+  const kept: JobListing[] = [];
   let page = 1;
   let lastPage = 1;
   let total = 0;
 
+  // The filters run here, not on the endpoint, so paging has to continue until
+  // enough rows have passed them. Counting fetched rows stops on page one and
+  // never sees the matches further in.
   while (page <= lastPage) {
     checkAbort(signal);
     const result = await fetchPage(options, page, signal);
@@ -51,11 +54,14 @@ async function scrape(
     for (const item of result.items) {
       if (seen.has(item.id)) continue;
       seen.add(item.id);
-      items.push(item);
+      const job = toJobListing(item);
+      if (matches(job, query)) kept.push(job);
     }
 
-    onLog(`Page ${page}/${lastPage}: ${seen.size} unique of ${total} reported.`);
-    if (seen.size >= query.limit || page >= lastPage) break;
+    onLog(
+      `Page ${page}/${lastPage}: ${seen.size} unique of ${total} fetched, ${kept.length} kept.`,
+    );
+    if (kept.length >= query.limit || page >= lastPage) break;
     page++;
     // Rate limiting: the endpoint is public and unauthenticated, so be polite.
     await waitOrAbort(signal, 1000 + Math.random() * 2000);
@@ -63,14 +69,13 @@ async function scrape(
 
   // Offset pagination on this endpoint repeats and skips rows across the full
   // corpus. Say so rather than implying the whole set was seen.
-  if (page >= lastPage && seen.size < total) {
+  if (page >= lastPage && kept.length < query.limit && seen.size < total) {
     onLog(`WARNING: walked every page but saw ${seen.size} unique of ${total} reported.`);
   }
 
-  const jobs = items.map((item) => toJobListing(item));
-  const kept = jobs.filter((job) => matches(job, query)).slice(0, query.limit);
-  onLog(`Kept ${kept.length} of ${jobs.length} after keyword and location filters.`);
-  return kept;
+  const jobs = kept.slice(0, query.limit);
+  onLog(`Kept ${jobs.length} of ${seen.size} fetched after keyword and location filters.`);
+  return jobs;
 }
 
 export function unstopSource(options: UnstopOptions): SourceRunner {
