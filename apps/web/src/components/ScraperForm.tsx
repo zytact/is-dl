@@ -19,10 +19,9 @@ export interface ScraperFormData {
   remoteOnly: boolean;
   postedWithin: string;
   headless: boolean;
-  /** The API reads these as comma separated names, not arrays. */
-  sources: string;
+  sources: JobSource[];
   unstopOpportunity: UnstopOpportunity;
-  unstopRoles: string;
+  unstopRoles: string[];
 }
 
 interface ScraperFormProps {
@@ -69,8 +68,8 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
     e.preventDefault();
     onStart({
       ...formData,
-      sources: sources.join(','),
-      unstopRoles: unstopSelected ? unstopRoles.join(',') : '',
+      sources,
+      unstopRoles: unstopSelected ? unstopRoles : [],
     });
   };
 
