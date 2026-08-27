@@ -1,5 +1,14 @@
 import { Play } from 'lucide-react';
 import { useState } from 'react';
+import {
+  JOB_SOURCES,
+  type JobSource,
+  roleLabel,
+  SOURCE_LABELS,
+  UNSTOP_OPPORTUNITIES,
+  UNSTOP_ROLES,
+  type UnstopOpportunity,
+} from '../types';
 
 export interface ScraperFormData {
   keywords: string;
@@ -10,6 +19,9 @@ export interface ScraperFormData {
   remoteOnly: boolean;
   postedWithin: string;
   headless: boolean;
+  sources: JobSource[];
+  unstopOpportunity: UnstopOpportunity;
+  unstopRoles: string[];
 }
 
 interface ScraperFormProps {
@@ -27,7 +39,12 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
     remoteOnly: false,
     postedWithin: '',
     headless: true,
+    unstopOpportunity: 'jobs' as UnstopOpportunity,
   });
+  const [sources, setSources] = useState<JobSource[]>([...JOB_SOURCES]);
+  const [unstopRoles, setUnstopRoles] = useState<string[]>(['software-development']);
+
+  const unstopSelected = sources.includes('unstop');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -35,9 +52,25 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
     setFormData((prev) => ({ ...prev, [name]: val }));
   };
 
+  const toggleSource = (source: JobSource) => {
+    setSources((prev) =>
+      prev.includes(source) ? prev.filter((item) => item !== source) : [...prev, source],
+    );
+  };
+
+  const toggleRole = (role: string) => {
+    setUnstopRoles((prev) =>
+      prev.includes(role) ? prev.filter((item) => item !== role) : [...prev, role],
+    );
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onStart(formData);
+    onStart({
+      ...formData,
+      sources,
+      unstopRoles: unstopSelected ? unstopRoles : [],
+    });
   };
 
   return (
@@ -45,6 +78,95 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
       <div className="flex justify-between border-b border-brand-border pb-2">
         <h3 className="text-brand-cyan tracking-widest font-bold uppercase">TARGET_PARAMS</h3>
       </div>
+
+      <div className="p-4 border border-brand-border bg-brand-panel relative flex flex-col gap-3">
+        <div className="absolute top-0 right-0 bg-brand-cyan text-brand-dark text-xs px-2 font-bold uppercase">
+          BOARDS
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {JOB_SOURCES.map((source) => (
+            <button
+              key={source}
+              type="button"
+              onClick={() => toggleSource(source)}
+              disabled={isScraping}
+              aria-pressed={sources.includes(source)}
+              className={`border px-3 py-2 text-xs font-mono uppercase tracking-widest transition-colors disabled:opacity-50 ${
+                sources.includes(source)
+                  ? 'border-brand-cyan bg-brand-cyan/10 text-brand-cyan'
+                  : 'border-brand-border text-brand-muted hover:border-brand-text hover:text-brand-text'
+              }`}
+            >
+              {SOURCE_LABELS[source]}
+            </button>
+          ))}
+        </div>
+        <span className="text-[10px] text-brand-muted uppercase tracking-widest">
+          {sources.length === 0
+            ? 'PICK AT LEAST ONE BOARD'
+            : 'LINKEDIN NEEDS A STORED SESSION. UNSTOP NEEDS NONE.'}
+        </span>
+      </div>
+
+      {unstopSelected && (
+        <div className="p-4 border border-brand-border bg-brand-panel relative flex flex-col gap-4">
+          <div className="absolute top-0 right-0 bg-brand-border text-brand-dark text-xs px-2 font-bold uppercase">
+            UNSTOP
+          </div>
+
+          <div className="flex flex-col gap-1 relative group">
+            <label
+              htmlFor="unstopOpportunity"
+              className="text-xs uppercase text-brand-muted tracking-widest bg-brand-panel px-1 absolute -top-2 left-2 group-focus-within:text-brand-cyan transition-colors z-10"
+            >
+              OPPORTUNITY
+            </label>
+            <select
+              id="unstopOpportunity"
+              name="unstopOpportunity"
+              className="brutal-input py-3 mt-1 appearance-none bg-brand-dark"
+              value={formData.unstopOpportunity}
+              onChange={handleChange}
+              disabled={isScraping}
+            >
+              {UNSTOP_OPPORTUNITIES.map((opportunity) => (
+                <option key={opportunity} value={opportunity}>
+                  {opportunity.toUpperCase()}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <span className="text-xs uppercase text-brand-muted tracking-widest">
+              WORK_FUNCTION
+            </span>
+            <div className="grid grid-cols-2 gap-2">
+              {UNSTOP_ROLES.map((role) => (
+                <button
+                  key={role}
+                  type="button"
+                  onClick={() => toggleRole(role)}
+                  disabled={isScraping}
+                  aria-pressed={unstopRoles.includes(role)}
+                  className={`border px-2 py-2 text-[10px] font-mono uppercase tracking-widest transition-colors disabled:opacity-50 ${
+                    unstopRoles.includes(role)
+                      ? 'border-brand-accent bg-brand-accent/10 text-brand-accent'
+                      : 'border-brand-border text-brand-muted hover:border-brand-text hover:text-brand-text'
+                  }`}
+                >
+                  {roleLabel(role)}
+                </button>
+              ))}
+            </div>
+            <span className="text-[10px] text-brand-muted uppercase tracking-widest">
+              {unstopRoles.length === 0
+                ? 'NO FILTER: MOSTLY SALES AND SUPPORT ROLES'
+                : 'UNSTOP LISTS EVERY FUNCTION. NARROW IT OR EXPECT SALES.'}
+            </span>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col gap-1 relative group">
         <label
@@ -213,7 +335,7 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
 
       <button
         type="submit"
-        disabled={isScraping}
+        disabled={isScraping || sources.length === 0}
         className="brutal-btn primary w-full mt-4 flex justify-center items-center gap-3 text-lg py-4 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-brand-accent disabled:active:translate-x-0 disabled:active:translate-y-0 disabled:shadow-none"
       >
         <Play fill="currentColor" />

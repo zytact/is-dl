@@ -21,15 +21,20 @@ type Client struct {
 	http    *http.Client
 }
 
+// Sources, UnstopRoles and the other list fields are comma separated names;
+// the API parses them as strings, not JSON arrays.
 type ScrapeOptions struct {
-	Keywords        string `json:"keywords"`
-	Location        string `json:"location"`
-	Limit           int    `json:"limit"`
-	ExperienceLevel string `json:"experienceLevel,omitempty"`
-	JobType         string `json:"jobType,omitempty"`
-	PostedWithin    string `json:"postedWithin,omitempty"`
-	RemoteOnly      bool   `json:"remoteOnly"`
-	Headless        bool   `json:"headless"`
+	Keywords          string `json:"keywords"`
+	Location          string `json:"location"`
+	Limit             int    `json:"limit"`
+	ExperienceLevel   string `json:"experienceLevel,omitempty"`
+	JobType           string `json:"jobType,omitempty"`
+	PostedWithin      string `json:"postedWithin,omitempty"`
+	RemoteOnly        bool   `json:"remoteOnly"`
+	Headless          bool   `json:"headless"`
+	Sources           string `json:"sources,omitempty"`
+	UnstopOpportunity string `json:"unstopOpportunity,omitempty"`
+	UnstopRoles       string `json:"unstopRoles,omitempty"`
 }
 
 type SSEEvent struct {
@@ -38,19 +43,35 @@ type SSEEvent struct {
 	Message    string `json:"message"`
 }
 
+// PayAmount is only present when the board published real figures.
+type PayAmount struct {
+	Min      *float64 `json:"min"`
+	Max      *float64 `json:"max"`
+	Currency string   `json:"currency"`
+	Period   string   `json:"period"`
+}
+
+type PayInfo struct {
+	Kind     string     `json:"kind"`
+	Evidence *string    `json:"evidence"`
+	Amount   *PayAmount `json:"amount"`
+}
+
 type JobListing struct {
-	JobID            *string `json:"jobId"`
-	JobURL           string  `json:"jobUrl"`
-	Title            *string `json:"title"`
-	CompanyName      *string `json:"companyName"`
-	LocationText     *string `json:"locationText"`
-	PostedAtText     *string `json:"postedAtText"`
-	CompanyURL       *string `json:"companyUrl"`
-	PostedAtIso      *string `json:"postedAtIso"`
-	JobType          *string `json:"jobType"`
-	AlumniCount      *string `json:"alumniCount"`
-	DescriptionText  *string `json:"descriptionText"`
-	RequirementsText *string `json:"requirementsText"`
+	Source           string   `json:"source"`
+	JobID            *string  `json:"jobId"`
+	JobURL           string   `json:"jobUrl"`
+	Title            *string  `json:"title"`
+	CompanyName      *string  `json:"companyName"`
+	LocationText     *string  `json:"locationText"`
+	PostedAtText     *string  `json:"postedAtText"`
+	CompanyURL       *string  `json:"companyUrl"`
+	PostedAtIso      *string  `json:"postedAtIso"`
+	JobType          *string  `json:"jobType"`
+	AlumniCount      *string  `json:"alumniCount"`
+	DescriptionText  *string  `json:"descriptionText"`
+	RequirementsText *string  `json:"requirementsText"`
+	Pay              *PayInfo `json:"pay"`
 }
 
 type Filters struct {
@@ -60,13 +81,23 @@ type Filters struct {
 	JobType         []string `json:"jobType"`
 }
 
+// SourceRun is one board's outcome. A failed board does not fail the search.
+type SourceRun struct {
+	Source string `json:"source"`
+	Status string `json:"status"`
+	Count  int    `json:"count"`
+	Error  string `json:"error"`
+}
+
+// Sources is nil for run files written before multi-source search.
 type SearchMeta struct {
-	Query     string  `json:"query"`
-	Location  string  `json:"location"`
-	Filters   Filters `json:"filters"`
-	ScrapedAt string  `json:"scrapedAt"`
-	Source    string  `json:"source"`
-	Count     int     `json:"count"`
+	Query     string      `json:"query"`
+	Location  string      `json:"location"`
+	Filters   Filters     `json:"filters"`
+	ScrapedAt string      `json:"scrapedAt"`
+	Source    string      `json:"source"`
+	Sources   []SourceRun `json:"sources"`
+	Count     int         `json:"count"`
 }
 
 type ResultMeta struct {

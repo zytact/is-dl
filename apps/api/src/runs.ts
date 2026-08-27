@@ -3,7 +3,7 @@ import { mkdir, readdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { CliError } from './errors.ts';
 import type { AppPaths } from './paths.ts';
-import type { ScraperOutput } from './types.ts';
+import type { PersistedRun, ScraperOutput } from './types.ts';
 
 export interface RunSummary {
   runId: string;
@@ -30,7 +30,7 @@ async function writeJson(filePath: string, value: unknown): Promise<void> {
   await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf-8');
 }
 
-function summarize(runId: string, filePath: string, output: ScraperOutput): RunSummary {
+function summarize(runId: string, filePath: string, output: PersistedRun): RunSummary {
   return {
     runId,
     path: filePath,
@@ -100,9 +100,21 @@ export async function listRuns(paths: AppPaths): Promise<RunSummary[]> {
   return summaries;
 }
 
-async function tryReadRunFile(filePath: string): Promise<ScraperOutput | null> {
+/** A missing `sources` becomes an explicit null, so callers cannot read past it. */
+function normalizeRun(parsed: unknown): PersistedRun | null {
+  if (typeof parsed !== 'object' || parsed === null) return null;
+  const run = parsed as Partial<PersistedRun>;
+  if (!run.meta || !Array.isArray(run.jobs)) return null;
+  const sources = run.meta.sources;
+  return {
+    meta: { ...run.meta, sources: Array.isArray(sources) ? sources : null },
+    jobs: run.jobs,
+  };
+}
+
+async function tryReadRunFile(filePath: string): Promise<PersistedRun | null> {
   try {
-    return JSON.parse(await readFile(filePath, 'utf-8')) as ScraperOutput;
+    return normalizeRun(JSON.parse(await readFile(filePath, 'utf-8')));
   } catch {
     return null;
   }
@@ -116,7 +128,7 @@ export async function resolveRunId(paths: AppPaths, ref: string): Promise<string
   return latest.runId;
 }
 
-export async function readRun(paths: AppPaths, runId: string): Promise<ScraperOutput> {
+export async function readRun(paths: AppPaths, runId: string): Promise<PersistedRun> {
   const filePath = join(paths.runsDir, `${runId}.json`);
   const output = await tryReadRunFile(filePath);
   if (!output) throw new CliError('ERROR', `Run not found: ${runId}`);

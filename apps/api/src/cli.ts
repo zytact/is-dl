@@ -28,13 +28,13 @@ const COMMANDS: Record<string, Command> = {
   resume: resumeCommand,
 };
 
-const HELP = `is-dl ${version} - LinkedIn job scraper
+const HELP = `is-dl ${version} - job search CLI for LinkedIn and Unstop
 
 Usage:
   is-dl <command> [flags]
 
 Commands:
-  search                    Run a scrape
+  search                    Run a scrape across every selected source
   login                     Open a browser and capture the LinkedIn session
   logout                    Delete the stored session
   runs list|show|rm         Inspect past runs
@@ -56,6 +56,10 @@ Global flags:
 
 search flags:
   -k, --keywords <query>            Search keywords (required unless --profile)
+  -s, --source <csv>                linkedin, unstop, or both (default both)
+      --unstop-opportunity <name>   jobs, internships, hackathons, competitions
+      --unstop-roles <csv>          Unstop work functions, for example
+                                    "software-development,backend-development"
   -p, --profile <name>              Use a saved profile from config
   -l, --location <location>         Location, for example "Remote" or "India"
       --limit <n>                   Maximum jobs to scrape (default 50)
@@ -70,8 +74,16 @@ search flags:
       --exclude-unpaid              Drop unpaid and token-stipend listings
       --exclude-seen                Drop listings already in the application log
 
+Sources:
+  search queries LinkedIn and Unstop together and merges the results, newest
+  first. LinkedIn needs "is-dl login"; Unstop needs nothing. A source that
+  fails is reported and skipped, and the command only fails when every source
+  failed. --limit applies per source. meta.sources in the output records what
+  each source returned.
+
 apps flags:
       --variant <name>              Which resume variant was sent
+  -s, --source <name>               Disambiguate a job id shared by two boards
       --from-run <runId>            Look the job up in one run instead of all
       --status <status>             Filter apps list
       --older-than <10d>            Filter apps list by age
@@ -98,6 +110,7 @@ Exit codes:
 Examples:
   is-dl login
   is-dl search -k "frontend intern" -l Remote --limit 20 --json
+  is-dl search -k developer --source unstop --unstop-roles software-development
   is-dl runs show latest --json
   is-dl search -k "intern" --exclude-unpaid --exclude-seen
   is-dl resume build --variant ai

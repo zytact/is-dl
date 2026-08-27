@@ -48,6 +48,7 @@ describe('pay classification', () => {
     expect(classifyPay({ descriptionText: 'Join our team.', requirementsText: null })).toEqual({
       kind: 'unstated',
       evidence: null,
+      amount: null,
     });
   });
 

@@ -1,5 +1,5 @@
 {
-  "name": "is-dl",
+  "name": "is-dl-workspace",
   "private": true,
   "scripts": {
     "dev": "vp run -F is-dl -F @repo/web dev",

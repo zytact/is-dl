@@ -99,6 +99,7 @@ export async function extractJobDetailsFromView(
     });
 
     return {
+      source: 'linkedin',
       jobId,
       jobUrl: currentUrl,
       title: title?.trim() || null,
@@ -128,6 +129,7 @@ export async function extractJobDetailsFromView(
 
     // Return partial data on error
     return {
+      source: 'linkedin',
       jobId: null,
       jobUrl: page.url(),
       title: null,

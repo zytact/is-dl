@@ -1,7 +1,7 @@
 import type { JobListing, PayInfo, PayKind } from './types.ts';
 
-/** Below this, a performance-contingent monthly stipend is a token, not pay. */
-const TOKEN_CEILING_INR = 10000;
+/** Below this, a monthly stipend is a token, not pay. */
+export const TOKEN_CEILING_INR = 10000;
 
 const AMBIGUOUS = /\bunpaid\s*(?:\/|\||\bor\b)\s*paid\b|\bpaid\s*(?:\/|\||\bor\b)\s*unpaid\b/i;
 
@@ -80,13 +80,13 @@ export function classifyPay(input: {
   requirementsText: string | null;
 }): PayInfo {
   const text = [input.descriptionText, input.requirementsText].filter(Boolean).join('\n');
-  if (!text.trim()) return { kind: 'unstated', evidence: null };
+  if (!text.trim()) return emptyPay();
 
   const ambiguous = text.match(AMBIGUOUS);
-  if (ambiguous) return { kind: 'unstated', evidence: clean(ambiguous[0]) };
+  if (ambiguous) return { kind: 'unstated', evidence: clean(ambiguous[0]), amount: null };
 
   const unpaid = firstMatch(text, UNPAID);
-  if (unpaid) return { kind: 'unpaid', evidence: clean(unpaid[0]) };
+  if (unpaid) return { kind: 'unpaid', evidence: clean(unpaid[0]), amount: null };
 
   const token = firstMatch(text, TOKEN);
   if (token) {
@@ -94,23 +94,24 @@ export function classifyPay(input: {
     return {
       kind: amount < TOKEN_CEILING_INR ? 'token' : 'paid',
       evidence: clean(token[0]),
+      amount: null,
     };
   }
 
   const money = text.match(MONEY);
   if (money?.index !== undefined) {
     const around = snippet(text, money.index, money[0].length);
-    if (PAY_CONTEXT.test(around)) return { kind: 'paid', evidence: around };
+    if (PAY_CONTEXT.test(around)) return { kind: 'paid', evidence: around, amount: null };
   }
 
   const claim = firstMatch(text, PAID_CLAIMS);
-  if (claim) return { kind: 'paid', evidence: clean(claim[0]) };
+  if (claim) return { kind: 'paid', evidence: clean(claim[0]), amount: null };
 
-  return { kind: 'unstated', evidence: null };
+  return emptyPay();
 }
 
 export function emptyPay(): PayInfo {
-  return { kind: 'unstated', evidence: null };
+  return { kind: 'unstated', evidence: null, amount: null };
 }
 
 export function summarizePay(jobs: JobListing[]): Record<PayKind, number> {

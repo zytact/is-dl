@@ -4,11 +4,24 @@ import { dirname, join, resolve } from 'node:path';
 import { parse as parseToml, stringify as stringifyToml } from 'smol-toml';
 import { CliError } from './errors.ts';
 import { expandHome } from './paths.ts';
+import {
+  isJobSource,
+  isUnstopOpportunity,
+  JOB_SOURCES,
+  type JobSource,
+  UNSTOP_OPPORTUNITIES,
+  type UnstopOpportunity,
+} from './types.ts';
 
 export const PROJECT_CONFIG_NAME = '.is-dl.toml';
 
 export interface SearchSettings {
   keywords: string;
+  /** Which job boards to query. More than one merges into a single result. */
+  sources: JobSource[];
+  unstopOpportunity: UnstopOpportunity;
+  /** Unstop work function slugs, for example "software-development". */
+  unstopRoles?: string[];
   location: string;
   limit: number;
   experienceLevel?: string[];
@@ -57,6 +70,8 @@ export interface LoadedConfig extends ConfigLayer {
 
 export const DEFAULT_SEARCH: SearchSettings = {
   keywords: '',
+  sources: [...JOB_SOURCES],
+  unstopOpportunity: 'jobs',
   location: '',
   limit: 50,
   remoteOnly: false,
@@ -80,6 +95,9 @@ const SEARCH_FIELDS = {
   headless: 'boolean',
   'out-dir': 'string',
   timeout: 'number',
+  sources: 'string[]',
+  'unstop-opportunity': 'string',
+  'unstop-roles': 'string[]',
 } as const satisfies Record<string, FieldType>;
 
 type SearchFieldKey = keyof typeof SEARCH_FIELDS;
@@ -312,6 +330,9 @@ export function envSearchLayer(env: NodeJS.ProcessEnv): SearchLayer {
     headless: envBool(env, 'HEADLESS'),
     outDir: envString(env, 'OUT_DIR'),
     timeout: envNumber(env, 'TIMEOUT'),
+    sources: envList(env, 'SOURCES') as JobSource[] | undefined,
+    unstopOpportunity: envString(env, 'UNSTOP_OPPORTUNITY') as UnstopOpportunity | undefined,
+    unstopRoles: envList(env, 'UNSTOP_ROLES'),
   });
 }
 
@@ -325,6 +346,22 @@ export function envServeLayer(env: NodeJS.ProcessEnv): Partial<ServeSettings> {
 export function resolveResumeDir(input: ResolveResumeDirInput): string {
   const dir = input.flag ?? envString(input.env, 'RESUME_DIR') ?? input.config.resume.dir;
   return dir ? resolve(input.cwd, expandHome(dir, input.home)) : input.fallback;
+}
+
+/** Order is the caller's, duplicates are dropped, an unknown name is a config error. */
+function readSources(values: readonly string[]): JobSource[] {
+  const sources: JobSource[] = [];
+  for (const value of values) {
+    if (!isJobSource(value)) {
+      throw new CliError(
+        'CONFIG',
+        `Unknown source "${value}". Use one of: ${JOB_SOURCES.join(', ')}`,
+      );
+    }
+    if (!sources.includes(value)) sources.push(value);
+  }
+  if (!sources.length) throw new CliError('USAGE', 'At least one source is required.');
+  return sources;
 }
 
 export interface ResolveSearchInput {
@@ -368,6 +405,15 @@ export function resolveSearch(input: ResolveSearchInput): SearchSettings {
   }
   if (!Number.isFinite(merged.limit) || merged.limit <= 0) {
     throw new CliError('USAGE', `--limit must be a positive number, got "${merged.limit}".`);
+  }
+  merged.sources = readSources(merged.sources);
+
+  const opportunity: string = merged.unstopOpportunity;
+  if (!isUnstopOpportunity(opportunity)) {
+    throw new CliError(
+      'CONFIG',
+      `Unknown Unstop opportunity "${opportunity}". Use one of: ${UNSTOP_OPPORTUNITIES.join(', ')}`,
+    );
   }
   return merged;
 }

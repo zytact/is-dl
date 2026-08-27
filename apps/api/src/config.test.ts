@@ -2,8 +2,16 @@ import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, test } from 'vite-plus/test';
-import { loadConfig, parseConfigLayer, resolveResumeDir, resolveSearch } from './config.ts';
+import {
+  type LoadedConfig,
+  loadConfig,
+  parseConfigLayer,
+  resolveResumeDir,
+  resolveSearch,
+} from './config.ts';
 import { CliError } from './errors.ts';
+
+const empty: LoadedConfig = { file: null, base: {}, profiles: {}, serve: {}, resume: {} };
 
 let root = '';
 let userConfigFile = '';
@@ -35,6 +43,33 @@ describe('config precedence', () => {
 
     expect(settings.limit).toBe(10);
     expect(settings.location).toBe('India');
+  });
+
+  test('sources default to every board and follow the precedence chain', async () => {
+    await writeUser('sources = ["linkedin"]\n');
+    const config = await loadConfig({ cwd: root, userConfigFile });
+
+    expect(resolveSearch({ config: empty, env: {}, flags: {} }).sources).toEqual([
+      'linkedin',
+      'unstop',
+    ]);
+    expect(resolveSearch({ config, env: {}, flags: {} }).sources).toEqual(['linkedin']);
+    expect(resolveSearch({ config, env: { IS_DL_SOURCES: 'unstop' }, flags: {} }).sources).toEqual([
+      'unstop',
+    ]);
+    expect(
+      resolveSearch({
+        config,
+        env: { IS_DL_SOURCES: 'unstop' },
+        flags: { sources: ['unstop', 'linkedin', 'unstop'] },
+      }).sources,
+    ).toEqual(['unstop', 'linkedin']);
+  });
+
+  test('an unknown source name is a config error', () => {
+    expect(() =>
+      resolveSearch({ config: empty, env: { IS_DL_SOURCES: 'indeed' }, flags: {} }),
+    ).toThrow(CliError);
   });
 
   test('profile beats top-level config, env beats profile, flags beat env', async () => {

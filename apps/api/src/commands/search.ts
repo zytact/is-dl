@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
-import { currentState, readApplications } from '../applications.ts';
+import { currentState, readApplications, seenKey } from '../applications.ts';
 import { buildCtx, type CliBase } from '../cli-context.ts';
 import { resolveSearch, type SearchLayer } from '../config.ts';
 import { CliError } from '../errors.ts';
@@ -8,7 +8,7 @@ import { migrateLegacySession } from '../linkedin/browser.ts';
 import { summarizePay } from '../pay.ts';
 import { newRunId, saveRun, writeRunTo } from '../runs.ts';
 import { runScraper } from '../scraper.ts';
-import type { ScraperOutput } from '../types.ts';
+import type { JobSource, ScraperOutput } from '../types.ts';
 import { GLOBAL_OPTIONS, usage } from './shared.ts';
 
 const SEARCH_OPTIONS = {
@@ -29,6 +29,9 @@ const SEARCH_OPTIONS = {
   timeout: { type: 'string' },
   'exclude-unpaid': { type: 'boolean' },
   'exclude-seen': { type: 'boolean' },
+  source: { type: 'string', short: 's' },
+  'unstop-opportunity': { type: 'string' },
+  'unstop-roles': { type: 'string' },
 } as const;
 
 function toggle(on: boolean | undefined, off: boolean | undefined): boolean | undefined {
@@ -66,7 +69,7 @@ function applyTriage(
       droppedUnpaid++;
       return false;
     }
-    if (job.jobId && options.seen.has(job.jobId)) {
+    if (job.jobId && options.seen.has(seenKey(job.source, job.jobId))) {
       droppedSeen++;
       return false;
     }
@@ -101,6 +104,9 @@ export async function searchCommand(base: CliBase, argv: string[]): Promise<void
     outDir: values.out,
     debug: toggle(values.debug, values['no-debug']),
     timeout: num(values.timeout, '--timeout'),
+    sources: csv(values.source) as JobSource[] | undefined,
+    unstopOpportunity: values['unstop-opportunity'] as SearchLayer['unstopOpportunity'],
+    unstopRoles: csv(values['unstop-roles']),
   };
 
   const profile = values.profile ?? ctx.env.IS_DL_PROFILE;
@@ -113,31 +119,44 @@ export async function searchCommand(base: CliBase, argv: string[]): Promise<void
     throw new CliError('USAGE', '--no-headless needs an interactive terminal.');
   }
 
-  await migrateLegacySession(ctx.paths.sessionFile, ctx.cwd, ctx.log);
+  if (settings.sources.includes('linkedin')) {
+    await migrateLegacySession(ctx.paths.sessionFile, ctx.cwd, ctx.log);
+  }
 
   const scraped = await runScraper(
     {
-      keywords: settings.keywords,
-      location: settings.location,
-      limit: settings.limit,
-      experienceLevel: settings.experienceLevel,
-      jobType: settings.jobType,
-      postedWithin: settings.postedWithin,
-      remoteOnly: settings.remoteOnly,
-      headless: settings.headless,
-      debug: settings.debug,
-      timeout: settings.timeout,
-      sessionFile: ctx.paths.sessionFile,
-      debugDir: ctx.paths.cache,
+      query: {
+        keywords: settings.keywords,
+        location: settings.location,
+        limit: settings.limit,
+        remoteOnly: settings.remoteOnly,
+      },
+      sources: settings.sources,
+      linkedin: {
+        headless: settings.headless,
+        debug: settings.debug,
+        timeout: settings.timeout,
+        sessionFile: ctx.paths.sessionFile,
+        debugDir: ctx.paths.cache,
+        experienceLevel: settings.experienceLevel,
+        jobType: settings.jobType,
+        postedWithin: settings.postedWithin,
+      },
+      unstop: {
+        opportunity: settings.unstopOpportunity,
+        roles: settings.unstopRoles,
+      },
     },
     ctx.log,
     base.signal,
   );
 
+  for (const run of scraped.meta.sources) {
+    if (run.status === 'failed') ctx.log(`Skipped ${run.source}: ${run.error}`);
+  }
+
   const seen = values['exclude-seen']
-    ? new Set(
-        [...currentState(await readApplications(ctx.paths.applicationsLog)).keys()].filter(Boolean),
-      )
+    ? new Set(currentState(await readApplications(ctx.paths.applicationsLog)).keys())
     : new Set<string>();
 
   const triaged = applyTriage(scraped, {
