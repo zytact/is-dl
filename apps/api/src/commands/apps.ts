@@ -56,13 +56,20 @@ function readSourceFlag(value: string | undefined): JobSource | undefined {
 }
 
 /** Two boards can hand out the same numeric id, so the caller has to pick one. */
+function assertOneBoard(matches: ApplicationRecord[], jobId: string): void {
+  const sources = [...new Set(matches.map(recordSource))];
+  if (sources.length > 1) {
+    throw new CliError(
+      'USAGE',
+      `${jobId} is logged on ${sources.join(', ')}. Pass --source to pick one.`,
+    );
+  }
+}
+
 function pickOne(matches: ApplicationRecord[], jobId: string): ApplicationRecord {
   const first = matches[0];
   if (!first) throw new CliError('ERROR', `No application logged for ${jobId}.`);
-  if (matches.length > 1) {
-    const sources = matches.map(recordSource).join(', ');
-    throw new CliError('USAGE', `${jobId} is logged on ${sources}. Pass --source to pick one.`);
-  }
+  assertOneBoard(matches, jobId);
   return first;
 }
 
@@ -160,6 +167,7 @@ export async function appsCommand(base: CliBase, argv: string[]): Promise<void> 
       if (!first) throw new CliError('USAGE', 'Usage: is-dl apps show <jobId>');
       const history = historyFor(await readApplications(file), first, source);
       if (!history.length) throw new CliError('ERROR', `No application logged for ${first}.`);
+      assertOneBoard(history, first);
       const human = [
         `${first}  ${history.at(-1)!.company ?? '?'} - ${history.at(-1)!.title ?? '?'}`,
         `url: ${history.at(-1)!.url ?? '-'}`,
