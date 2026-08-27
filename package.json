@@ -13,7 +13,6 @@
     "start:tui": "bash scripts/start-api-tui.sh start",
     "start:api:tui": "vp run start:tui",
     "launch": "vp run start:tui",
-    "build": "vp run -F is-dl -F @repo/web -F @repo/tui build",
     "build:api": "vp run --filter is-dl build",
     "build:web": "vp run --filter @repo/web build",
     "build:tui": "vp run --filter @repo/tui build",
