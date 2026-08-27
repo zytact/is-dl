@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -29,6 +30,10 @@ type ResultsModel struct {
 	detailTable    table.Model
 	detailViewport viewport.Model
 	detailFilename string
+
+	// Empty means every source. Jobs are always read through visibleJobs.
+	sourceFilter string
+	visibleJobs  []api.JobListing
 
 	inJobDetail       bool
 	jobDetailViewport viewport.Model
@@ -82,8 +87,7 @@ func (r *ResultsModel) SetSize(width, height int) {
 	r.table.SetHeight(maxInt(innerH-3, 1)) // header (2) + footer (1)
 	r.table.SetColumns(buildListColumns(innerW))
 	if r.inDetail {
-		jobsH := maxInt((innerH-6)/2, 2)
-		descH := maxInt(innerH-6-jobsH, 2)
+		jobsH, descH := r.detailHeights()
 		r.detailTable.SetHeight(jobsH)
 		r.detailViewport.Width = innerW
 		r.detailViewport.Height = descH
@@ -92,8 +96,74 @@ func (r *ResultsModel) SetSize(width, height int) {
 	if r.inJobDetail {
 		r.jobDetailViewport.Width = innerW
 		r.jobDetailViewport.Height = maxInt(innerH-4, 2)
-		r.jobDetailViewport.SetContent(buildFullJobDetail(r.detailResult, r.selectedJobIndex, innerW))
+		r.jobDetailViewport.SetContent(buildFullJobDetail(r.visibleJobs, r.selectedJobIndex, innerW))
 	}
+}
+
+// The job table and the description share whatever the header leaves behind.
+func (r *ResultsModel) detailHeights() (jobs int, description int) {
+	chrome := 6 // header block, two section titles and the footer
+	if r.detailResult != nil && skippedSources(r.detailResult.Meta) != "" {
+		chrome++
+	}
+	available := r.innerHeight() - chrome
+	jobs = maxInt(available/2, 2)
+	return jobs, maxInt(available-jobs, 2)
+}
+
+func jobsFilterNote(r *ResultsModel) string {
+	if r.sourceFilter == "" {
+		return ""
+	}
+	return ui.MetaText.Render("  " + r.sourceFilter + " only")
+}
+
+// The sources that actually returned jobs, in merge order.
+func (r *ResultsModel) sourceOptions() []string {
+	if r.detailResult == nil {
+		return nil
+	}
+	seen := map[string]bool{}
+	out := []string{}
+	for _, job := range r.detailResult.Jobs {
+		if job.Source != "" && !seen[job.Source] {
+			seen[job.Source] = true
+			out = append(out, job.Source)
+		}
+	}
+	return out
+}
+
+// Rebuilds the job table for the current source filter and resets the cursor.
+func (r *ResultsModel) applySourceFilter() {
+	r.visibleJobs = nil
+	if r.detailResult == nil {
+		return
+	}
+	for _, job := range r.detailResult.Jobs {
+		if r.sourceFilter == "" || job.Source == r.sourceFilter {
+			r.visibleJobs = append(r.visibleJobs, job)
+		}
+	}
+	innerW := r.innerWidth()
+	r.detailTable = buildJobsTable(r.visibleJobs, innerW)
+	r.selectedJobIndex = 0
+	r.detailViewport.SetContent(buildJobDescription(r.visibleJobs, 0))
+}
+
+func (r *ResultsModel) cycleSourceFilter() {
+	options := append([]string{""}, r.sourceOptions()...)
+	if len(options) < 3 {
+		return
+	}
+	next := 0
+	for i, option := range options {
+		if option == r.sourceFilter {
+			next = (i + 1) % len(options)
+		}
+	}
+	r.sourceFilter = options[next]
+	r.applySourceFilter()
 }
 
 func (r *ResultsModel) Update(msg tea.Msg) (*ResultsModel, tea.Cmd) {
@@ -152,6 +222,11 @@ func (r *ResultsModel) Update(msg tea.Msg) (*ResultsModel, tea.Cmd) {
 				r.detailResult = nil
 				return r, nil
 			}
+		case "s":
+			if r.inDetail && !r.inJobDetail {
+				r.cycleSourceFilter()
+				return r, nil
+			}
 		case "x":
 			if !r.inDetail {
 				return r, r.exportCmd()
@@ -184,7 +259,7 @@ func (r *ResultsModel) Update(msg tea.Msg) (*ResultsModel, tea.Cmd) {
 				var cmd tea.Cmd
 				r.detailTable, cmd = r.detailTable.Update(msg)
 				r.selectedJobIndex = r.detailTable.Cursor()
-				r.detailViewport.SetContent(buildJobDescription(r.detailResult, r.detailTable.Cursor()))
+				r.detailViewport.SetContent(buildJobDescription(r.visibleJobs, r.detailTable.Cursor()))
 				return r, cmd
 			}
 		case "left", "h":
@@ -192,17 +267,17 @@ func (r *ResultsModel) Update(msg tea.Msg) (*ResultsModel, tea.Cmd) {
 				r.selectedJobIndex = maxInt(r.selectedJobIndex-1, 0)
 				innerW := r.innerWidth()
 				innerH := r.innerHeight()
-				r.jobDetailViewport.SetContent(buildFullJobDetail(r.detailResult, r.selectedJobIndex, innerW))
+				r.jobDetailViewport.SetContent(buildFullJobDetail(r.visibleJobs, r.selectedJobIndex, innerW))
 				r.jobDetailViewport.GotoTop()
 				r.jobDetailViewport.Height = maxInt(innerH-4, 2)
 				return r, nil
 			}
 		case "right", "l":
 			if r.inJobDetail && r.detailResult != nil {
-				r.selectedJobIndex = minInt(r.selectedJobIndex+1, len(r.detailResult.Jobs)-1)
+				r.selectedJobIndex = minInt(r.selectedJobIndex+1, len(r.visibleJobs)-1)
 				innerW := r.innerWidth()
 				innerH := r.innerHeight()
-				r.jobDetailViewport.SetContent(buildFullJobDetail(r.detailResult, r.selectedJobIndex, innerW))
+				r.jobDetailViewport.SetContent(buildFullJobDetail(r.visibleJobs, r.selectedJobIndex, innerW))
 				r.jobDetailViewport.GotoTop()
 				r.jobDetailViewport.Height = maxInt(innerH-4, 2)
 				return r, nil
@@ -231,15 +306,13 @@ func (r *ResultsModel) Update(msg tea.Msg) (*ResultsModel, tea.Cmd) {
 		r.inDetail = true
 		r.detailResult = msg.result
 		r.detailFilename = msg.filename
-		innerW := r.innerWidth()
-		innerH := r.innerHeight()
-		jobsH := maxInt((innerH-6)/2, 2)
-		descH := maxInt(innerH-6-jobsH, 2)
-		r.detailTable = buildJobsTable(msg.result, innerW)
-		r.detailViewport = viewport.New(innerW, descH)
-		r.selectedJobIndex = 0
 		r.detailConfirmDelete = false
-		r.detailViewport.SetContent(buildJobDescription(msg.result, 0))
+		r.sourceFilter = ""
+		r.applySourceFilter()
+		jobsH, descH := r.detailHeights()
+		r.detailViewport = viewport.New(r.innerWidth(), descH)
+		r.detailViewport.SetContent(buildJobDescription(r.visibleJobs, 0))
+		r.detailTable.SetHeight(jobsH)
 		return r, nil
 	case resultsErrMsg:
 		r.lastError = msg.err.Error()
@@ -271,7 +344,7 @@ func (r *ResultsModel) Update(msg tea.Msg) (*ResultsModel, tea.Cmd) {
 		var cmd tea.Cmd
 		r.detailTable, cmd = r.detailTable.Update(msg)
 		r.selectedJobIndex = r.detailTable.Cursor()
-		r.detailViewport.SetContent(buildJobDescription(r.detailResult, r.detailTable.Cursor()))
+		r.detailViewport.SetContent(buildJobDescription(r.visibleJobs, r.detailTable.Cursor()))
 		return r, cmd
 	}
 	var cmd tea.Cmd
@@ -285,10 +358,10 @@ func (r *ResultsModel) View() string {
 
 	var content string
 	if r.inJobDetail && r.detailResult != nil {
-		total := len(r.detailResult.Jobs)
+		total := len(r.visibleJobs)
 		jobNav := fmt.Sprintf("Job %d / %d", r.selectedJobIndex+1, total)
 		header := ui.PanelTitle.Render("JOB DETAIL") + "  " + ui.MetaText.Render(jobNav)
-		meta := ui.MetaText.Render("File: "+r.detailFilename+"  Query: "+strings.TrimSpace(r.detailResult.Meta.Query))
+		meta := ui.MetaText.Render("File: " + r.detailFilename + "  Query: " + strings.TrimSpace(r.detailResult.Meta.Query))
 		footer := ui.HelpText.Render("←/→ prev/next job   ↑/↓ scroll   o open URL   b/esc back")
 		content = lipgloss.JoinVertical(lipgloss.Left,
 			header,
@@ -297,7 +370,7 @@ func (r *ResultsModel) View() string {
 			footer,
 		)
 	} else if r.inDetail && r.detailResult != nil {
-		footer := ui.HelpText.Render("↑↓ navigate jobs   enter: view job   o: open URL   b/esc: back   d: delete")
+		footer := ui.HelpText.Render("↑↓ navigate jobs   enter: view job   o: open URL   s: source filter   b/esc: back   d: delete")
 		if r.detailConfirmDelete {
 			footer = ui.WarningText.Render("Delete " + r.detailFilename + "? y/n")
 		}
@@ -309,7 +382,7 @@ func (r *ResultsModel) View() string {
 		}
 		content = lipgloss.JoinVertical(lipgloss.Left,
 			renderDetailHeader(r),
-			ui.PanelTitle.Render("JOBS"),
+			ui.PanelTitle.Render("JOBS")+jobsFilterNote(r),
 			r.detailTable.View(),
 			ui.PanelTitle.Render("DETAILS"),
 			r.detailViewport.View(),
@@ -440,10 +513,10 @@ func (r *ResultsModel) openURLCmd() tea.Cmd {
 		return nil
 	}
 	idx := r.detailTable.Cursor()
-	if idx < 0 || idx >= len(r.detailResult.Jobs) {
+	if idx < 0 || idx >= len(r.visibleJobs) {
 		return nil
 	}
-	url := r.detailResult.Jobs[idx].JobURL
+	url := r.visibleJobs[idx].JobURL
 	if strings.TrimSpace(url) == "" {
 		return func() tea.Msg {
 			return resultsErrMsg{err: fmt.Errorf("no job URL for selected record")}
@@ -491,23 +564,19 @@ func buildResultRows(results []api.ResultMeta, width int) []table.Row {
 	return rows
 }
 
-func buildJobsTable(result *api.ResultFile, width int) table.Model {
+func buildJobsTable(jobs []api.JobListing, width int) table.Model {
 	columnWidths := detailColumnWidths(width)
 	t := table.New(
-		table.WithColumns([]table.Column{
-			{Title: "Title", Width: columnWidths.title},
-			{Title: "Company", Width: columnWidths.company},
-			{Title: "Location", Width: columnWidths.location},
-			{Title: "Posted", Width: columnWidths.posted},
-		}),
+		table.WithColumns(buildDetailColumns(width)),
 		table.WithFocused(true),
 	)
 	t.SetStyles(ui.TableStyles())
-	rows := make([]table.Row, 0, len(result.Jobs))
-	for _, job := range result.Jobs {
+	rows := make([]table.Row, 0, len(jobs))
+	for _, job := range jobs {
 		rows = append(rows, table.Row{
 			truncate(displayValue(job.Title, "(untitled)"), columnWidths.title),
 			truncate(displayValue(job.CompanyName, "(unknown company)"), columnWidths.company),
+			truncate(displayString(job.Source, "-"), columnWidths.source),
 			truncate(displayValue(job.LocationText, "Any Region"), columnWidths.location),
 			truncate(displayValue(job.PostedAtText, "-"), columnWidths.posted),
 		})
@@ -521,19 +590,22 @@ func buildDetailColumns(width int) []table.Column {
 	return []table.Column{
 		{Title: "Title", Width: columnWidths.title},
 		{Title: "Company", Width: columnWidths.company},
+		{Title: "Source", Width: columnWidths.source},
 		{Title: "Location", Width: columnWidths.location},
 		{Title: "Posted", Width: columnWidths.posted},
 	}
 }
 
-func buildJobDescription(result *api.ResultFile, index int) string {
-	if result == nil || index < 0 || index >= len(result.Jobs) {
+func buildJobDescription(jobs []api.JobListing, index int) string {
+	if index < 0 || index >= len(jobs) {
 		return ""
 	}
-	job := result.Jobs[index]
+	job := jobs[index]
 	var b strings.Builder
 	b.WriteString("Title: " + displayValue(job.Title, "(untitled)"))
 	b.WriteString("\nCompany: " + displayValue(job.CompanyName, "(unknown company)"))
+	b.WriteString("\nSource: " + displayString(job.Source, "-"))
+	b.WriteString("\nPay: " + formatPay(job.Pay))
 	b.WriteString("\nLocation: " + displayValue(job.LocationText, "Any Region"))
 	b.WriteString("\nPosted: " + displayValue(job.PostedAtText, "-"))
 	if job.JobType != nil && strings.TrimSpace(*job.JobType) != "" {
@@ -558,7 +630,7 @@ func buildJobDescription(result *api.ResultFile, index int) string {
 }
 
 func (r *ResultsModel) openJobDetailCmd() tea.Cmd {
-	if r.detailResult == nil || len(r.detailResult.Jobs) == 0 {
+	if len(r.visibleJobs) == 0 {
 		return nil
 	}
 	idx := r.detailTable.Cursor()
@@ -566,7 +638,7 @@ func (r *ResultsModel) openJobDetailCmd() tea.Cmd {
 	innerW := r.innerWidth()
 	innerH := r.innerHeight()
 	vp := viewport.New(innerW, maxInt(innerH-4, 2))
-	vp.SetContent(buildFullJobDetail(r.detailResult, idx, innerW))
+	vp.SetContent(buildFullJobDetail(r.visibleJobs, idx, innerW))
 	r.jobDetailViewport = vp
 	r.inJobDetail = true
 	return nil
@@ -577,10 +649,10 @@ func (r *ResultsModel) openURLFromJobDetail() tea.Cmd {
 		return nil
 	}
 	idx := r.selectedJobIndex
-	if idx < 0 || idx >= len(r.detailResult.Jobs) {
+	if idx < 0 || idx >= len(r.visibleJobs) {
 		return nil
 	}
-	url := r.detailResult.Jobs[idx].JobURL
+	url := r.visibleJobs[idx].JobURL
 	if strings.TrimSpace(url) == "" {
 		return func() tea.Msg {
 			return resultsErrMsg{err: fmt.Errorf("no job URL for selected record")}
@@ -598,11 +670,11 @@ func (r *ResultsModel) openURLFromJobDetail() tea.Cmd {
 	}
 }
 
-func buildFullJobDetail(result *api.ResultFile, index int, width int) string {
-	if result == nil || index < 0 || index >= len(result.Jobs) {
+func buildFullJobDetail(jobs []api.JobListing, index int, width int) string {
+	if index < 0 || index >= len(jobs) {
 		return ""
 	}
-	job := result.Jobs[index]
+	job := jobs[index]
 	sep := strings.Repeat("─", maxInt(width, 10))
 	var b strings.Builder
 
@@ -614,6 +686,9 @@ func buildFullJobDetail(result *api.ResultFile, index int, width int) string {
 
 	writeField("Title", displayValue(job.Title, "(untitled)"))
 	writeField("Company", displayValue(job.CompanyName, "(unknown company)"))
+	writeField("Source", displayString(job.Source, "-"))
+	writeField("Pay", formatPay(job.Pay))
+	writeField("Pay Evidence", displayValue(payEvidence(job.Pay), ""))
 	writeField("Location", displayValue(job.LocationText, "Any Region"))
 	writeField("Job Type", displayValue(job.JobType, ""))
 	writeField("Posted", displayValue(job.PostedAtText, ""))
@@ -720,10 +795,7 @@ func renderDetailHeader(r *ResultsModel) string {
 	if location == "" {
 		location = "Any Region"
 	}
-	count := len(r.detailResult.Jobs)
-	if meta.Count > 0 {
-		count = meta.Count
-	}
+	count := len(r.visibleJobs)
 	filters := formatFilters(meta.Filters)
 	if filters == "" {
 		filters = "None"
@@ -733,8 +805,11 @@ func renderDetailHeader(r *ResultsModel) string {
 		ui.MetaText.Render("File: " + r.detailFilename),
 		ui.MetaText.Render("Query: " + query),
 		ui.MetaText.Render("Location: " + location),
-		ui.MetaText.Render("Source: " + displayString(meta.Source, "-") + "  Records: " + fmt.Sprintf("%d", count)),
+		ui.MetaText.Render("Sources: " + formatSourceRuns(meta) + "  Records: " + fmt.Sprintf("%d", count)),
 		ui.MetaText.Render("Filters: " + filters),
+	}
+	if skipped := skippedSources(meta); skipped != "" {
+		lines = append(lines, ui.WarningText.Render("Skipped: "+skipped))
 	}
 	return header + "\n" + strings.Join(lines, "\n")
 }
@@ -782,14 +857,15 @@ func listColumnWidths(width int) listWidths {
 type detailWidths struct {
 	title    int
 	company  int
+	source   int
 	location int
 	posted   int
 }
 
 func detailColumnWidths(width int) detailWidths {
 	w := maxInt(width-10, 30)
-	widths := detailWidths{posted: 10}
-	remaining := w - widths.posted
+	widths := detailWidths{posted: 10, source: 9}
+	remaining := w - widths.posted - widths.source
 	if remaining < 20 {
 		widths.title = 10
 		widths.company = 8
@@ -878,4 +954,65 @@ func truncate(value string, max int) string {
 		return value[:max]
 	}
 	return value[:max-3] + "..."
+}
+
+// The board outcomes recorded with the run. Older run files only have the
+// comma-joined name of the sources that returned jobs.
+func formatSourceRuns(meta api.SearchMeta) string {
+	if len(meta.Sources) == 0 {
+		return displayString(meta.Source, "-")
+	}
+	parts := make([]string, 0, len(meta.Sources))
+	for _, run := range meta.Sources {
+		if run.Status == "ok" {
+			parts = append(parts, fmt.Sprintf("%s %d", run.Source, run.Count))
+		} else {
+			parts = append(parts, run.Source+" skipped")
+		}
+	}
+	return strings.Join(parts, "  ")
+}
+
+func skippedSources(meta api.SearchMeta) string {
+	parts := []string{}
+	for _, run := range meta.Sources {
+		if run.Status != "ok" {
+			parts = append(parts, run.Source+": "+displayString(run.Error, "no reason recorded"))
+		}
+	}
+	return strings.Join(parts, " | ")
+}
+
+// Figures are only shown when the board published them; prose stays evidence.
+func formatPay(pay *api.PayInfo) string {
+	if pay == nil {
+		return "-"
+	}
+	if pay.Amount == nil {
+		return pay.Kind
+	}
+	figures := []string{}
+	for _, value := range []*float64{pay.Amount.Min, pay.Amount.Max} {
+		if value != nil {
+			figure := strconv.FormatFloat(*value, 'f', -1, 64)
+			if len(figures) == 0 || figures[0] != figure {
+				figures = append(figures, figure)
+			}
+		}
+	}
+	if len(figures) == 0 {
+		return pay.Kind
+	}
+	out := pay.Kind + ": " + pay.Amount.Currency + " " + strings.Join(figures, " - ")
+	if pay.Amount.Period != "" && pay.Amount.Period != "unknown" {
+		out += " / " + pay.Amount.Period
+	}
+	return out
+}
+
+func payEvidence(pay *api.PayInfo) *string {
+	if pay == nil {
+		return nil
+	}
+	return pay.Evidence
 }

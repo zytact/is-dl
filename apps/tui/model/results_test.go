@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -96,5 +97,111 @@ func TestResultsDeleteCmd_ClientError(t *testing.T) {
 	}
 	if errMsg.err.Error() != "delete failed" {
 		t.Errorf("unexpected error: %v", errMsg.err)
+	}
+}
+
+func sourcedResult() *api.ResultFile {
+	return &api.ResultFile{
+		Meta: api.SearchMeta{
+			Query:  "engineer",
+			Source: "unstop",
+			Sources: []api.SourceRun{
+				{Source: "linkedin", Status: "failed", Count: 0, Error: "no stored session"},
+				{Source: "unstop", Status: "ok", Count: 2},
+			},
+		},
+		Jobs: []api.JobListing{
+			{Source: "unstop", JobURL: "https://unstop.test/1"},
+			{Source: "unstop", JobURL: "https://unstop.test/2"},
+		},
+	}
+}
+
+func TestResultDetail_AppliesSourceFilter(t *testing.T) {
+	r := newTestResults(&mockClient{})
+	result := sourcedResult()
+	result.Jobs = append(result.Jobs, api.JobListing{Source: "linkedin", JobURL: "https://li.test/1"})
+
+	r, _ = r.Update(resultDetailMsg{filename: "a.json", result: result})
+	if len(r.visibleJobs) != 3 {
+		t.Fatalf("expected every job visible, got %d", len(r.visibleJobs))
+	}
+
+	r.cycleSourceFilter()
+	if r.sourceFilter != "unstop" || len(r.visibleJobs) != 2 {
+		t.Errorf("expected 2 unstop jobs, got filter %q with %d", r.sourceFilter, len(r.visibleJobs))
+	}
+
+	r.cycleSourceFilter()
+	if r.sourceFilter != "linkedin" || len(r.visibleJobs) != 1 {
+		t.Errorf("expected 1 linkedin job, got filter %q with %d", r.sourceFilter, len(r.visibleJobs))
+	}
+
+	r.cycleSourceFilter()
+	if r.sourceFilter != "" || len(r.visibleJobs) != 3 {
+		t.Errorf("expected the filter to wrap back to every source, got %q", r.sourceFilter)
+	}
+}
+
+func TestCycleSourceFilter_SingleSourceStaysUnfiltered(t *testing.T) {
+	r := newTestResults(&mockClient{})
+	r, _ = r.Update(resultDetailMsg{filename: "a.json", result: sourcedResult()})
+
+	r.cycleSourceFilter()
+
+	if r.sourceFilter != "" {
+		t.Errorf("expected no filter with one source, got %q", r.sourceFilter)
+	}
+}
+
+func TestFormatSourceRuns_ShowsSkippedSource(t *testing.T) {
+	meta := sourcedResult().Meta
+
+	if got := formatSourceRuns(meta); got != "linkedin skipped  unstop 2" {
+		t.Errorf("unexpected summary: %q", got)
+	}
+	if got := skippedSources(meta); got != "linkedin: no stored session" {
+		t.Errorf("unexpected skip detail: %q", got)
+	}
+}
+
+func TestFormatSourceRuns_FallsBackToLegacyMeta(t *testing.T) {
+	meta := api.SearchMeta{Source: "linkedin"}
+
+	if got := formatSourceRuns(meta); got != "linkedin" {
+		t.Errorf("unexpected summary: %q", got)
+	}
+	if got := skippedSources(meta); got != "" {
+		t.Errorf("expected no skips, got %q", got)
+	}
+}
+
+func TestSearchMeta_DecodesRunFileWithoutSources(t *testing.T) {
+	var meta api.SearchMeta
+	if err := json.Unmarshal([]byte(`{"query":"dev","source":"linkedin","count":3}`), &meta); err != nil {
+		t.Fatalf("expected a legacy run file to decode, got %v", err)
+	}
+	if meta.Sources != nil {
+		t.Errorf("expected no source runs, got %v", meta.Sources)
+	}
+}
+
+func TestFormatPay_OnlyShowsPublishedFigures(t *testing.T) {
+	min := 20000.0
+	max := 40000.0
+
+	if got := formatPay(nil); got != "-" {
+		t.Errorf("unexpected pay for a missing block: %q", got)
+	}
+	if got := formatPay(&api.PayInfo{Kind: "unstated"}); got != "unstated" {
+		t.Errorf("unexpected pay without figures: %q", got)
+	}
+	pay := &api.PayInfo{Kind: "paid", Amount: &api.PayAmount{Min: &min, Max: &max, Currency: "INR", Period: "monthly"}}
+	if got := formatPay(pay); got != "paid: INR 20000 - 40000 / monthly" {
+		t.Errorf("unexpected pay range: %q", got)
+	}
+	single := &api.PayInfo{Kind: "paid", Amount: &api.PayAmount{Min: &min, Max: &min, Currency: "INR", Period: "unknown"}}
+	if got := formatPay(single); got != "paid: INR 20000" {
+		t.Errorf("unexpected single figure: %q", got)
 	}
 }

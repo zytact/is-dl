@@ -23,6 +23,17 @@ type ScrapeModel struct {
 
 	viewport viewport.Model
 
+	sourceOptions  []string
+	sourceSelected map[int]bool
+	sourceIndex    int
+
+	unstopOpportunityOptions []string
+	unstopOpportunityIndex   int
+
+	unstopRoleOptions  []string
+	unstopRoleSelected map[int]bool
+	unstopRoleIndex    int
+
 	experienceOptions  []string
 	experienceSelected map[int]bool
 	experienceIndex    int
@@ -39,12 +50,19 @@ type ScrapeModel struct {
 	isScraping bool
 
 	inlineError string
+
+	// Line positions from the last render, used to keep the focused field visible.
+	fieldLines   map[int]int
+	contentLines int
 }
 
 const (
 	scrapeKeywords = iota
 	scrapeLocation
 	scrapeLimit
+	scrapeSources
+	scrapeUnstopOpportunity
+	scrapeUnstopRoles
 	scrapeExperience
 	scrapeJobType
 	scrapePostedWithin
@@ -72,17 +90,25 @@ func NewScrape(client api.APIClient) *ScrapeModel {
 	inputs[scrapeLimit] = limit
 
 	model := &ScrapeModel{
-		client:              client,
-		inputs:              inputs,
+		client:                   client,
+		inputs:                   inputs,
+		sourceOptions:            []string{"linkedin", "unstop"},
+		sourceSelected:           map[int]bool{0: true, 1: true},
+		unstopOpportunityOptions: []string{"jobs", "internships", "hackathons", "competitions"},
+		unstopRoleOptions: []string{
+			"software-development",
+			"frontend-development",
+			"full-stack-development",
+			"backend-development",
+		},
+		unstopRoleSelected:  map[int]bool{0: true},
 		experienceOptions:   []string{"Internship", "Entry level", "Associate", "Mid-Senior level", "Director"},
 		experienceSelected:  map[int]bool{},
-		experienceIndex:     0,
 		jobTypeOptions:      []string{"Full-time", "Part-time"},
 		jobTypeSelected:     map[int]bool{},
-		jobTypeIndex:        0,
 		postedWithinOptions: []string{"Any Time", "Past 24 hours", "Past week", "Past month"},
-		postedWithinIndex:   0,
 		headless:            true,
+		fieldLines:          map[int]int{},
 	}
 	model.viewport = viewport.New(0, 0)
 	return model
@@ -108,76 +134,108 @@ func (s *ScrapeModel) SetScraping(active bool) {
 	s.isScraping = active
 }
 
+// A group of checkboxes, addressed uniformly so navigation stays in one place.
+type checkboxField struct {
+	options  []string
+	selected map[int]bool
+	index    *int
+}
+
+func (s *ScrapeModel) checkboxField(field int) *checkboxField {
+	switch field {
+	case scrapeSources:
+		return &checkboxField{s.sourceOptions, s.sourceSelected, &s.sourceIndex}
+	case scrapeUnstopRoles:
+		return &checkboxField{s.unstopRoleOptions, s.unstopRoleSelected, &s.unstopRoleIndex}
+	case scrapeExperience:
+		return &checkboxField{s.experienceOptions, s.experienceSelected, &s.experienceIndex}
+	case scrapeJobType:
+		return &checkboxField{s.jobTypeOptions, s.jobTypeSelected, &s.jobTypeIndex}
+	}
+	return nil
+}
+
+func (s *ScrapeModel) cycleField(field int) (options []string, index *int) {
+	switch field {
+	case scrapeUnstopOpportunity:
+		return s.unstopOpportunityOptions, &s.unstopOpportunityIndex
+	case scrapePostedWithin:
+		return s.postedWithinOptions, &s.postedWithinIndex
+	}
+	return nil, nil
+}
+
+func (s *ScrapeModel) unstopEnabled() bool {
+	for i, name := range s.sourceOptions {
+		if name == "unstop" && s.sourceSelected[i] {
+			return true
+		}
+	}
+	return false
+}
+
+// The Unstop fields only exist while Unstop is one of the selected sources.
+func (s *ScrapeModel) visibleFields() []int {
+	fields := []int{scrapeKeywords, scrapeLocation, scrapeLimit, scrapeSources}
+	if s.unstopEnabled() {
+		fields = append(fields, scrapeUnstopOpportunity, scrapeUnstopRoles)
+	}
+	return append(fields,
+		scrapeExperience,
+		scrapeJobType,
+		scrapePostedWithin,
+		scrapeRemoteOnly,
+		scrapeHeadless,
+		scrapeStartButton,
+	)
+}
+
+func (s *ScrapeModel) moveFocus(delta int, wrap bool) {
+	fields := s.visibleFields()
+	current := 0
+	for i, field := range fields {
+		if field == s.focusIndex {
+			current = i
+		}
+	}
+	next := current + delta
+	if wrap {
+		next = (next + len(fields)) % len(fields)
+	} else if next < 0 || next >= len(fields) {
+		return
+	}
+	s.focusIndex = fields[next]
+	s.updateFocus()
+}
+
 func (s *ScrapeModel) Update(msg tea.Msg) (*ScrapeModel, tea.Cmd) {
 	s.inlineError = ""
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "tab", "shift+tab":
-			if msg.String() == "tab" {
-				s.focusIndex = (s.focusIndex + 1) % (scrapeStartButton + 1)
-			} else {
-				s.focusIndex = (s.focusIndex + scrapeStartButton) % (scrapeStartButton + 1)
-			}
-			s.updateFocus()
+		case "tab":
+			s.moveFocus(1, true)
+			return s, nil
+		case "shift+tab":
+			s.moveFocus(-1, true)
 			return s, nil
 		case "up":
-			switch s.focusIndex {
-			case scrapeExperience:
-				if s.experienceIndex > 0 {
-					s.experienceIndex--
-					s.ensureFocusVisible()
-					return s, nil
-				}
-				s.focusIndex = scrapeLimit
-				s.updateFocus()
-				return s, nil
-			case scrapeJobType:
-				if s.jobTypeIndex > 0 {
-					s.jobTypeIndex--
-					s.ensureFocusVisible()
-					return s, nil
-				}
-				s.focusIndex = scrapeExperience
-				s.updateFocus()
-				return s, nil
-			case scrapeKeywords:
-				// already at top
-				return s, nil
-			default:
-				s.focusIndex--
-				s.updateFocus()
+			if group := s.checkboxField(s.focusIndex); group != nil && *group.index > 0 {
+				*group.index--
+				s.ensureFocusVisible()
 				return s, nil
 			}
+			s.moveFocus(-1, false)
+			return s, nil
 		case "down":
-			switch s.focusIndex {
-			case scrapeExperience:
-				if s.experienceIndex < len(s.experienceOptions)-1 {
-					s.experienceIndex++
-					s.ensureFocusVisible()
-					return s, nil
-				}
-				s.focusIndex = scrapeJobType
-				s.updateFocus()
-				return s, nil
-			case scrapeJobType:
-				if s.jobTypeIndex < len(s.jobTypeOptions)-1 {
-					s.jobTypeIndex++
-					s.ensureFocusVisible()
-					return s, nil
-				}
-				s.focusIndex = scrapePostedWithin
-				s.updateFocus()
-				return s, nil
-			case scrapeStartButton:
-				// already at bottom
-				return s, nil
-			default:
-				s.focusIndex++
-				s.updateFocus()
+			if group := s.checkboxField(s.focusIndex); group != nil && *group.index < len(group.options)-1 {
+				*group.index++
+				s.ensureFocusVisible()
 				return s, nil
 			}
+			s.moveFocus(1, false)
+			return s, nil
 		case "pgup", "pgdown":
 			var cmd tea.Cmd
 			s.viewport, cmd = s.viewport.Update(msg)
@@ -191,22 +249,18 @@ func (s *ScrapeModel) Update(msg tea.Msg) (*ScrapeModel, tea.Cmd) {
 				s.headless = !s.headless
 				return s, nil
 			}
-			if s.focusIndex == scrapeExperience {
-				s.toggleSelection(s.experienceSelected, s.experienceIndex)
+			if group := s.checkboxField(s.focusIndex); group != nil {
+				group.selected[*group.index] = !group.selected[*group.index]
 				return s, nil
 			}
-			if s.focusIndex == scrapeJobType {
-				s.toggleSelection(s.jobTypeSelected, s.jobTypeIndex)
-				return s, nil
-			}
-		case "left":
-			if s.focusIndex == scrapePostedWithin {
-				s.postedWithinIndex = (s.postedWithinIndex + len(s.postedWithinOptions) - 1) % len(s.postedWithinOptions)
-				return s, nil
-			}
-		case "right":
-			if s.focusIndex == scrapePostedWithin {
-				s.postedWithinIndex = (s.postedWithinIndex + 1) % len(s.postedWithinOptions)
+		case "left", "right":
+			options, index := s.cycleField(s.focusIndex)
+			if options != nil {
+				delta := 1
+				if msg.String() == "left" {
+					delta = len(options) - 1
+				}
+				*index = (*index + delta) % len(options)
 				return s, nil
 			}
 		case "enter":
@@ -248,17 +302,15 @@ func (s *ScrapeModel) updateFocus() {
 	s.ensureFocusVisible()
 }
 
-func (s *ScrapeModel) toggleSelection(store map[int]bool, index int) {
-	if index < 0 {
-		return
-	}
-	store[index] = !store[index]
-}
-
 func (s *ScrapeModel) startCmd() tea.Cmd {
 	keywords := strings.TrimSpace(s.inputs[scrapeKeywords].Value())
 	if keywords == "" {
 		s.inlineError = "keywords are required"
+		return nil
+	}
+	sources := s.selectedOptions(s.sourceOptions, s.sourceSelected)
+	if len(sources) == 0 {
+		s.inlineError = "select at least one source"
 		return nil
 	}
 	limitVal := strings.TrimSpace(s.inputs[scrapeLimit].Value())
@@ -279,6 +331,11 @@ func (s *ScrapeModel) startCmd() tea.Cmd {
 		JobType:         strings.Join(s.selectedOptions(s.jobTypeOptions, s.jobTypeSelected), ", "),
 		RemoteOnly:      s.remoteOnly,
 		Headless:        s.headless,
+		Sources:         strings.Join(sources, ","),
+	}
+	if s.unstopEnabled() {
+		options.UnstopOpportunity = s.unstopOpportunityOptions[s.unstopOpportunityIndex]
+		options.UnstopRoles = strings.Join(s.selectedOptions(s.unstopRoleOptions, s.unstopRoleSelected), ",")
 	}
 	if s.postedWithinIndex > 0 {
 		options.PostedWithin = s.postedWithinOptions[s.postedWithinIndex]
@@ -311,28 +368,61 @@ func (s *ScrapeModel) selectedOptions(options []string, selected map[int]bool) [
 	return out
 }
 
+// Accumulates the form and records where each field landed, so the viewport can
+// scroll to the focused one without a second copy of the layout arithmetic.
+type formBuilder struct {
+	b     strings.Builder
+	lines int
+	at    map[int]int
+}
+
+func (f *formBuilder) write(text string) {
+	f.b.WriteString(text)
+	f.lines += strings.Count(text, "\n")
+}
+
+func (f *formBuilder) field(id int, text string) {
+	f.at[id] = f.lines
+	f.write(text)
+}
+
+func (f *formBuilder) group(id int, cursor int, text string) {
+	f.at[id] = f.lines + 1 + cursor // the title takes the first line
+	f.write(text)
+}
+
 func (s *ScrapeModel) View() string {
-	var b strings.Builder
-	b.WriteString(ui.PanelTitle.Render("SCRAPE"))
-	b.WriteString("\n")
+	f := &formBuilder{at: map[int]int{}}
+	f.write(ui.PanelTitle.Render("SCRAPE") + "\n\n")
 
-	b.WriteString(fieldRow("Keywords", s.inputs[scrapeKeywords].View(), s.focusIndex == scrapeKeywords))
-	b.WriteString(fieldRow("Location", s.inputs[scrapeLocation].View(), s.focusIndex == scrapeLocation))
-	b.WriteString(fieldRow("Limit", s.inputs[scrapeLimit].View(), s.focusIndex == scrapeLimit))
-	b.WriteString("\n")
+	f.field(scrapeKeywords, fieldRow("Keywords", s.inputs[scrapeKeywords].View(), s.focusIndex == scrapeKeywords))
+	f.field(scrapeLocation, fieldRow("Location", s.inputs[scrapeLocation].View(), s.focusIndex == scrapeLocation))
+	f.field(scrapeLimit, fieldRow("Limit", s.inputs[scrapeLimit].View(), s.focusIndex == scrapeLimit))
+	f.write("\n")
 
-	b.WriteString(checkboxGroup("Experience Level", s.experienceOptions, s.experienceSelected, s.experienceIndex, s.focusIndex == scrapeExperience))
-	b.WriteString(checkboxGroup("Job Type", s.jobTypeOptions, s.jobTypeSelected, s.jobTypeIndex, s.focusIndex == scrapeJobType))
-	b.WriteString("\n")
+	f.group(scrapeSources, s.sourceIndex,
+		checkboxGroup("Sources", s.sourceOptions, s.sourceSelected, s.sourceIndex, s.focusIndex == scrapeSources))
+	if s.unstopEnabled() {
+		f.field(scrapeUnstopOpportunity,
+			cycleRow("Unstop Opportunity", s.unstopOpportunityOptions[s.unstopOpportunityIndex], s.focusIndex == scrapeUnstopOpportunity))
+		f.group(scrapeUnstopRoles, s.unstopRoleIndex,
+			checkboxGroup("Unstop Roles", s.unstopRoleOptions, s.unstopRoleSelected, s.unstopRoleIndex, s.focusIndex == scrapeUnstopRoles))
+	}
+	f.write("\n")
 
-	b.WriteString(cycleRow("Posted Within", s.postedWithinOptions[s.postedWithinIndex], s.focusIndex == scrapePostedWithin))
-	b.WriteString(toggleRow("Remote Only", s.remoteOnly, s.focusIndex == scrapeRemoteOnly))
-	b.WriteString(toggleRow("Headless", s.headless, s.focusIndex == scrapeHeadless))
-	b.WriteString("\n")
+	f.group(scrapeExperience, s.experienceIndex,
+		checkboxGroup("Experience Level", s.experienceOptions, s.experienceSelected, s.experienceIndex, s.focusIndex == scrapeExperience))
+	f.group(scrapeJobType, s.jobTypeIndex,
+		checkboxGroup("Job Type", s.jobTypeOptions, s.jobTypeSelected, s.jobTypeIndex, s.focusIndex == scrapeJobType))
+	f.write("\n")
+
+	f.field(scrapePostedWithin, cycleRow("Posted Within", s.postedWithinOptions[s.postedWithinIndex], s.focusIndex == scrapePostedWithin))
+	f.field(scrapeRemoteOnly, toggleRow("Remote Only", s.remoteOnly, s.focusIndex == scrapeRemoteOnly))
+	f.field(scrapeHeadless, toggleRow("Headless", s.headless, s.focusIndex == scrapeHeadless))
+	f.write("\n")
 
 	if s.inlineError != "" {
-		b.WriteString(ui.ErrorText.Render(s.inlineError))
-		b.WriteString("\n")
+		f.write(ui.ErrorText.Render(s.inlineError) + "\n")
 	}
 
 	label := "[ START SCAN ]"
@@ -341,14 +431,17 @@ func (s *ScrapeModel) View() string {
 		label = "[ ABORT ]"
 		btnStyle = ui.ButtonAbort
 	}
+	f.at[scrapeStartButton] = f.lines
 	if s.focusIndex == scrapeStartButton {
-		b.WriteString(btnStyle.Render(label))
+		f.write(btnStyle.Render(label))
 	} else {
-		b.WriteString(ui.HelpText.Render(label))
+		f.write(ui.HelpText.Render(label))
 	}
 
-	content := b.String()
-	s.viewport.SetContent(content)
+	s.fieldLines = f.at
+	s.contentLines = f.lines + 1
+
+	s.viewport.SetContent(f.b.String())
 	panelHeight := s.height - 3
 	if panelHeight < 0 {
 		panelHeight = 0
@@ -361,88 +454,12 @@ func (s *ScrapeModel) View() string {
 	return ui.Panel.Width(panelWidth).Height(panelHeight).Render(s.viewport.View())
 }
 
-func (s *ScrapeModel) focusLine() int {
-	line := 0
-	line++
-	line++
-	keywordsLine := line
-	line++
-	locationLine := line
-	line++
-	limitLine := line
-	line++
-	line++
-	line++
-	experienceOptionStart := line
-	line += len(s.experienceOptions)
-	line++
-	jobTypeOptionStart := line
-	line += len(s.jobTypeOptions)
-	line++
-	postedWithinLine := line
-	line++
-	remoteOnlyLine := line
-	line++
-	headlessLine := line
-	line++
-	errorLine := -1
-	if s.inlineError != "" {
-		errorLine = line
-		line++
-	}
-	buttonLine := line
-
-	switch s.focusIndex {
-	case scrapeKeywords:
-		return keywordsLine
-	case scrapeLocation:
-		return locationLine
-	case scrapeLimit:
-		return limitLine
-	case scrapeExperience:
-		return experienceOptionStart + s.experienceIndex
-	case scrapeJobType:
-		return jobTypeOptionStart + s.jobTypeIndex
-	case scrapePostedWithin:
-		return postedWithinLine
-	case scrapeRemoteOnly:
-		return remoteOnlyLine
-	case scrapeHeadless:
-		return headlessLine
-	case scrapeStartButton:
-		return buttonLine
-	default:
-		return errorLine
-	}
-}
-
-func (s *ScrapeModel) estimatedContentLines() int {
-	line := 0
-	line++
-	line++
-	line += 3
-	line++
-	line++
-	line++
-	line += len(s.experienceOptions)
-	line++
-	line += len(s.jobTypeOptions)
-	line++
-	line += 3
-	line++
-	if s.inlineError != "" {
-		line++
-	}
-	line++
-	return line
-}
-
 func (s *ScrapeModel) ensureFocusVisible() {
 	if s.viewport.Height <= 0 {
 		return
 	}
-	target := s.focusLine()
-	if target < 0 {
+	target, ok := s.fieldLines[s.focusIndex]
+	if !ok {
 		return
 	}
 	offset := s.viewport.YOffset
@@ -454,10 +471,9 @@ func (s *ScrapeModel) ensureFocusVisible() {
 	if offset < 0 {
 		offset = 0
 	}
-	totalLines := s.estimatedContentLines()
 	maxOffset := 0
-	if totalLines > s.viewport.Height {
-		maxOffset = totalLines - s.viewport.Height
+	if s.contentLines > s.viewport.Height {
+		maxOffset = s.contentLines - s.viewport.Height
 	}
 	if offset > maxOffset {
 		offset = maxOffset

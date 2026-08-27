@@ -91,3 +91,90 @@ func TestStartScrapeCmd_EmptyKeywords_ReturnsNil(t *testing.T) {
 		t.Error("expected nil cmd for empty keywords")
 	}
 }
+
+func TestStartScrapeCmd_DefaultsToEverySource(t *testing.T) {
+	mc := &mockClient{}
+	s := newTestScrape(mc)
+	s.inputs[scrapeKeywords].SetValue("Go Engineer")
+
+	s.startCmd()()
+
+	if mc.startScrapeOpts.Sources != "linkedin,unstop" {
+		t.Errorf("unexpected sources: %q", mc.startScrapeOpts.Sources)
+	}
+	if mc.startScrapeOpts.UnstopOpportunity != "jobs" {
+		t.Errorf("unexpected opportunity: %q", mc.startScrapeOpts.UnstopOpportunity)
+	}
+	if mc.startScrapeOpts.UnstopRoles != "software-development" {
+		t.Errorf("unexpected roles: %q", mc.startScrapeOpts.UnstopRoles)
+	}
+}
+
+func TestStartScrapeCmd_LinkedInOnly_DropsUnstopFields(t *testing.T) {
+	mc := &mockClient{}
+	s := newTestScrape(mc)
+	s.inputs[scrapeKeywords].SetValue("Go Engineer")
+	s.sourceSelected[1] = false
+
+	s.startCmd()()
+
+	if mc.startScrapeOpts.Sources != "linkedin" {
+		t.Errorf("unexpected sources: %q", mc.startScrapeOpts.Sources)
+	}
+	if mc.startScrapeOpts.UnstopOpportunity != "" || mc.startScrapeOpts.UnstopRoles != "" {
+		t.Errorf("expected no unstop fields, got %+v", mc.startScrapeOpts)
+	}
+}
+
+func TestStartScrapeCmd_NoSource_ReturnsNil(t *testing.T) {
+	mc := &mockClient{}
+	s := newTestScrape(mc)
+	s.inputs[scrapeKeywords].SetValue("Go Engineer")
+	s.sourceSelected[0] = false
+	s.sourceSelected[1] = false
+
+	if cmd := s.startCmd(); cmd != nil {
+		t.Error("expected nil cmd when no source is selected")
+	}
+	if s.inlineError == "" {
+		t.Error("expected an inline error")
+	}
+	if mc.startScrapeCalled {
+		t.Error("expected StartScrape not to be called")
+	}
+}
+
+func TestVisibleFields_HidesUnstopFieldsWhenDeselected(t *testing.T) {
+	s := newTestScrape(&mockClient{})
+
+	if !containsField(s.visibleFields(), scrapeUnstopRoles) {
+		t.Error("expected unstop roles to be visible by default")
+	}
+
+	s.sourceSelected[1] = false
+	fields := s.visibleFields()
+	if containsField(fields, scrapeUnstopRoles) || containsField(fields, scrapeUnstopOpportunity) {
+		t.Errorf("expected no unstop fields, got %v", fields)
+	}
+}
+
+func TestMoveFocus_SkipsHiddenUnstopFields(t *testing.T) {
+	s := newTestScrape(&mockClient{})
+	s.sourceSelected[1] = false
+	s.focusIndex = scrapeSources
+
+	s.moveFocus(1, false)
+
+	if s.focusIndex != scrapeExperience {
+		t.Errorf("expected focus on experience, got %d", s.focusIndex)
+	}
+}
+
+func containsField(fields []int, target int) bool {
+	for _, field := range fields {
+		if field == target {
+			return true
+		}
+	}
+	return false
+}
