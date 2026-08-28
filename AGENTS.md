@@ -4,8 +4,8 @@ Use concise language.
 
 ## Repo shape
 
-- Vite+ monorepo with three apps:
-  - `apps/api` — the `is-dl` CLI (Node + Playwright), which also hosts the REST API
+- The root package **is** `is-dl`, the CLI (Node + Playwright), which also hosts the REST API. Its source lives in `apps/api/`, which is a plain folder with no `package.json` of its own. That is what makes `vp pack && vp install -g .` work from the root.
+- Two workspace packages under `apps/*`:
   - `apps/web` — React + Vite + Tailwind frontend
   - `apps/tui` — Go TUI
 
@@ -16,20 +16,25 @@ Use concise language.
 
 ## Dev commands
 
-| Command              | What it does               |
-| -------------------- | -------------------------- |
-| `vp run dev`         | API + web                  |
-| `vp run dev:api`     | API only, port 3000        |
-| `vp run dev:web`     | Web only, port 5173        |
-| `vp run dev:tui`     | API + TUI, API logs hidden |
-| `vp run dev:api:tui` | Alias for `dev:tui`        |
-| `vp run build`       | Build all apps             |
-| `vp check`           | Format, lint, typecheck    |
-| `vp test run`        | Tests                      |
+| Command                      | What it does               |
+| ---------------------------- | -------------------------- |
+| `vp run dev`                 | API + web                  |
+| `vp run dev:api`             | API only, port 3000        |
+| `vp run dev:web`             | Web only, port 5173        |
+| `vp run dev:tui`             | API + TUI, API logs hidden |
+| `vp run dev:api:tui`         | Alias for `dev:tui`        |
+| `vp run build`               | Build all apps             |
+| `vp pack && vp install -g .` | Install the CLI globally   |
+| `vp check`                   | Format, lint, typecheck    |
+| `vp test run`                | Tests                      |
 
 ## apps/api
 
-Published as `is-dl`. `vp pack` builds `dist/cli.mjs` (the `is-dl` bin) and `dist/server.mjs`.
+Source for the root `is-dl` package. `vp pack` reads its `pack` block from the root `vite.config.ts` and writes `dist/cli.mjs` (the `is-dl` bin) and `dist/server.mjs` to the repo root, not to `apps/api/`.
+
+Install it globally from a checkout with `vp pack && vp install -g .`. Run that in a shell rather than through `vp run`, which delegates to the local `vite-plus` package and rejects `-g`.
+
+- **Version:** `readVersion()` in `src/cli.ts` walks up to the nearest `package.json`. The bin sits at `<root>/dist/cli.mjs` when packed and `<root>/apps/api/src/cli.ts` under tsx, so a hard-coded `../package.json` is right in only one of them. It throws rather than falling back to a placeholder, because a version it cannot read means the package was assembled wrong.
 
 - **Entry:** `src/cli.ts`, a `node:util` `parseArgs` subcommand router.
 - **Commands:** `src/commands/`; search, login, logout, runs, config, serve, doctor.
@@ -104,7 +109,7 @@ is-dl resume build --all           # every variant, each gated at 1 page
 - **Router:** TanStack Router, code routes in `src/router.tsx`.
 - **Routes:** `/`, `/results`.
 - **API:** Direct `fetch` to `http://localhost:3000/api/*`. List fields go over the wire as JSON arrays.
-- **Types:** the board contracts (`JobSource`, `PayInfo`, `SourceRun` and friends) are the API's. `apps/api` exports `is-dl/types`, which maps to `src/types.ts` and nothing else, and `apps/web/src/types.ts` re-exports it alongside the browser-only labels. Keep `src/types.ts` free of Node imports or the web bundle pulls in Playwright. The root workspace package is `is-dl-workspace` so that `is-dl` names one package.
+- **Types:** the board contracts (`JobSource`, `PayInfo`, `SourceRun` and friends) are the CLI's. `apps/web/src/types.ts` imports `apps/api/src/types.ts` by relative path and re-exports it alongside the browser-only labels. Keep `types.ts` free of Node imports or the web bundle pulls in Playwright. The root package also publishes the same file as `is-dl/types` for consumers outside the repo; the web app does not go through it, because the CLI is the root package and pnpm has nothing to link into `apps/web/node_modules`.
 - **Styling:** Tailwind CSS v4 via `@tailwindcss/vite`.
 
 ## apps/tui
@@ -118,12 +123,12 @@ is-dl resume build --all           # every variant, each gated at 1 page
 ## CLI
 
 ```bash
-vp run --filter is-dl cli search --keywords "..." --location "..."
+vp run cli search --keywords "..." --location "..."
 is-dl search -k "..." --json    # after npm i -g is-dl
 is-dl search -k developer --source unstop --unstop-roles software-development --json
 ```
 
-`vp run --filter is-dl cli` forwards a literal `--`, which `parseArgs` then treats as the start of positionals. Pass the subcommand directly, with no `--` separator.
+`vp run cli` forwards a literal `--`, which `parseArgs` then treats as the start of positionals. Pass the subcommand directly, with no `--` separator.
 
 Agents should always pass `--json`, parse stdout only, and treat exit 3 as "ask a human to run `is-dl login`" and exit 4 as "run `npx playwright install chromium`". Check `meta.sources[]` before trusting a count: exit 0 does not mean every source ran.
 

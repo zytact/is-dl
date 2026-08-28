@@ -1,31 +1,49 @@
 {
-  "name": "is-dl-workspace",
-  "private": true,
+  "name": "is-dl",
+  "version": "0.1.1",
+  "description": "LinkedIn job scraper CLI",
+  "bin": {
+    "is-dl": "./dist/cli.mjs"
+  },
+  "files": [
+    "dist",
+    "apps/api/src/types.ts"
+  ],
+  "type": "module",
+  "exports": {
+    "./types": "./apps/api/src/types.ts"
+  },
   "scripts": {
-    "dev": "vp run -F is-dl -F @repo/web dev",
-    "dev:api": "vp run --filter is-dl dev",
-    "dev:web": "vp run --filter @repo/web dev",
+    "cli": "tsx apps/api/src/cli.ts",
+    "dev:serve": "tsx watch apps/api/src/cli.ts serve",
+    "start:serve": "tsx apps/api/src/cli.ts serve",
+    "dev": "vp run -w -F @repo/web dev:serve",
+    "dev:api": "vp run dev:serve",
+    "dev:web": "vp run --filter @repo/web dev:serve",
     "dev:tui": "bash scripts/start-api-tui.sh dev",
     "dev:api:tui": "vp run dev:tui",
-    "start": "vp run -F is-dl -F @repo/web start",
-    "start:api": "vp run --filter is-dl start",
-    "start:web": "vp run --filter @repo/web start",
+    "start": "vp run -w -F @repo/web start:serve",
+    "start:api": "vp run start:serve",
+    "start:web": "vp run --filter @repo/web start:serve",
     "start:tui": "bash scripts/start-api-tui.sh start",
     "start:api:tui": "vp run start:tui",
     "launch": "vp run start:tui",
-    "build:api": "vp run --filter is-dl build",
+    "build:api": "vp pack",
     "build:web": "vp run --filter @repo/web build",
     "build:tui": "vp run --filter @repo/tui build",
     "lint": "vp lint",
     "format": "vp fmt",
-    "typecheck": "vp run -r typecheck",
+    "typecheck": "tsc --noEmit -p apps/api/tsconfig.json && vp run -r typecheck",
     "prepare": "vp config"
   },
   "dependencies": {
+    "archiver": "^6.0.2",
+    "playwright": "^1.58.0",
     "smol-toml": "^1.8.0",
     "yaml": "^2.9.0"
   },
   "devDependencies": {
+    "@types/archiver": "^6.0.3",
     "@types/node": "^24.10.1",
     "oxfmt": "^0.56.0",
     "oxlint": "^1.71.0",
@@ -34,7 +52,7 @@
     "vite-plus": "catalog:"
   },
   "engines": {
-    "node": "24.x"
+    "node": ">=24"
   },
   "packageManager": "pnpm@11.6.0"
 }
