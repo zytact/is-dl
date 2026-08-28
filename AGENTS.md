@@ -31,6 +31,15 @@ Use concise language.
 
 Published as `is-dl`. `vp pack` builds `dist/cli.mjs` (the `is-dl` bin) and `dist/server.mjs`.
 
+To install the CLI globally from a checkout, run these two from the repo root:
+
+```bash
+vp run build:api
+vp install -g ./apps/api
+```
+
+The second one cannot be wrapped in a package script. `vp run` delegates to the local `vite-plus` package, which rejects `-g`, so only the global `vp` binary can install globally. Keep the `./` prefix or npm reads `apps/api` as a GitHub shorthand and fails with `EALLOWGIT`.
+
 - **Entry:** `src/cli.ts`, a `node:util` `parseArgs` subcommand router.
 - **Commands:** `src/commands/`; search, login, logout, runs, config, serve, doctor.
 - **Paths:** `src/paths.ts` is the only place config/data/state/cache directories are resolved. Linux uses XDG, macOS uses `~/Library`, Windows uses `%APPDATA%`/`%LOCALAPPDATA%`. `XDG_*` wins everywhere when set.
