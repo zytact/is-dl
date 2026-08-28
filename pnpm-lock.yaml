@@ -14,34 +14,6 @@ importers:
 
   .:
     dependencies:
-      smol-toml:
-        specifier: ^1.8.0
-        version: 1.8.0
-      yaml:
-        specifier: ^2.9.0
-        version: 2.9.0
-    devDependencies:
-      '@types/node':
-        specifier: ^24.10.1
-        version: 24.13.2
-      oxfmt:
-        specifier: ^0.56.0
-        version: 0.56.0(vite-plus@0.3.0(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(typescript@5.9.3)(vite@7.3.6(@types/node@24.13.2)(jiti@2.7.0)(lightningcss@1.33.0)(tsx@4.22.4)(yaml@2.9.0))(yaml@2.9.0))
-      oxlint:
-        specifier: ^1.71.0
-        version: 1.71.0(oxlint-tsgolint@7.0.2001)(vite-plus@0.3.0(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(typescript@5.9.3)(vite@7.3.6(@types/node@24.13.2)(jiti@2.7.0)(lightningcss@1.33.0)(tsx@4.22.4)(yaml@2.9.0))(yaml@2.9.0))
-      tsx:
-        specifier: ^4.22.4
-        version: 4.22.4
-      typescript:
-        specifier: ^5
-        version: 5.9.3
-      vite-plus:
-        specifier: 'catalog:'
-        version: 0.3.0(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(typescript@5.9.3)(vite@7.3.6(@types/node@24.13.2)(jiti@2.7.0)(lightningcss@1.33.0)(tsx@4.22.4)(yaml@2.9.0))(yaml@2.9.0)
-
-  apps/api:
-    dependencies:
       archiver:
         specifier: ^6.0.2
         version: 6.0.2
@@ -61,9 +33,21 @@ importers:
       '@types/node':
         specifier: ^24.10.1
         version: 24.13.2
+      oxfmt:
+        specifier: ^0.56.0
+        version: 0.56.0(vite-plus@0.3.0(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(typescript@5.9.3)(vite@7.3.6(@types/node@24.13.2)(jiti@2.7.0)(lightningcss@1.33.0)(tsx@4.22.4)(yaml@2.9.0))(yaml@2.9.0))
+      oxlint:
+        specifier: ^1.71.0
+        version: 1.71.0(oxlint-tsgolint@7.0.2001)(vite-plus@0.3.0(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(typescript@5.9.3)(vite@7.3.6(@types/node@24.13.2)(jiti@2.7.0)(lightningcss@1.33.0)(tsx@4.22.4)(yaml@2.9.0))(yaml@2.9.0))
+      tsx:
+        specifier: ^4.22.4
+        version: 4.22.4
       typescript:
         specifier: ^5
         version: 5.9.3
+      vite-plus:
+        specifier: 'catalog:'
+        version: 0.3.0(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(typescript@5.9.3)(vite@7.3.6(@types/node@24.13.2)(jiti@2.7.0)(lightningcss@1.33.0)(tsx@4.22.4)(yaml@2.9.0))(yaml@2.9.0)
 
   apps/tui: {}
 
@@ -78,9 +62,6 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      is-dl:
-        specifier: workspace:*
-        version: link:../api
       lucide-react:
         specifier: ^0.575.0
         version: 0.575.0(react@19.2.7)

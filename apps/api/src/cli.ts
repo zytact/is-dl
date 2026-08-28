@@ -1,5 +1,7 @@
 #!/usr/bin/env node
-import { createRequire } from 'node:module';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { CliBase } from './cli-context.ts';
 import { appsCommand } from './commands/apps.ts';
 import { loginCommand, logoutCommand } from './commands/auth.ts';
@@ -12,7 +14,30 @@ import { serveCommand } from './commands/serve.ts';
 import { CliError, ExitCode } from './errors.ts';
 import { resolvePaths } from './paths.ts';
 
-const { version } = createRequire(import.meta.url)('../package.json') as { version: string };
+/** Nearest package.json: `<root>/dist/` when packed, `<root>/apps/api/src/` under tsx. */
+function readVersion(): string {
+  let dir = dirname(fileURLToPath(import.meta.url));
+  for (;;) {
+    const candidate = join(dir, 'package.json');
+    if (existsSync(candidate)) {
+      const pkg: unknown = JSON.parse(readFileSync(candidate, 'utf8'));
+      if (
+        typeof pkg === 'object' &&
+        pkg !== null &&
+        'version' in pkg &&
+        typeof pkg.version === 'string'
+      ) {
+        return pkg.version;
+      }
+      throw new Error(`${candidate} has no version field`);
+    }
+    const parent = dirname(dir);
+    if (parent === dir) throw new Error('no package.json found above cli.ts');
+    dir = parent;
+  }
+}
+
+const version = readVersion();
 
 type Command = (base: CliBase, argv: string[]) => Promise<void>;
 

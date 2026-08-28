@@ -2,9 +2,9 @@
 
 LinkedIn Internship Scraper - Extract job postings from LinkedIn and export to JSON.
 
-This is a monorepo built with [Vite+](https://viteplus.dev/) containing:
+This is a monorepo built with [Vite+](https://viteplus.dev/). The root package is the CLI itself, with its source under `apps/api`:
 
-- `apps/api` - Node + Playwright backend with REST API and CLI
+- `apps/api` - Node + Playwright backend with REST API and CLI, built by `vp pack` at the root
 - `apps/web` - React + Vite + Tailwind + TanStack Router frontend
 - `apps/tui` - Go Bubble Tea TUI
 
@@ -20,6 +20,12 @@ Install Playwright browsers:
 
 ```bash
 vp exec playwright install chromium
+```
+
+Install the `is-dl` command globally from the checkout:
+
+```bash
+vp pack && vp install -g .
 ```
 
 ## Development
@@ -94,7 +100,7 @@ The backend runs at `http://localhost:3000`:
 Run the scraper CLI:
 
 ```bash
-vp run --filter is-dl cli -- search --keywords "software engineer intern" --location "United States" --limit 30
+vp run cli search --keywords "software engineer intern" --location "United States" --limit 30
 ```
 
 ### First Run (Authentication)
@@ -127,13 +133,13 @@ Every other command refuses to prompt. Without a session they exit `3` immediate
 **Search for remote internships:**
 
 ```bash
-vp run --filter is-dl cli -- search -k "data science" -l "Remote" --remote-only --posted-within "Past week"
+vp run cli search -k "data science" -l "Remote" --remote-only --posted-within "Past week"
 ```
 
 **Search for frontend developer positions with browser visible:**
 
 ```bash
-vp run --filter is-dl cli -- search -k "frontend developer" -l "San Francisco" --experience-level "Internship" --no-headless
+vp run cli search -k "frontend developer" -l "San Francisco" --experience-level "Internship" --no-headless
 ```
 
 ## Output
@@ -192,8 +198,7 @@ is-dl/
 │   │   │       ├── search.ts     # Search page scraping
 │   │   │       ├── job.ts        # Job detail extraction
 │   │   │       └── search-url.ts # URL builder
-│   │   ├── out/                  # Scraped output
-│   │   └── package.json
+│   │   └── out/                  # Scraped output
 │   └── web/                      # React + Vite frontend
 │       ├── src/
 │       │   ├── routes/
@@ -207,10 +212,10 @@ is-dl/
 │       │   ├── router.tsx
 │       │   └── main.tsx
 │       └── package.json
-├── vite.config.ts     # Vite+ lint/format/test/staged config
+├── vite.config.ts     # Vite+ pack, lint, format, test and staged config
 ├── pnpm-workspace.yaml
 ├── tsconfig.json      # Shared TypeScript base config
-└── package.json       # Root workspace config
+└── package.json       # The is-dl package itself: bin, deps, scripts
 ```
 
 ## Tech Stack
@@ -236,7 +241,7 @@ Going through LinkedIn is a mess. It is filled with trash posts and wastes time.
 
 ## Notes
 
-- Session state is saved in `apps/api/storageState.json` (gitignored)
+- Session state is saved outside the repo, at the paths listed under First Run (Authentication)
 - Rate limiting is built-in (1-3 second delay between job extractions)
 - The scraper uses Playwright with Chromium for reliable extraction
 - Location can be flexible: "Remote", "United States", "San Francisco, CA", etc.

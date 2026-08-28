@@ -1,6 +1,6 @@
 /**
- * The board contracts come from the API package, which owns them. Only the
- * browser-side presentation of those contracts lives here.
+ * The board contracts come from the CLI, which owns them. Only the browser-side
+ * presentation of those contracts lives here.
  */
 export {
   isJobSource,
@@ -13,8 +13,8 @@ export {
   type SourceRun,
   UNSTOP_OPPORTUNITIES,
   type UnstopOpportunity,
-} from 'is-dl/types';
-import type { JobSource } from 'is-dl/types';
+} from '../../api/src/types.ts';
+import type { JobSource } from '../../api/src/types.ts';
 
 /** Work function slugs Unstop actually publishes enough listings under. */
 export const UNSTOP_ROLES = [
