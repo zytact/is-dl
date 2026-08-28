@@ -171,7 +171,11 @@ export const TEMPLATE_PREAMBLE = `\\documentclass[8pt, letterpaper]{article}
 \\begin{document}
 `;
 
-export const TEMPLATE_RESUME = `basics:
+export const TEMPLATE_RESUME = `# Prose fields (bullet text, and the text of a labelled item) take a small
+# markup: **bold** for keywords and [text](url) for links. A backslash escapes
+# the next character, so '\\**not bold\\**' keeps the asterisks literal.
+# Quote any value holding a '#', or YAML reads the rest of the line as a comment.
+basics:
   name: Your Name
   headline: Software Engineer
   location: City, Country
@@ -208,7 +212,7 @@ sections:
         tags: [typescript, react]
         bullets:
           - id: exp-example-1
-            text: Write what you actually did, in your own words, verbatim.
+            text: 'Write what you actually did, in your own words, using **TypeScript** and **React**. ([PR #12](https://github.com/example/repo/pull/12))'
             tags: [typescript, react]
 
   - id: skills
