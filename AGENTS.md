@@ -84,6 +84,8 @@ Published as `is-dl`. `vp pack` builds `dist/cli.mjs` (the `is-dl` bin) and `dis
 - Outputs land in the data dir under `resume/build/`, next to runs. `--out <dir>` overrides it. `is-dl resume path` prints both.
 - `tags` on an item or bullet is a selector for the `tags` variant filter. Nothing requires it.
 - The pipeline selects. It never writes prose: every sentence in a built PDF is copied verbatim from resume.yaml.
+- **Inline markup.** Bullet text and the `text` of a labelled item take `**bold**` and `[text](url)`; a backslash escapes the next character. `src/resume/inline.ts` parses it at schema load, so `Bullet.text` and `TextItem.text` are `Inline[]`, not strings, and a renderer cannot forget to handle a link. Unclosed `**`, a `[text]` with no `(url)` and an empty url are config errors, so a typo fails the build instead of printing asterisks. Nothing is inferred: is-dl never decides which words are important or which PR a number refers to. Quote any YAML value holding a `#`.
+- `renderInline` escapes leaf text only, which keeps `escapeLatex` running exactly once per character. The extraction gate probes with `plainInline`, the markup stripped, since that is what lands in the PDF text stream.
 - Two gates on every build: page count parsed from the LaTeX log (>1 page fails and names the section), and a pdftotext extraction check. FontAwesome icons garble the text stream under both engines and are not a regression.
 - Engine is tectonic (XeTeX). The preamble picks XCharter via fontspec under non-pdfTeX so bold survives, and `\AND` is a plain `\textbar` emitted only between contact items.
 

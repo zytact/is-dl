@@ -1,5 +1,6 @@
 import { parse as parseYaml } from 'yaml';
 import { CliError } from '../errors.ts';
+import { type Inline, parseInline } from './inline.ts';
 
 export interface Contact {
   icon: string;
@@ -17,7 +18,7 @@ export interface Basics {
 
 export interface Bullet {
   id: string;
-  text: string;
+  text: Inline[];
   tags: string[];
 }
 
@@ -36,7 +37,7 @@ export interface TextItem {
   kind: 'text';
   id: string;
   label?: string;
-  text: string;
+  text: Inline[];
   tags: string[];
 }
 
@@ -80,6 +81,10 @@ function str(raw: Record<string, unknown>, key: string, where: string): string {
   if (typeof value !== 'string' || !value.trim())
     fail(where, `"${key}" must be a non-empty string`);
   return value;
+}
+
+function inline(raw: Record<string, unknown>, key: string, where: string): Inline[] {
+  return parseInline(str(raw, key, where), where);
 }
 
 function optStr(raw: Record<string, unknown>, key: string, where: string): string | undefined {
@@ -126,7 +131,7 @@ function parseItem(raw: unknown, where: string): Item {
       kind: 'text',
       id,
       label: optStr(item, 'label', at),
-      text: str(item, 'text', at),
+      text: inline(item, 'text', at),
       tags,
     };
   }
@@ -136,7 +141,7 @@ function parseItem(raw: unknown, where: string): Item {
     const bulletId = str(bullet, 'id', `${at} bullet`);
     return {
       id: bulletId,
-      text: str(bullet, 'text', `${at} bullet "${bulletId}"`),
+      text: inline(bullet, 'text', `${at} bullet "${bulletId}"`),
       tags: strList(bullet, 'tags', `${at} bullet "${bulletId}"`),
     };
   });

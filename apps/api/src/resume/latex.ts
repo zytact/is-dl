@@ -1,4 +1,5 @@
 import { CliError } from '../errors.ts';
+import type { Inline } from './inline.ts';
 import type { Contact, EntryItem, ResolvedVariant, Section, TextItem } from './schema.ts';
 
 const ESCAPES: Record<string, string> = {
@@ -47,6 +48,22 @@ function icon(name: string): string {
 function link(url: string | undefined, text: string, command = 'href'): string {
   const escaped = escapeLatex(text);
   return url ? `\\${command}{${escapeUrl(url)}}{${escaped}}` : escaped;
+}
+
+/** Renders parsed prose. Only leaf text is escaped, so escaping still runs once. */
+export function renderInline(nodes: Inline[]): string {
+  return nodes
+    .map((node) => {
+      switch (node.kind) {
+        case 'text':
+          return escapeLatex(node.text);
+        case 'bold':
+          return `\\textbf{${renderInline(node.children)}}`;
+        case 'link':
+          return `\\href{${escapeUrl(node.url)}}{${renderInline(node.children)}}`;
+      }
+    })
+    .join('');
 }
 
 function contactLine(contacts: Contact[]): string {
@@ -102,7 +119,7 @@ function entry(item: EntryItem): string {
   if (!item.bullets.length) return head;
 
   const bullets = item.bullets
-    .map((bullet) => `            \\item ${escapeLatex(bullet.text)}`)
+    .map((bullet) => `            \\item ${renderInline(bullet.text)}`)
     .join('\n');
 
   return `${head}
@@ -118,7 +135,7 @@ ${bullets}
 function textItem(item: TextItem): string {
   const label = item.label ? `\\textbf{${escapeLatex(item.label)}:} ` : '';
   return `    \\begin{onecolentry}
-        ${label}${escapeLatex(item.text)}
+        ${label}${renderInline(item.text)}
     \\end{onecolentry}
 `;
 }

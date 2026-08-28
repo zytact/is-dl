@@ -4,6 +4,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { CliError } from '../errors.ts';
 import { ensureDir } from '../runs.ts';
+import { plainInline } from './inline.ts';
 import { renderBody } from './latex.ts';
 import {
   parseResume,
@@ -170,8 +171,8 @@ function probes(variant: ResolvedVariant): string[] {
   const items = variant.sections.flatMap((section) => section.items);
   return items.flatMap((item) =>
     item.kind === 'entry'
-      ? [item.role, ...item.bullets.map((bullet) => bullet.text.slice(0, 40))]
-      : [item.text.slice(0, 40)],
+      ? [item.role, ...item.bullets.map((bullet) => plainInline(bullet.text).slice(0, 40))]
+      : [plainInline(item.text).slice(0, 40)],
   );
 }
 
