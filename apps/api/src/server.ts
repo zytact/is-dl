@@ -5,15 +5,8 @@ import { join } from 'node:path';
 import { PassThrough, Readable } from 'node:stream';
 import archiver from 'archiver';
 import type { AppPaths } from './paths.ts';
-import {
-  ensureDir,
-  listRuns,
-  newRunId,
-  readRun,
-  removeRun,
-  runIdFromFilename,
-  saveRun,
-} from './runs.ts';
+import { ensureDir } from './fs.ts';
+import { listRuns, newRunId, readRun, removeRun, runIdFromFilename, saveRun } from './runs.ts';
 import { type ScrapeRequest, runScraper } from './scraper.ts';
 import { isJobSource, isUnstopOpportunity, JOB_SOURCES, type JobSource } from './types.ts';
 

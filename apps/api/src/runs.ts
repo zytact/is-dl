@@ -1,8 +1,10 @@
 import { existsSync } from 'node:fs';
-import { mkdir, readdir, readFile, unlink, writeFile } from 'node:fs/promises';
+import { readdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { CliError } from './errors.ts';
+import { ensureDir } from './fs.ts';
 import type { AppPaths } from './paths.ts';
+import { appendSeen, newSeenRecords, readSeen, recordSeen } from './seen.ts';
 import type { PersistedRun, ScraperOutput } from './types.ts';
 
 export interface RunSummary {
@@ -20,10 +22,6 @@ export function newRunId(now: Date = new Date()): string {
 
 export function runIdFromFilename(filename: string): string {
   return basename(filename).replace(/\.json$/, '');
-}
-
-export async function ensureDir(dir: string): Promise<void> {
-  if (!existsSync(dir)) await mkdir(dir, { recursive: true });
 }
 
 async function writeJson(filePath: string, value: unknown): Promise<void> {
@@ -53,6 +51,7 @@ export async function writeRunTo(
   return filePath;
 }
 
+/** Saving a run is also what puts its jobs in the seen ledger. */
 export async function saveRun(
   paths: AppPaths,
   runId: string,
@@ -62,7 +61,43 @@ export async function saveRun(
   const runs = await listRuns(paths);
   const next = [summarize(runId, filePath, output), ...runs.filter((r) => r.runId !== runId)];
   await writeJson(paths.runsIndex, { runs: next });
+  await backfillSeen(paths);
+  await recordSeen(paths, runId, output.jobs, output.meta.scrapedAt);
   return filePath;
+}
+
+/** Rebuilds the ledger from the run store, oldest run first so each job keeps
+ * the date of the run that found it. */
+export async function rebuildSeen(paths: AppPaths): Promise<void> {
+  const known = new Set<string>();
+  const records = [];
+
+  for (const summary of (await listRuns(paths)).reverse()) {
+    const run = await tryReadRunFile(summary.path);
+    if (!run) continue;
+    for (const record of newSeenRecords(run.jobs, known, summary.runId, summary.scrapedAt)) {
+      known.add(record.key);
+      records.push(record);
+    }
+  }
+
+  await appendSeen(paths.seenLog, records);
+}
+
+/**
+ * Every path that touches the ledger goes through this first. Guarding only the
+ * read would strand a user who upgrades and runs a plain search: that search
+ * writes a ledger holding its own jobs, the file now exists, and every earlier
+ * run is lost for good.
+ */
+async function backfillSeen(paths: AppPaths): Promise<void> {
+  if (!existsSync(paths.seenLog)) await rebuildSeen(paths);
+}
+
+/** The keys `--exclude-seen` filters on. */
+export async function knownJobKeys(paths: AppPaths): Promise<Set<string>> {
+  await backfillSeen(paths);
+  return new Set((await readSeen(paths.seenLog)).keys());
 }
 
 /** The index is a cache. A directory scan is the source of truth when it is stale. */

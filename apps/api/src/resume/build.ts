@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { CliError } from '../errors.ts';
-import { ensureDir } from '../runs.ts';
+import { ensureDir } from '../fs.ts';
 import { plainInline } from './inline.ts';
 import { renderBody } from './latex.ts';
 import {
