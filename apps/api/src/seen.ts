@@ -8,9 +8,8 @@ import type { AppPaths } from './paths.ts';
 import type { JobListing, KnownJobs } from './types.ts';
 
 /**
- * One job a search has surfaced before. Append-only, and only ever the first
- * sighting: a job that shows up again in a later run is not re-appended, so the
- * timestamp always answers "when did I first see this".
+ * One job a search has surfaced before. Only the first sighting is recorded, so
+ * the timestamp always answers "when did I first see this".
  */
 export interface SeenRecord {
   /** `source:jobId`, the same key the application log uses. */
@@ -71,19 +70,13 @@ export function newSeenRecords(
   return records;
 }
 
-/**
- * Adds a saved run's jobs to the ledger. `saveRun` calls this, so anything that
- * reaches the run store is in the ledger whether or not the search that
- * produced it asked to filter on one.
- */
+/** `saveRun` calls this, so reaching the run store is what puts a job in the ledger. */
 export async function recordSeen(
   paths: AppPaths,
   runId: string,
   jobs: readonly JobListing[],
   at: string = new Date().toISOString(),
-): Promise<number> {
+): Promise<void> {
   const existing = await readSeen(paths.seenLog);
-  const records = newSeenRecords(jobs, new Set(existing.keys()), runId, at);
-  await appendSeen(paths.seenLog, records);
-  return records.length;
+  await appendSeen(paths.seenLog, newSeenRecords(jobs, new Set(existing.keys()), runId, at));
 }

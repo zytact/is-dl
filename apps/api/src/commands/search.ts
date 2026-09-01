@@ -59,9 +59,8 @@ function num(value: string | undefined, flag: string): number | undefined {
 /**
  * `unstated` is never dropped: good listings routinely omit pay entirely.
  *
- * `known` runs again here even though the sources already filtered on it. A
- * LinkedIn card whose id was not readable before the click is only identified
- * once it has been opened, and this is where it gets dropped.
+ * `known` runs again here because a LinkedIn card whose id was unreadable
+ * before the click is only identifiable once it has been opened.
  */
 function applyTriage(
   output: ScraperOutput,

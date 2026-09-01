@@ -27,14 +27,13 @@ describe('recording what a run surfaced', () => {
   test('keeps the first sighting when a later run shows the same job', async () => {
     const paths = await dataDir();
     await recordSeen(paths, 'run-1', [job('unstop', '1')], '2026-08-01T00:00:00.000Z');
-    const added = await recordSeen(
+    await recordSeen(
       paths,
       'run-2',
       [job('unstop', '1'), job('unstop', '2')],
       '2026-08-02T00:00:00.000Z',
     );
 
-    expect(added).toBe(1);
     expect(await lines(paths)).toEqual([
       { key: 'unstop:1', runId: 'run-1', firstSeenAt: '2026-08-01T00:00:00.000Z' },
       { key: 'unstop:2', runId: 'run-2', firstSeenAt: '2026-08-02T00:00:00.000Z' },
@@ -43,13 +42,13 @@ describe('recording what a run surfaced', () => {
 
   test('records a job once when a single run lists it twice', async () => {
     const paths = await dataDir();
-    const added = await recordSeen(paths, 'run-1', [job('unstop', '1'), job('unstop', '1')]);
-    expect(added).toBe(1);
+    await recordSeen(paths, 'run-1', [job('unstop', '1'), job('unstop', '1')]);
+    expect(await lines(paths)).toHaveLength(1);
   });
 
   test('ignores jobs with no id, since nothing can identify them later', async () => {
     const paths = await dataDir();
-    expect(await recordSeen(paths, 'run-1', [job('linkedin', null)])).toBe(0);
+    await recordSeen(paths, 'run-1', [job('linkedin', null)]);
     expect(await readSeen(paths.seenLog)).toEqual(new Map());
   });
 

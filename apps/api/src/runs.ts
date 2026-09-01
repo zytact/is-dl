@@ -61,20 +61,18 @@ export async function saveRun(
   const runs = await listRuns(paths);
   const next = [summarize(runId, filePath, output), ...runs.filter((r) => r.runId !== runId)];
   await writeJson(paths.runsIndex, { runs: next });
+  await backfillSeen(paths);
   await recordSeen(paths, runId, output.jobs, output.meta.scrapedAt);
   return filePath;
 }
 
-/**
- * Rebuilds the seen ledger from the run store, oldest run first so each job is
- * dated by the run that actually found it. The runs are the source of truth, so
- * a deleted ledger costs one directory scan rather than the history itself.
- */
-export async function rebuildSeen(paths: AppPaths): Promise<number> {
+/** Rebuilds the ledger from the run store, oldest run first so each job keeps
+ * the date of the run that found it. */
+export async function rebuildSeen(paths: AppPaths): Promise<void> {
   const known = new Set<string>();
   const records = [];
 
-  for (const summary of (await listRuns(paths)).slice().reverse()) {
+  for (const summary of (await listRuns(paths)).reverse()) {
     const run = await tryReadRunFile(summary.path);
     if (!run) continue;
     for (const record of newSeenRecords(run.jobs, known, summary.runId, summary.scrapedAt)) {
@@ -84,16 +82,21 @@ export async function rebuildSeen(paths: AppPaths): Promise<number> {
   }
 
   await appendSeen(paths.seenLog, records);
-  return records.length;
 }
 
 /**
- * The keys `--exclude-seen` filters on, backfilled from the run store the first
- * time. Without the backfill, the flag would treat every run made before the
- * ledger existed as if it had never happened.
+ * Every path that touches the ledger goes through this first. Guarding only the
+ * read would strand a user who upgrades and runs a plain search: that search
+ * writes a ledger holding its own jobs, the file now exists, and every earlier
+ * run is lost for good.
  */
-export async function knownJobKeys(paths: AppPaths): Promise<Set<string>> {
+async function backfillSeen(paths: AppPaths): Promise<void> {
   if (!existsSync(paths.seenLog)) await rebuildSeen(paths);
+}
+
+/** The keys `--exclude-seen` filters on. */
+export async function knownJobKeys(paths: AppPaths): Promise<Set<string>> {
+  await backfillSeen(paths);
   return new Set((await readSeen(paths.seenLog)).keys());
 }
 

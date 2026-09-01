@@ -8,12 +8,7 @@ import { extractJobDetailsFromView } from './job.ts';
 import { clickJobCard, getJobCardIds, getPaginationInfo, goToNextPage } from './search.ts';
 import { buildSearchUrl } from './search-url.ts';
 
-/**
- * A card that fails to open no longer uses up the limit, which is right for a
- * flaky card and wrong for a DOM change: without a bound, a scrape that can no
- * longer extract anything would walk every page of the search results retrying.
- * Consecutive failures mean the page shape moved, so stop and say so.
- */
+/** A failing card no longer uses up the limit, so a DOM change needs its own bound. */
 const MAX_CONSECUTIVE_FAILURES = 5;
 
 async function scrape(

@@ -103,8 +103,9 @@ describe('the seen ledger and the run store', () => {
       );
     }
 
-    expect(await rebuildSeen(paths)).toBe(3);
+    await rebuildSeen(paths);
     const seen = await readSeen(paths.seenLog);
+    expect(seen.size).toBe(3);
     expect(seen.get('unstop:1')?.runId).toBe('2026-08-01');
     expect(seen.get('unstop:3')?.runId).toBe('2026-08-02');
   });
@@ -119,6 +120,21 @@ describe('the seen ledger and the run store', () => {
     );
 
     expect([...(await knownJobKeys(paths))]).toEqual(['unstop:9']);
+  });
+
+  test('a plain search still backfills, so an unfiltered run cannot strand the history', async () => {
+    const paths = await emptyStore();
+    await ensureDir(paths.runsDir);
+    await writeFile(
+      join(paths.runsDir, 'old.json'),
+      JSON.stringify(output('2026-07-01T00:00:00.000Z', ['9'])),
+      'utf-8',
+    );
+
+    // No --exclude-seen here: this run only writes the ledger, it does not read it.
+    await saveRun(paths, 'new', output('2026-08-01T00:00:00.000Z', ['10']));
+
+    expect([...(await knownJobKeys(paths))].sort()).toEqual(['unstop:10', 'unstop:9']);
   });
 
   test('no runs and no ledger is not an error', async () => {
