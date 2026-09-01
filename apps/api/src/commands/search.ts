@@ -76,7 +76,7 @@ function applyTriage(
       droppedUnpaid++;
       return false;
     }
-    if (job.jobId && options.applied.has(seenKey(job.source, job.jobId))) {
+    if (job.jobId !== null && options.applied.has(seenKey(job.source, job.jobId))) {
       droppedApplied++;
       return false;
     }

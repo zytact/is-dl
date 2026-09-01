@@ -112,4 +112,17 @@ describe('linkedin card processing', () => {
 
     expect(jobs.map((job) => job.jobId)).toEqual(['2', '3']);
   });
+
+  test('stops rather than walking every page when nothing can be extracted', async () => {
+    // What a DOM change looks like: cards are found, none of them open.
+    detailsFrom(Array.from({ length: 40 }, (_, i) => String(i + 1)));
+    mocks.clickJobCard.mockRejectedValue(new Error('detached'));
+    mocks.goToNextPage.mockResolvedValue(true);
+
+    const { jobs, logs } = await run({ limit: 25 });
+
+    expect(jobs).toEqual([]);
+    expect(mocks.clickJobCard).toHaveBeenCalledTimes(5);
+    expect(logs).toContain('Giving up after 5 jobs in a row failed to open.');
+  });
 });

@@ -8,6 +8,14 @@ import { extractJobDetailsFromView } from './job.ts';
 import { clickJobCard, getJobCardIds, getPaginationInfo, goToNextPage } from './search.ts';
 import { buildSearchUrl } from './search-url.ts';
 
+/**
+ * A card that fails to open no longer uses up the limit, which is right for a
+ * flaky card and wrong for a DOM change: without a bound, a scrape that can no
+ * longer extract anything would walk every page of the search results retrying.
+ * Consecutive failures mean the page shape moved, so stop and say so.
+ */
+const MAX_CONSECUTIVE_FAILURES = 5;
+
 async function scrape(
   query: SearchQuery,
   options: LinkedInOptions,
@@ -57,6 +65,7 @@ async function scrape(
     const jobs: JobListing[] = [];
     let currentPage = 1;
     let known = 0;
+    let consecutiveFailures = 0;
 
     while (jobs.length < query.limit) {
       checkAbort(signal);
@@ -70,7 +79,13 @@ async function scrape(
         break;
       }
 
-      for (let i = 0; i < cardIds.length && jobs.length < query.limit; i++) {
+      for (
+        let i = 0;
+        i < cardIds.length &&
+        jobs.length < query.limit &&
+        consecutiveFailures < MAX_CONSECUTIVE_FAILURES;
+        i++
+      ) {
         checkAbort(signal);
 
         // Skipping here rather than after the fact is the whole point: an
@@ -89,6 +104,7 @@ async function scrape(
           await clickJobCard(session.page, i, ctx);
           const jobDetails = await extractJobDetailsFromView(session.page, i, ctx);
           jobs.push(jobDetails);
+          consecutiveFailures = 0;
 
           if (options.debug) {
             onLog(`  Title: ${jobDetails.title}, Company: ${jobDetails.companyName}`);
@@ -99,7 +115,13 @@ async function scrape(
         } catch (error) {
           const errMsg = error instanceof Error ? error.message : String(error);
           onLog(`Error processing job ${i + 1}: ${errMsg}`);
+          consecutiveFailures++;
         }
+      }
+
+      if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+        onLog(`Giving up after ${consecutiveFailures} jobs in a row failed to open.`);
+        break;
       }
 
       if (jobs.length >= query.limit) break;

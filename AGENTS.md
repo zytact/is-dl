@@ -84,6 +84,7 @@ Install it globally from a checkout with `vp pack && vp install -g .`. Run that 
   - **`KnownJobs.has` takes a non-null id**, so a caller has to deal with `jobId: null` rather than trusting the predicate to. A job with no id cannot be tracked and always resurfaces.
   - **The run store is the source of truth.** `rebuildSeen` in `src/runs.ts` walks runs oldest first so each job is dated by the run that found it, and `knownJobKeys` backfills a missing ledger, which is what makes the flag work on runs made before the ledger existed. Deleting `seen.jsonl` costs one directory scan, not the history.
   - **`--out <dir>` and `-o -` bypass `saveRun`**, so those runs never enter the ledger.
+  - **LinkedIn stops after 5 consecutive extraction failures.** A failed card no longer uses up `--limit`, which is right for one flaky card and wrong for a DOM change: without the bound, a scraper that can no longer extract anything would walk every page of the results retrying.
 - No scoring. Tag matching was removed because it scored nearly every listing at 100% and dressed up a guess as a number. is-dl reports facts and leaves fit to the reader.
 - is-dl never submits an application. Search, filter, log, build a PDF.
 
