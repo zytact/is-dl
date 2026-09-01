@@ -1,11 +1,11 @@
 import { join } from 'node:path';
-import { ensureDir } from '../runs.ts';
+import { ensureDir } from '../fs.ts';
 import { checkAbort, type SourceContext, type SourceRunner, waitOrAbort } from '../sources.ts';
 import type { JobListing, LinkedInOptions, SearchQuery } from '../types.ts';
 import { closeBrowser, launchBrowser } from './browser.ts';
 import type { ScrapeContext } from './context.ts';
 import { extractJobDetailsFromView } from './job.ts';
-import { clickJobCard, getJobCardCount, getPaginationInfo, goToNextPage } from './search.ts';
+import { clickJobCard, getJobCardIds, getPaginationInfo, goToNextPage } from './search.ts';
 import { buildSearchUrl } from './search-url.ts';
 
 async function scrape(
@@ -56,25 +56,33 @@ async function scrape(
 
     const jobs: JobListing[] = [];
     let currentPage = 1;
-    let totalProcessed = 0;
+    let known = 0;
 
-    while (totalProcessed < query.limit) {
+    while (jobs.length < query.limit) {
       checkAbort(signal);
       onLog(`=== Processing Page ${currentPage} ===`);
 
-      const jobCount = await getJobCardCount(session.page, query.limit - totalProcessed, ctx);
-      onLog(`Found ${jobCount} jobs on page ${currentPage}`);
+      const cardIds = await getJobCardIds(session.page, ctx);
+      onLog(`Found ${cardIds.length} jobs on page ${currentPage}`);
 
-      if (jobCount === 0) {
+      if (cardIds.length === 0) {
         onLog('No more jobs found.');
         break;
       }
 
-      for (let i = 0; i < jobCount && totalProcessed < query.limit; i++) {
+      for (let i = 0; i < cardIds.length && jobs.length < query.limit; i++) {
         checkAbort(signal);
-        totalProcessed++;
+
+        // Skipping here rather than after the fact is the whole point: an
+        // already-seen job costs neither a click nor a slot under the limit.
+        const cardId = cardIds[i] ?? null;
+        if (cardId !== null && query.known?.has('linkedin', cardId)) {
+          known++;
+          continue;
+        }
+
         onLog(
-          `[${totalProcessed}/${query.limit}] Processing job ${i + 1} on page ${currentPage}...`,
+          `[${jobs.length + 1}/${query.limit}] Processing job ${i + 1} on page ${currentPage}...`,
         );
 
         try {
@@ -94,7 +102,7 @@ async function scrape(
         }
       }
 
-      if (totalProcessed >= query.limit) break;
+      if (jobs.length >= query.limit) break;
 
       checkAbort(signal);
       onLog('Attempting to navigate to next page...');
@@ -107,6 +115,7 @@ async function scrape(
     }
 
     onLog(`Successfully extracted ${jobs.length} jobs.`);
+    if (known) onLog(`Skipped ${known} already surfaced by an earlier run.`);
     return jobs;
   } finally {
     await closeBrowser(session, options.sessionFile, onLog);

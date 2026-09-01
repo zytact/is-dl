@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { appendFile, readFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { CliError } from './errors.ts';
-import { ensureDir } from './runs.ts';
+import { ensureDir } from './fs.ts';
 import type { JobSource } from './types.ts';
 
 export const APPLICATION_STATUSES = [

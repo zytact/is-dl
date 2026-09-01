@@ -97,7 +97,14 @@ search flags:
       --debug / --no-debug
       --timeout <ms>                Navigation timeout (default 30000)
       --exclude-unpaid              Drop unpaid and token-stipend listings
-      --exclude-seen                Drop listings already in the application log
+      --exclude-applied             Drop listings already in the application log
+      --exclude-seen                Drop listings an earlier run already showed
+
+Seen listings:
+  Every saved run adds its jobs to a ledger in the data dir. --exclude-seen
+  filters on it while the sources page, so --limit still yields that many jobs
+  you have not been shown. The ledger is rebuilt from the run store when it is
+  missing, so it already knows about runs made before it existed.
 
 Sources:
   search queries LinkedIn and Unstop together and merges the results, newest
@@ -137,7 +144,8 @@ Examples:
   is-dl search -k "frontend intern" -l Remote --limit 20 --json
   is-dl search -k developer --source unstop --unstop-roles software-development
   is-dl runs show latest --json
-  is-dl search -k "intern" --exclude-unpaid --exclude-seen
+  is-dl search -k "intern" --exclude-unpaid --exclude-applied
+  is-dl search -k "intern" --exclude-seen   # only what I have not been shown
   is-dl resume build --variant ai
 
 is-dl never submits an application. It searches, filters, logs and builds a

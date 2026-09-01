@@ -36,11 +36,12 @@ async function scrape(
   onLog(`Opportunity: ${options.opportunity}`);
   if (options.roles?.length) onLog(`Roles: ${options.roles.join(', ')}`);
 
-  const seen = new Set<number>();
+  const fetched = new Set<number>();
   const kept: JobListing[] = [];
   let page = 1;
   let lastPage = 1;
   let total = 0;
+  let known = 0;
 
   // The filters run here, not on the endpoint, so paging has to continue until
   // enough rows have passed them. Counting fetched rows stops on page one and
@@ -52,14 +53,21 @@ async function scrape(
     total = result.total;
 
     for (const item of result.items) {
-      if (seen.has(item.id)) continue;
-      seen.add(item.id);
+      if (fetched.has(item.id)) continue;
+      fetched.add(item.id);
       const job = toJobListing(item);
-      if (matches(job, query)) kept.push(job);
+      if (!matches(job, query)) continue;
+      // Counted against the limit only if it is new, so asking for 25 jobs
+      // keeps paging past the ones an earlier run already showed.
+      if (job.jobId !== null && query.known?.has(job.source, job.jobId)) {
+        known++;
+        continue;
+      }
+      kept.push(job);
     }
 
     onLog(
-      `Page ${page}/${lastPage}: ${seen.size} unique of ${total} fetched, ${kept.length} kept.`,
+      `Page ${page}/${lastPage}: ${fetched.size} unique of ${total} fetched, ${kept.length} kept.`,
     );
     if (kept.length >= query.limit || page >= lastPage) break;
     page++;
@@ -69,12 +77,13 @@ async function scrape(
 
   // Offset pagination on this endpoint repeats and skips rows across the full
   // corpus. Say so rather than implying the whole set was seen.
-  if (page >= lastPage && kept.length < query.limit && seen.size < total) {
-    onLog(`WARNING: walked every page but saw ${seen.size} unique of ${total} reported.`);
+  if (page >= lastPage && kept.length < query.limit && fetched.size < total) {
+    onLog(`WARNING: walked every page but saw ${fetched.size} unique of ${total} reported.`);
   }
 
   const jobs = kept.slice(0, query.limit);
-  onLog(`Kept ${jobs.length} of ${seen.size} fetched after keyword and location filters.`);
+  onLog(`Kept ${jobs.length} of ${fetched.size} fetched after keyword and location filters.`);
+  if (known) onLog(`Skipped ${known} already surfaced by an earlier run.`);
   return jobs;
 }
 

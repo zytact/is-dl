@@ -6,9 +6,10 @@ import { resolveSearch, type SearchLayer } from '../config.ts';
 import { CliError } from '../errors.ts';
 import { migrateLegacySession } from '../linkedin/browser.ts';
 import { summarizePay } from '../pay.ts';
-import { newRunId, saveRun, writeRunTo } from '../runs.ts';
+import { knownJobKeys, newRunId, saveRun, writeRunTo } from '../runs.ts';
 import { runScraper } from '../scraper.ts';
-import type { JobSource, ScraperOutput } from '../types.ts';
+import { knownJobs, noJobsKnown } from '../seen.ts';
+import type { JobSource, KnownJobs, ScraperOutput } from '../types.ts';
 import { GLOBAL_OPTIONS, usage } from './shared.ts';
 
 const SEARCH_OPTIONS = {
@@ -28,6 +29,7 @@ const SEARCH_OPTIONS = {
   'no-debug': { type: 'boolean' },
   timeout: { type: 'string' },
   'exclude-unpaid': { type: 'boolean' },
+  'exclude-applied': { type: 'boolean' },
   'exclude-seen': { type: 'boolean' },
   source: { type: 'string', short: 's' },
   'unstop-opportunity': { type: 'string' },
@@ -56,21 +58,30 @@ function num(value: string | undefined, flag: string): number | undefined {
 
 /**
  * `unstated` is never dropped: good listings routinely omit pay entirely.
+ *
+ * `known` runs again here even though the sources already filtered on it. A
+ * LinkedIn card whose id was not readable before the click is only identified
+ * once it has been opened, and this is where it gets dropped.
  */
 function applyTriage(
   output: ScraperOutput,
-  options: { excludeUnpaid: boolean; seen: Set<string> },
-): { output: ScraperOutput; droppedUnpaid: number; droppedSeen: number } {
+  options: { excludeUnpaid: boolean; applied: Set<string>; known: KnownJobs },
+): { output: ScraperOutput; droppedUnpaid: number; droppedApplied: number; droppedKnown: number } {
   let droppedUnpaid = 0;
-  let droppedSeen = 0;
+  let droppedApplied = 0;
+  let droppedKnown = 0;
 
   const jobs = output.jobs.filter((job) => {
     if (options.excludeUnpaid && (job.pay.kind === 'unpaid' || job.pay.kind === 'token')) {
       droppedUnpaid++;
       return false;
     }
-    if (job.jobId && options.seen.has(seenKey(job.source, job.jobId))) {
-      droppedSeen++;
+    if (job.jobId && options.applied.has(seenKey(job.source, job.jobId))) {
+      droppedApplied++;
+      return false;
+    }
+    if (job.jobId !== null && options.known.has(job.source, job.jobId)) {
+      droppedKnown++;
       return false;
     }
     return true;
@@ -82,7 +93,8 @@ function applyTriage(
       jobs,
     },
     droppedUnpaid,
-    droppedSeen,
+    droppedApplied,
+    droppedKnown,
   };
 }
 
@@ -123,6 +135,10 @@ export async function searchCommand(base: CliBase, argv: string[]): Promise<void
     await migrateLegacySession(ctx.paths.sessionFile, ctx.cwd, ctx.log);
   }
 
+  // Resolved before the scrape, not after: the sources page on it so that
+  // --limit still yields that many jobs the reader has not already been shown.
+  const known = values['exclude-seen'] ? knownJobs(await knownJobKeys(ctx.paths)) : noJobsKnown;
+
   const scraped = await runScraper(
     {
       query: {
@@ -130,6 +146,7 @@ export async function searchCommand(base: CliBase, argv: string[]): Promise<void
         location: settings.location,
         limit: settings.limit,
         remoteOnly: settings.remoteOnly,
+        known,
       },
       sources: settings.sources,
       linkedin: {
@@ -155,19 +172,22 @@ export async function searchCommand(base: CliBase, argv: string[]): Promise<void
     if (run.status === 'failed') ctx.log(`Skipped ${run.source}: ${run.error}`);
   }
 
-  const seen = values['exclude-seen']
+  const applied = values['exclude-applied']
     ? new Set(currentState(await readApplications(ctx.paths.applicationsLog)).keys())
     : new Set<string>();
 
   const triaged = applyTriage(scraped, {
     excludeUnpaid: values['exclude-unpaid'] ?? false,
-    seen,
+    applied,
+    known,
   });
   const output = triaged.output;
 
   if (triaged.droppedUnpaid) ctx.log(`Dropped ${triaged.droppedUnpaid} unpaid or token listings.`);
-  if (triaged.droppedSeen)
-    ctx.log(`Dropped ${triaged.droppedSeen} already in the application log.`);
+  if (triaged.droppedApplied)
+    ctx.log(`Dropped ${triaged.droppedApplied} already in the application log.`);
+  if (triaged.droppedKnown)
+    ctx.log(`Dropped ${triaged.droppedKnown} already surfaced by an earlier run.`);
 
   const runId = newRunId();
   const outDir = settings.outDir;

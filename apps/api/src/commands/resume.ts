@@ -18,7 +18,7 @@ import {
 import { resolveVariant } from '../resume/schema.ts';
 import { TEMPLATE_PREAMBLE, TEMPLATE_RESUME, TEMPLATE_VARIANTS } from '../resume/template.ts';
 import { expandHome } from '../paths.ts';
-import { ensureDir } from '../runs.ts';
+import { ensureDir } from '../fs.ts';
 import { GLOBAL_OPTIONS, usage } from './shared.ts';
 
 const RESUME_OPTIONS = {

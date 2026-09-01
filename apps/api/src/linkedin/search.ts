@@ -7,12 +7,16 @@ const JOB_LIST_SELECTOR =
 const PAGINATION_INFO_SELECTOR =
   '#jobs-search-results-footer > div.jobs-search-pagination.jobs-search-results-list__pagination.p4 > p';
 
-export async function getJobCardCount(
-  page: Page,
-  limit: number,
-  ctx: ScrapeContext,
-): Promise<number> {
-  ctx.onLog(`Getting job cards (limit: ${limit})...`);
+/**
+ * The job ids of every card on the page, in card order, so the caller can skip
+ * a job before paying for the click and the detail fetch.
+ *
+ * An entry is null when neither attribute is on the card. That is not fatal:
+ * the caller opens the job and reads the id from the URL as it always has, and
+ * only loses the chance to skip it early.
+ */
+export async function getJobCardIds(page: Page, ctx: ScrapeContext): Promise<(string | null)[]> {
+  ctx.onLog('Getting job cards...');
 
   try {
     if (ctx.debug) {
@@ -29,14 +33,30 @@ export async function getJobCardCount(
 
     // Get all job cards (li elements)
     const jobCards = await page.$$(`${JOB_LIST_SELECTOR} > li`);
-    const jobCount = Math.min(jobCards.length, limit);
+    const ids = await Promise.all(jobCards.map((card) => cardJobId(card)));
 
     ctx.onLog(`Found ${jobCards.length} job cards on current page`);
 
-    return jobCount;
+    return ids;
   } catch (error) {
     ctx.onLog(`Error getting job cards: ${String(error)}`);
     throw error;
+  }
+}
+
+/** Whatever `page.$$` hands back, without naming DOM types this project has no lib for. */
+type JobCard = Awaited<ReturnType<Page['$$']>>[number];
+
+/** LinkedIn puts the id on the list item, or on the card div inside it. */
+async function cardJobId(card: JobCard): Promise<string | null> {
+  try {
+    const own = await card.getAttribute('data-occludable-job-id');
+    if (own?.trim()) return own.trim();
+    const inner = await card.$('[data-job-id]');
+    const nested = await inner?.getAttribute('data-job-id');
+    return nested?.trim() ? nested.trim() : null;
+  } catch {
+    return null;
   }
 }
 

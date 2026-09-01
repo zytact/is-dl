@@ -12,6 +12,8 @@ export interface AppPaths {
   runsDir: string;
   runsIndex: string;
   applicationsLog: string;
+  /** Every job id a saved run has ever surfaced. Derived from runsDir. */
+  seenLog: string;
   sessionFile: string;
   /** User-edited resume.yaml, variants.yaml and preamble.tex. */
   resumeDir: string;
@@ -95,6 +97,7 @@ export function resolvePaths(
     runsDir: join(data, 'runs'),
     runsIndex: join(data, 'runs', 'index.json'),
     applicationsLog: join(data, 'applications.jsonl'),
+    seenLog: join(data, 'seen.jsonl'),
     sessionFile: join(state, 'storageState.json'),
     resumeDir: join(config, 'resume'),
     resumeBuildDir: join(data, 'resume', 'build'),

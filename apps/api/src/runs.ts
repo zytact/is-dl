@@ -1,8 +1,10 @@
 import { existsSync } from 'node:fs';
-import { mkdir, readdir, readFile, unlink, writeFile } from 'node:fs/promises';
+import { readdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { CliError } from './errors.ts';
+import { ensureDir } from './fs.ts';
 import type { AppPaths } from './paths.ts';
+import { appendSeen, newSeenRecords, readSeen, recordSeen } from './seen.ts';
 import type { PersistedRun, ScraperOutput } from './types.ts';
 
 export interface RunSummary {
@@ -20,10 +22,6 @@ export function newRunId(now: Date = new Date()): string {
 
 export function runIdFromFilename(filename: string): string {
   return basename(filename).replace(/\.json$/, '');
-}
-
-export async function ensureDir(dir: string): Promise<void> {
-  if (!existsSync(dir)) await mkdir(dir, { recursive: true });
 }
 
 async function writeJson(filePath: string, value: unknown): Promise<void> {
@@ -53,6 +51,7 @@ export async function writeRunTo(
   return filePath;
 }
 
+/** Saving a run is also what puts its jobs in the seen ledger. */
 export async function saveRun(
   paths: AppPaths,
   runId: string,
@@ -62,7 +61,40 @@ export async function saveRun(
   const runs = await listRuns(paths);
   const next = [summarize(runId, filePath, output), ...runs.filter((r) => r.runId !== runId)];
   await writeJson(paths.runsIndex, { runs: next });
+  await recordSeen(paths, runId, output.jobs, output.meta.scrapedAt);
   return filePath;
+}
+
+/**
+ * Rebuilds the seen ledger from the run store, oldest run first so each job is
+ * dated by the run that actually found it. The runs are the source of truth, so
+ * a deleted ledger costs one directory scan rather than the history itself.
+ */
+export async function rebuildSeen(paths: AppPaths): Promise<number> {
+  const known = new Set<string>();
+  const records = [];
+
+  for (const summary of (await listRuns(paths)).slice().reverse()) {
+    const run = await tryReadRunFile(summary.path);
+    if (!run) continue;
+    for (const record of newSeenRecords(run.jobs, known, summary.runId, summary.scrapedAt)) {
+      known.add(record.key);
+      records.push(record);
+    }
+  }
+
+  await appendSeen(paths.seenLog, records);
+  return records.length;
+}
+
+/**
+ * The keys `--exclude-seen` filters on, backfilled from the run store the first
+ * time. Without the backfill, the flag would treat every run made before the
+ * ledger existed as if it had never happened.
+ */
+export async function knownJobKeys(paths: AppPaths): Promise<Set<string>> {
+  if (!existsSync(paths.seenLog)) await rebuildSeen(paths);
+  return new Set((await readSeen(paths.seenLog)).keys());
 }
 
 /** The index is a cache. A directory scan is the source of truth when it is stale. */
