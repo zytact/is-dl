@@ -7,6 +7,7 @@ import { appsCommand } from './commands/apps.ts';
 import { loginCommand, logoutCommand } from './commands/auth.ts';
 import { configCommand } from './commands/config.ts';
 import { doctorCommand } from './commands/doctor.ts';
+import { notesCommand } from './commands/notes.ts';
 import { resumeCommand } from './commands/resume.ts';
 import { runsCommand } from './commands/runs.ts';
 import { searchCommand } from './commands/search.ts';
@@ -50,6 +51,7 @@ const COMMANDS: Record<string, Command> = {
   serve: serveCommand,
   doctor: doctorCommand,
   apps: appsCommand,
+  notes: notesCommand,
   resume: resumeCommand,
 };
 
@@ -65,6 +67,8 @@ Commands:
   runs list|show|rm         Inspect past runs
   config get|set|path       Read or write configuration
   apps add|status|list|show Track applications in an append-only log
+  notes add|attach|list|show|path|rm
+                            Keep the text and files attached to a job
   resume init|build|check|path
                             Build resume variants with tectonic
   serve                     Run the REST API used by the web UI and TUI
@@ -120,6 +124,30 @@ apps flags:
       --status <status>             Filter apps list
       --older-than <10d>            Filter apps list by age
 
+notes flags:
+  -s, --source <name>               Board the job id belongs to
+  -t, --title <text>                Note title (default: its first line)
+  -u, --url <url>                   Where the text came from
+      --text <text>                 The note itself, inline
+  -f, --file <path>                 Read the note from a file, or attach it
+      --as <name>                   Attachment name, for attach and rm
+  -n, --note <noteId>               Which note, for show, path and rm
+      --from-run <runId>            Look the job up in one run instead of all
+
+Notes:
+  A note is a markdown file in the data dir under notes/<source>/<jobId>/, and
+  the text is stored exactly as given. Company and role are filled in from the
+  run that surfaced the job. Notes are not tied to the application log, so a
+  job can be noted before you decide to apply.
+
+  "notes attach" copies a file's bytes unchanged into files/ beside the notes,
+  so a PDF brief or a docx take-home keeps its original form and name.
+
+  cat brief.md | is-dl notes add 4055 -t "Comp and process" -u <doc url>
+  is-dl notes attach 4055 --file ~/Downloads/take-home.pdf
+  is-dl notes show 4055 --json
+  $EDITOR "$(is-dl notes path 4055 --note <noteId>)"
+
 resume flags:
       --variant <name>              Variant to build
       --all                         Build every variant
@@ -147,6 +175,7 @@ Examples:
   is-dl search -k "intern" --exclude-unpaid --exclude-applied
   is-dl search -k "intern" --exclude-seen   # only what I have not been shown
   is-dl resume build --variant ai
+  pbpaste | is-dl notes add 4055 --title "Their hiring doc"
 
 is-dl never submits an application. It searches, filters, logs and builds a
 PDF. Judging whether a listing fits you is yours to do, as is applying.

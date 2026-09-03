@@ -10,11 +10,10 @@ import {
   readApplications,
   recordSource,
 } from '../applications.ts';
-import { buildCtx, type CliBase, type Ctx } from '../cli-context.ts';
+import { buildCtx, type CliBase } from '../cli-context.ts';
 import { CliError } from '../errors.ts';
-import { listRuns, readRun, resolveRunId } from '../runs.ts';
-import { isJobSource, JOB_SOURCES, type JobListing, type JobSource } from '../types.ts';
-import { GLOBAL_OPTIONS, usage } from './shared.ts';
+import { listAttachments, listNotes, noteMeta } from '../notes.ts';
+import { findJob, GLOBAL_OPTIONS, readSourceFlag, usage } from './shared.ts';
 
 const APPS_OPTIONS = {
   variant: { type: 'string' },
@@ -23,37 +22,6 @@ const APPS_OPTIONS = {
   'older-than': { type: 'string' },
   source: { type: 'string', short: 's' },
 } as const;
-
-async function findJob(
-  ctx: Ctx,
-  jobId: string,
-  fromRun: string | undefined,
-  source: JobSource | undefined,
-): Promise<{ job: JobListing; runId: string } | null> {
-  const runIds = fromRun
-    ? [await resolveRunId(ctx.paths, fromRun)]
-    : (await listRuns(ctx.paths)).map((run) => run.runId);
-
-  for (const runId of runIds) {
-    const output = await readRun(ctx.paths, runId);
-    const job = output.jobs.find(
-      (candidate) => candidate.jobId === jobId && (!source || candidate.source === source),
-    );
-    if (job) return { job, runId };
-  }
-  return null;
-}
-
-function readSourceFlag(value: string | undefined): JobSource | undefined {
-  if (value === undefined) return undefined;
-  if (!isJobSource(value)) {
-    throw new CliError(
-      'USAGE',
-      `Unknown --source "${value}". Use one of: ${JOB_SOURCES.join(', ')}`,
-    );
-  }
-  return value;
-}
 
 /** Two boards can hand out the same numeric id, so the caller has to pick one. */
 function assertOneBoard(matches: ApplicationRecord[], jobId: string): void {
@@ -168,14 +136,27 @@ export async function appsCommand(base: CliBase, argv: string[]): Promise<void> 
       const history = historyFor(await readApplications(file), first, source);
       if (!history.length) throw new CliError('ERROR', `No application logged for ${first}.`);
       assertOneBoard(history, first);
+      const last = history.at(-1)!;
+      const ref = { source: recordSource(last), jobId: first };
+      const notes = await listNotes(ctx.paths, ref);
+      const files = await listAttachments(ctx.paths, ref);
       const human = [
-        `${first}  ${history.at(-1)!.company ?? '?'} - ${history.at(-1)!.title ?? '?'}`,
-        `url: ${history.at(-1)!.url ?? '-'}`,
-        `variant: ${history.at(-1)!.variant ?? '-'}`,
+        `${first}  ${last.company ?? '?'} - ${last.title ?? '?'}`,
+        `url: ${last.url ?? '-'}`,
+        `variant: ${last.variant ?? '-'}`,
         'history:',
         ...history.map((record) => `  ${record.recordedAt}  ${record.status}`),
+        `notes:${notes.length ? '' : ' none'}`,
+        ...notes.map((note) => `  ${note.noteId}  ${note.title}`),
+        ...(files.length ? [`files: ${files.map((f) => f.name).join(', ')}`] : []),
       ].join('\n');
-      ctx.emit(human, () => ({ ok: true, jobId: first, history }));
+      ctx.emit(human, () => ({
+        ok: true,
+        jobId: first,
+        history,
+        notes: notes.map(noteMeta),
+        files,
+      }));
       return;
     }
     default:

@@ -12,6 +12,8 @@ export interface AppPaths {
   runsDir: string;
   runsIndex: string;
   applicationsLog: string;
+  /** One markdown file per note, under `<source>/<jobId>/`. */
+  notesDir: string;
   /** Every job id a saved run has ever surfaced. Derived from runsDir. */
   seenLog: string;
   sessionFile: string;
@@ -97,6 +99,7 @@ export function resolvePaths(
     runsDir: join(data, 'runs'),
     runsIndex: join(data, 'runs', 'index.json'),
     applicationsLog: join(data, 'applications.jsonl'),
+    notesDir: join(data, 'notes'),
     seenLog: join(data, 'seen.jsonl'),
     sessionFile: join(state, 'storageState.json'),
     resumeDir: join(config, 'resume'),

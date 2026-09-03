@@ -53,6 +53,7 @@ export async function doctorCommand(base: CliBase, argv: string[]): Promise<void
         pdftotext ?? 'missing, needed for the resume text extraction gate. Install poppler-utils',
     },
     { name: 'runs', ok: true, detail: ctx.paths.runsDir },
+    { name: 'notes', ok: true, detail: ctx.paths.notesDir },
     { name: 'cache', ok: true, detail: ctx.paths.cache },
   ];
 
