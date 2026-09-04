@@ -1,7 +1,5 @@
 # AGENTS
 
-Use concise language.
-
 ## Repo shape
 
 - The root package **is** `is-dl`, the CLI (Node + Playwright), which also hosts the REST API. Its source lives in `apps/api/`, which is a plain folder with no `package.json` of its own. That is what makes `vp pack && vp install -g .` work from the root.
@@ -13,20 +11,7 @@ Use concise language.
 
 - Install deps: `vp install`
 - Install Playwright Chromium once: `vp exec playwright install chromium`
-
-## Dev commands
-
-| Command                      | What it does               |
-| ---------------------------- | -------------------------- |
-| `vp run dev`                 | API + web                  |
-| `vp run dev:api`             | API only, port 3000        |
-| `vp run dev:web`             | Web only, port 5173        |
-| `vp run dev:tui`             | API + TUI, API logs hidden |
-| `vp run dev:api:tui`         | Alias for `dev:tui`        |
-| `vp run build`               | Build all apps             |
-| `vp pack && vp install -g .` | Install the CLI globally   |
-| `vp check`                   | Format, lint, typecheck    |
-| `vp test run`                | Tests                      |
+- Dev, build, check and test scripts are in `package.json`. `vp run <name>` runs a script, `vp <name>` runs a built-in, and a script never shadows a built-in.
 
 ## apps/api
 
@@ -38,13 +23,13 @@ Install it globally from a checkout with `vp pack && vp install -g .`. Run that 
 
 - **Entry:** `src/cli.ts`, a `node:util` `parseArgs` subcommand router.
 - **Commands:** `src/commands/`; search, login, logout, runs, config, serve, doctor.
-- **Paths:** `src/paths.ts` is the only place config/data/state/cache directories are resolved. `ensureDir` lives in `src/fs.ts`, not `runs.ts`, so the seen ledger and the run store can both use it without a cycle. Linux uses XDG, macOS uses `~/Library`, Windows uses `%APPDATA%`/`%LOCALAPPDATA%`. `XDG_*` wins everywhere when set.
+- **Paths:** `src/paths.ts` is the only place config/data/state/cache directories are resolved. `ensureDir` lives in `src/fs.ts`, not `runs.ts`, so the seen ledger and the run store can both use it without a cycle. `XDG_*` wins over the platform default everywhere.
 - **Config:** `src/config.ts`; TOML. Precedence is flags > `IS_DL_*` env > project `.is-dl.toml` > user `config.toml` > defaults.
 - **Server:** `src/server.ts` exports `startServer()`; routes all under `/api/`, manual `if url.pathname === ...`.
 - **Sources:** `src/sources.ts` defines `SourceRunner` and `runSources()`, which runs every selected source concurrently and merges the results. `src/scraper.ts` only builds runners from a `ScrapeRequest` and hands them over. Neither writes anything.
 - **Runs:** `src/runs.ts` owns the run files and `index.json` in the data directory.
 - **Browser:** `src/linkedin/browser.ts`; the session file is a parameter, and it refuses to prompt without a TTY.
-- **Exit codes:** `src/errors.ts`; 0 ok, 1 error, 2 usage, 3 auth, 4 dependency, 5 aborted, 6 config.
+- **Exit codes:** `src/errors.ts`.
 
 ### Sources
 
@@ -109,31 +94,10 @@ Install it globally from a checkout with `vp pack && vp install -g .`. Run that 
 - Two gates on every build: page count parsed from the LaTeX log (>1 page fails and names the section), and a pdftotext extraction check. FontAwesome icons garble the text stream under both engines and are not a regression.
 - Engine is tectonic (XeTeX). The preamble picks XCharter via fontspec under non-pdfTeX so bold survives, and `\AND` is a plain `\textbar` emitted only between contact items.
 
-### Resume workflow
-
-```bash
-is-dl resume path                  # where inputs and builds live
-is-dl resume init                  # scaffold the three input files
-$EDITOR "$(is-dl resume path --json | jq -r .input)/resume.yaml"
-is-dl resume check                 # what each variant would include
-is-dl resume build --all           # every variant, each gated at 1 page
-```
-
 ## apps/web
 
-- **Router:** TanStack Router, code routes in `src/router.tsx`.
-- **Routes:** `/`, `/results`.
 - **API:** Direct `fetch` to `http://localhost:3000/api/*`. List fields go over the wire as JSON arrays.
 - **Types:** the board contracts (`JobSource`, `PayInfo`, `SourceRun` and friends) are the CLI's. `apps/web/src/types.ts` imports `apps/api/src/types.ts` by relative path and re-exports it alongside the browser-only labels. Keep `types.ts` free of Node imports or the web bundle pulls in Playwright. The root package also publishes the same file as `is-dl/types` for consumers outside the repo; the web app does not go through it, because the CLI is the root package and pnpm has nothing to link into `apps/web/node_modules`.
-- **Styling:** Tailwind CSS v4 via `@tailwindcss/vite`.
-
-## apps/tui
-
-- **Go package:** `github.com/arnab/is-dl-tui`
-- **NPM package:** `@repo/tui`
-- **Framework:** Bubble Tea.
-- **HTTP:** `api.NewClient("http://localhost:3000")`.
-- **SSE:** `/api/logs` goroutine -> Bubble Tea channel.
 
 ## CLI
 
@@ -146,12 +110,6 @@ is-dl search -k developer --source unstop --unstop-roles software-development --
 `vp run cli` forwards a literal `--`, which `parseArgs` then treats as the start of positionals. Pass the subcommand directly, with no `--` separator.
 
 Agents should always pass `--json`, parse stdout only, and treat exit 3 as "ask a human to run `is-dl login`" and exit 4 as "run `npx playwright install chromium`". Check `meta.sources[]` before trusting a count: exit 0 does not mean every source ran.
-
-## Tech notes
-
-- API CORS open.
-- Oxlint/Oxfmt configured in root `vite.config.ts`.
-- Vite+ hooks via `prepare: vp config`.
 
 <!--VITE PLUS START-->
 
