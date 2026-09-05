@@ -3,15 +3,6 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { CliBase } from './cli-context.ts';
-import { appsCommand } from './commands/apps.ts';
-import { loginCommand, logoutCommand } from './commands/auth.ts';
-import { configCommand } from './commands/config.ts';
-import { doctorCommand } from './commands/doctor.ts';
-import { notesCommand } from './commands/notes.ts';
-import { resumeCommand } from './commands/resume.ts';
-import { runsCommand } from './commands/runs.ts';
-import { searchCommand } from './commands/search.ts';
-import { serveCommand } from './commands/serve.ts';
 import { CliError, ExitCode } from './errors.ts';
 import { resolvePaths } from './paths.ts';
 
@@ -42,17 +33,22 @@ const version = readVersion();
 
 type Command = (base: CliBase, argv: string[]) => Promise<void>;
 
-const COMMANDS: Record<string, Command> = {
-  search: searchCommand,
-  login: loginCommand,
-  logout: logoutCommand,
-  runs: runsCommand,
-  config: configCommand,
-  serve: serveCommand,
-  doctor: doctorCommand,
-  apps: appsCommand,
-  notes: notesCommand,
-  resume: resumeCommand,
+/**
+ * Loaded on dispatch, not at startup. Importing every command eagerly pulls in
+ * Playwright and the server for `--version`, `notes list` and `config get`
+ * alike, and the import graph is most of what those commands cost.
+ */
+const COMMANDS: Record<string, () => Promise<Command>> = {
+  search: async () => (await import('./commands/search.ts')).searchCommand,
+  login: async () => (await import('./commands/auth.ts')).loginCommand,
+  logout: async () => (await import('./commands/auth.ts')).logoutCommand,
+  runs: async () => (await import('./commands/runs.ts')).runsCommand,
+  config: async () => (await import('./commands/config.ts')).configCommand,
+  serve: async () => (await import('./commands/serve.ts')).serveCommand,
+  doctor: async () => (await import('./commands/doctor.ts')).doctorCommand,
+  apps: async () => (await import('./commands/apps.ts')).appsCommand,
+  notes: async () => (await import('./commands/notes.ts')).notesCommand,
+  resume: async () => (await import('./commands/resume.ts')).resumeCommand,
 };
 
 const HELP = `is-dl ${version} - job search CLI for LinkedIn and Unstop
@@ -210,13 +206,15 @@ async function main(argv: string[]): Promise<number> {
     return command && !COMMANDS[command.name] ? ExitCode.USAGE : ExitCode.OK;
   }
 
-  const run = COMMANDS[command.name];
-  if (!run) {
+  const load = COMMANDS[command.name];
+  if (!load) {
     throw new CliError(
       'USAGE',
       `Unknown command "${command.name}". Run is-dl --help for the command list.`,
     );
   }
+
+  const run = await load();
 
   const controller = new AbortController();
   const onSignal = () => controller.abort();
