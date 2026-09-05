@@ -53,16 +53,19 @@ async function scrape(
     total = result.total;
 
     for (const item of result.items) {
+      if (kept.length >= query.limit) break;
       if (fetched.has(item.id)) continue;
       fetched.add(item.id);
-      const job = toJobListing(item);
-      if (!matches(job, query)) continue;
-      // Counted against the limit only if it is new, so asking for 25 jobs
-      // keeps paging past the ones an earlier run already showed.
-      if (job.jobId !== null && query.known?.has(job.source, job.jobId)) {
+      // Ahead of `toJobListing`, which decodes the whole description and runs
+      // the pay, location and AI-agent classifiers. A row the reader is done
+      // with is worth none of that, and it never counted against the limit
+      // anyway, so asking for 25 jobs still pages past it.
+      if (query.known?.has('unstop', String(item.id))) {
         known++;
         continue;
       }
+      const job = toJobListing(item);
+      if (!matches(job, query)) continue;
       kept.push(job);
     }
 
@@ -83,7 +86,7 @@ async function scrape(
 
   const jobs = kept.slice(0, query.limit);
   onLog(`Kept ${jobs.length} of ${fetched.size} fetched after keyword and location filters.`);
-  if (known) onLog(`Skipped ${known} already surfaced by an earlier run.`);
+  if (known) onLog(`Skipped ${known} already seen or applied to.`);
   return jobs;
 }
 
