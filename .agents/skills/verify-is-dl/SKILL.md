@@ -20,7 +20,8 @@ This skill has byte-identical copies under `.agents/skills/verify-is-dl/` and `.
 The launcher:
 
 - refuses to start when port 3000 or 5173 already has a listener
-- runs `vp run build` for the CLI, API, website, and TUI
+- runs `vp run build` for the CLI, API, website, and TUI, then packs the CLI again so `dist` is
+  this working tree rather than whatever the task cache replayed
 - creates the disposable XDG config, data and cache roots under `.local/verify-is-dl/`
 - points the XDG state root at `.local/verify-is-dl-login/state`, which persists
 - starts the packed API on port 3000

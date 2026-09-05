@@ -73,6 +73,13 @@ cdp_port="$(free_port)"
 cd "$repo"
 vp run build
 
+# `vp run build` is a cached task, and a replay restores dist from the cache
+# with the mtimes it was captured with. That makes "is this build current?"
+# unanswerable from the filesystem, and a verification run driving a bundle that
+# does not match the working tree proves nothing. Packing again is ~100ms and
+# settles it: dist is this tree, and it is newer than every source file.
+vp pack >/dev/null
+
 mkdir -p "$run/config" "$run/data" "$run/cache" \
   "$run/tui-work" "$profile/Default" "$downloads" "$evidence_root" "$login/state"
 
