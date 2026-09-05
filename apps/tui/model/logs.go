@@ -12,13 +12,18 @@ import (
 	"github.com/zytact/is-dl-tui/ui"
 )
 
+// The console holds this many lines. A long scrape streams far more than a
+// reader will ever scroll back through, and every one of them is re-rendered
+// on each new message.
+const maxLogLines = 2000
+
 type LogsModel struct {
 	width          int
 	height         int
 	viewport       viewport.Model
 	statusScraping bool
 	lastKeywords   string
-	content        string
+	lines          []string
 }
 
 func NewLogs() *LogsModel {
@@ -49,12 +54,11 @@ func (l *LogsModel) ApplyEvent(evt api.SSEEvent) {
 	case "status":
 		l.statusScraping = evt.IsScraping
 	case "log":
-		if l.content == "" {
-			l.content = evt.Message
-		} else {
-			l.content = l.content + "\n" + evt.Message
+		l.lines = append(l.lines, evt.Message)
+		if len(l.lines) > maxLogLines {
+			l.lines = append(l.lines[:0], l.lines[len(l.lines)-maxLogLines:]...)
 		}
-		l.viewport.SetContent(l.content)
+		l.viewport.SetContent(strings.Join(l.lines, "\n"))
 		l.viewport.GotoBottom()
 	}
 }
@@ -64,7 +68,7 @@ func (l *LogsModel) Update(msg tea.Msg) (*LogsModel, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "c":
-			l.content = ""
+			l.lines = nil
 			l.viewport.SetContent("")
 			return l, nil
 		case "G":

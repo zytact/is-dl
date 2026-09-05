@@ -1,47 +1,9 @@
 import { Link, Outlet } from '@tanstack/react-router';
 import { Activity } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useScraperStream } from '../scraper-stream';
 
 export function RootLayout() {
-  const [isScraping, setIsScraping] = useState(false);
-
-  useEffect(() => {
-    let eventSource: EventSource | null = null;
-    let reconnectTimeout: ReturnType<typeof setTimeout>;
-
-    const connect = () => {
-      if (eventSource) {
-        eventSource.close();
-      }
-
-      eventSource = new EventSource('http://localhost:3000/api/logs');
-
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === 'status') {
-            setIsScraping(data.isScraping);
-          }
-        } catch (err) {
-          console.error('Error parsing SSE data', err);
-        }
-      };
-
-      eventSource.onerror = () => {
-        if (eventSource) eventSource.close();
-        reconnectTimeout = setTimeout(connect, 3000);
-      };
-    };
-
-    connect();
-
-    return () => {
-      clearTimeout(reconnectTimeout);
-      if (eventSource) {
-        eventSource.close();
-      }
-    };
-  }, []);
+  const { isScraping } = useScraperStream();
 
   return (
     <div className="h-screen w-full flex flex-col pt-4 px-4 pb-0 overflow-hidden relative selection:bg-brand-cyan selection:text-brand-dark">

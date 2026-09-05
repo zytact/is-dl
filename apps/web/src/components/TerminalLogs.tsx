@@ -1,9 +1,29 @@
-import type { RefCallback } from 'react';
+import { memo, type RefCallback } from 'react';
+import type { LogLine } from '../scraper-stream';
 
 interface TerminalLogsProps {
-  logs: string[];
+  logs: LogLine[];
   isScraping: boolean;
 }
+
+/** Memoized: a new line must not re-render the thousands already on screen. */
+const LogRow = memo(function LogRow({ line }: { line: LogLine }) {
+  const isError =
+    line.text.includes('Error') || line.text.includes('Failed') || line.text.includes('ABORTED');
+  const isSuccess = line.text.includes('complete') || line.text.includes('Successfully');
+
+  return (
+    <div
+      className={`mb-1 typewriter-text ${
+        isError ? 'text-brand-error' : isSuccess ? 'text-brand-ok' : 'text-brand-text'
+      }`}
+      style={{ animationDuration: '0.2s' }}
+    >
+      <span className="opacity-50 mr-2 text-xs">[{line.at}]</span>
+      {line.text}
+    </div>
+  );
+});
 
 export function TerminalLogs({ logs, isScraping }: TerminalLogsProps) {
   const scrollToBottom: RefCallback<HTMLDivElement> = (el) => {
@@ -36,24 +56,7 @@ export function TerminalLogs({ logs, isScraping }: TerminalLogsProps) {
             {'>'} Waiting for command execution...
           </div>
         ) : (
-          logs.map((log, i) => {
-            const isError =
-              log.includes('Error') || log.includes('Failed') || log.includes('ABORTED');
-            const isSuccess = log.includes('complete') || log.includes('Successfully');
-
-            return (
-              <div
-                key={`log-${i}-${log.slice(0, 20)}`}
-                className={`mb-1 typewriter-text ${
-                  isError ? 'text-brand-error' : isSuccess ? 'text-brand-ok' : 'text-brand-text'
-                }`}
-                style={{ animationDuration: '0.2s' }}
-              >
-                <span className="opacity-50 mr-2 text-xs">[{new Date().toLocaleTimeString()}]</span>
-                {log}
-              </div>
-            );
-          })
+          logs.map((line) => <LogRow key={line.id} line={line} />)
         )}
 
         {isScraping && (
