@@ -1,4 +1,4 @@
-import { mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vite-plus/test';
@@ -48,6 +48,42 @@ describe('reading a run file written before per-source outcomes', () => {
     const sources = [{ source: 'unstop', status: 'ok', count: 1, error: null }];
     const paths = await runsIn({ ...legacy, meta: { ...legacy.meta, sources } });
     expect((await readRun(paths, 'legacy')).meta.sources).toEqual(sources);
+  });
+});
+
+describe('the run index as a metadata cache', () => {
+  test('carries the run meta, so listing history reads no run files', async () => {
+    const paths = await runsIn(legacy);
+    const [summary] = await listRuns(paths);
+    expect(summary?.meta.query).toBe('developer');
+    expect(summary?.meta.sources).toBeNull();
+  });
+
+  test('refills an index entry written before the meta was cached', async () => {
+    const paths = await runsIn(legacy);
+    await writeFile(
+      paths.runsIndex,
+      JSON.stringify({
+        runs: [
+          {
+            runId: 'legacy',
+            path: join(paths.runsDir, 'legacy.json'),
+            scrapedAt: legacy.meta.scrapedAt,
+            query: legacy.meta.query,
+            location: legacy.meta.location,
+            count: 1,
+          },
+        ],
+      }),
+      'utf-8',
+    );
+
+    expect((await listRuns(paths))[0]?.meta.query).toBe('developer');
+
+    const written = JSON.parse(await readFile(paths.runsIndex, 'utf-8')) as {
+      runs: Array<{ meta?: { query: string } }>;
+    };
+    expect(written.runs[0]?.meta?.query).toBe('developer');
   });
 });
 

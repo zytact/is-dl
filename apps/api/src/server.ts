@@ -199,20 +199,14 @@ async function handleRequest(req: Request, paths: AppPaths) {
     try {
       await ensureDir(outputDir);
 
-      const results = [];
-      for (const run of await listRuns(paths)) {
-        try {
-          const data = await readRun(paths, run.runId);
-          results.push({
-            filename: `${run.runId}.json`,
-            meta: data.meta,
-            count: data.jobs.length,
-            aiAgentSummary: data.meta.aiAgentSummary,
-          });
-        } catch {
-          // A run file that will not parse is skipped, as before.
-        }
-      }
+      // From the run index, so history loading does not mean parsing every
+      // saved listing. A file that will not parse never reaches the index.
+      const results = (await listRuns(paths)).map((run) => ({
+        filename: `${run.runId}.json`,
+        meta: run.meta,
+        count: run.count,
+        aiAgentSummary: run.meta.aiAgentSummary,
+      }));
 
       return new Response(JSON.stringify({ results }), {
         headers: { 'Access-Control-Allow-Origin': '*' },
