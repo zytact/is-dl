@@ -49,18 +49,29 @@ func (l *LogsModel) SetContext(keywords, location string) {
 	}
 }
 
-func (l *LogsModel) ApplyEvent(evt api.SSEEvent) {
-	switch evt.Type {
-	case "status":
-		l.statusScraping = evt.IsScraping
-	case "log":
-		l.lines = append(l.lines, evt.Message)
-		if len(l.lines) > maxLogLines {
-			l.lines = append(l.lines[:0], l.lines[len(l.lines)-maxLogLines:]...)
+// ApplyEvents rebuilds the console once for the whole batch. A burst of log
+// lines is one join and one viewport reset, not one of each per line.
+func (l *LogsModel) ApplyEvents(events []api.SSEEvent) {
+	logged := false
+
+	for _, evt := range events {
+		switch evt.Type {
+		case "status":
+			l.statusScraping = evt.IsScraping
+		case "log":
+			l.lines = append(l.lines, evt.Message)
+			logged = true
 		}
-		l.viewport.SetContent(strings.Join(l.lines, "\n"))
-		l.viewport.GotoBottom()
 	}
+
+	if !logged {
+		return
+	}
+	if len(l.lines) > maxLogLines {
+		l.lines = append(l.lines[:0], l.lines[len(l.lines)-maxLogLines:]...)
+	}
+	l.viewport.SetContent(strings.Join(l.lines, "\n"))
+	l.viewport.GotoBottom()
 }
 
 func (l *LogsModel) Update(msg tea.Msg) (*LogsModel, tea.Cmd) {
