@@ -27,33 +27,36 @@ function readSources(value: unknown): JobSource[] {
   return names.length ? [...new Set(names)] : [...JOB_SOURCES];
 }
 
+/** One open `/api/logs` stream. `end` is what lets shutdown release the socket. */
+interface SseClient {
+  send: (data: string) => void;
+  end: () => void;
+}
+
 let currentLogs: string[] = [];
 let isScraping = false;
 let scrapeAbortController: AbortController | null = null;
-const sseControllers: Set<(data: string) => void> = new Set();
+const sseClients = new Set<SseClient>();
 
-const addLog = (msg: string) => {
-  currentLogs.push(msg);
-  const sseMsg = `data: ${JSON.stringify({ type: 'log', message: msg })}\n\n`;
-  for (const controller of sseControllers) {
+function broadcast(payload: unknown): void {
+  const sseMsg = `data: ${JSON.stringify(payload)}\n\n`;
+  for (const client of sseClients) {
     try {
-      controller(sseMsg);
+      client.send(sseMsg);
     } catch {
       // ignore broken pipes
     }
   }
+}
+
+const addLog = (msg: string) => {
+  currentLogs.push(msg);
+  broadcast({ type: 'log', message: msg });
 };
 
 const notifyStatus = (status: boolean) => {
   isScraping = status;
-  const sseMsg = `data: ${JSON.stringify({ type: 'status', isScraping })}\n\n`;
-  for (const controller of sseControllers) {
-    try {
-      controller(sseMsg);
-    } catch {
-      // ignore broken pipes
-    }
-  }
+  broadcast({ type: 'status', isScraping });
 };
 
 async function handleRequest(req: Request, paths: AppPaths) {
@@ -74,24 +77,26 @@ async function handleRequest(req: Request, paths: AppPaths) {
     const stream = new ReadableStream({
       start(controller) {
         let closed = false;
-        const send = (data: string) => {
-          if (!closed) {
-            controller.enqueue(new TextEncoder().encode(data));
-          }
+        const client: SseClient = {
+          send: (data) => {
+            if (!closed) controller.enqueue(new TextEncoder().encode(data));
+          },
+          end: () => {
+            if (closed) return;
+            closed = true;
+            sseClients.delete(client);
+            controller.close();
+          },
         };
 
-        sseControllers.add(send);
+        sseClients.add(client);
 
-        send(`data: ${JSON.stringify({ type: 'status', isScraping })}\n\n`);
+        client.send(`data: ${JSON.stringify({ type: 'status', isScraping })}\n\n`);
         for (const log of currentLogs) {
-          send(`data: ${JSON.stringify({ type: 'log', message: log })}\n\n`);
+          client.send(`data: ${JSON.stringify({ type: 'log', message: log })}\n\n`);
         }
 
-        req.signal.addEventListener('abort', () => {
-          closed = true;
-          sseControllers.delete(send);
-          controller.close();
-        });
+        req.signal.addEventListener('abort', () => client.end());
       },
     });
 
@@ -329,17 +334,42 @@ export interface ServerOptions {
   onLog?: (msg: string) => void;
 }
 
-/** Resolves with the listening address once the socket is bound. */
-export function startServer(options: ServerOptions): Promise<string> {
+export interface RunningServer {
+  address: string;
+  /**
+   * Stops listening and releases everything holding the event loop open, so the
+   * process exits on its own. A listening socket alone keeps Node alive, and an
+   * open SSE stream keeps its connection alive on top of that.
+   */
+  close(): Promise<void>;
+}
+
+/** Resolves once the socket is bound. */
+export function startServer(options: ServerOptions): Promise<RunningServer> {
   const log = options.onLog ?? ((msg: string) => process.stderr.write(`${msg}\n`));
   const server = createServer((req, res) => {
     void respond(req, res, options.paths, log);
   });
 
+  const close = (): Promise<void> => {
+    // A scrape in flight owns a browser, which would outlive the server.
+    scrapeAbortController?.abort();
+    // Deleting the current entry mid-iteration is safe on a Set.
+    for (const client of sseClients) client.end();
+
+    return new Promise((resolve) => {
+      server.close(() => resolve());
+      // The streams above ended cleanly. Whatever is still attached is a client
+      // that went away without closing its socket, and `close` would wait for
+      // it forever, which is the hang this exists to prevent.
+      server.closeAllConnections();
+    });
+  };
+
   return new Promise((resolve, reject) => {
     server.once('error', reject);
     server.listen(options.port, options.host, () => {
-      resolve(`http://${options.host}:${options.port}`);
+      resolve({ address: `http://${options.host}:${options.port}`, close });
     });
   });
 }
