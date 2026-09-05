@@ -13,7 +13,7 @@ Search LinkedIn, Unstop, or both, normalize the listings, classify pay and locat
 
 ## How to get to it (user POV)
 
-Run `is-dl search` with keywords. Unstop works without authentication. LinkedIn requires one interactive `is-dl login` for the active state directory.
+Run `is-dl search` with keywords. Unstop works without authentication. LinkedIn requires one interactive login, which the harness stores outside the run directory so it is reused by every later run.
 
 ## Driving it with the CLI harness
 
@@ -37,6 +37,6 @@ For multi-source behavior, prove each entry in `meta.sources[]`. Exit 0 alone is
 
 - `--limit` applies to each source and counts listings that passed `known`.
 - `--out -` prints data but bypasses saved runs and the seen ledger.
-- LinkedIn exit 3 means the isolated state has no session. Run `scripts/drive.sh login` in a TTY.
+- LinkedIn exit 3 means no stored session, or an expired one. Run `scripts/login.sh` in a TTY; cleanup keeps it, so this is a one-time step until LinkedIn expires the cookie.
 - Unstop is live data. Assert schema, source status, filters, and bounded counts rather than a particular job title or id.
 - Search never applies for a job.
