@@ -4,6 +4,9 @@ set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo="$(cd "$here/../../../.." && pwd)"
 run="$repo/.local/verify-is-dl"
+# The LinkedIn session lives here and survives cleanup, so one login serves
+# every later run. IS_DL_VERIFY_LOGIN_DIR points at a second account's login.
+login="${IS_DL_VERIFY_LOGIN_DIR:-$repo/.local/verify-is-dl-login}"
 session="$run/session.env"
 profile="$run/browser-profile"
 downloads="$run/downloads"
@@ -70,17 +73,46 @@ cdp_port="$(free_port)"
 cd "$repo"
 vp run build
 
-mkdir -p "$run/config" "$run/data" "$run/state" "$run/cache" \
-  "$run/tui-work" "$profile/Default" "$downloads" "$evidence_root"
+# `vp run build` is a cached task, and a replay restores dist from the cache
+# with the mtimes it was captured with. That makes "is this build current?"
+# unanswerable from the filesystem, and a verification run driving a bundle that
+# does not match the working tree proves nothing. Packing again is ~100ms and
+# settles it: dist is this tree, and it is newer than every source file.
+vp pack >/dev/null
+
+mkdir -p "$run/config" "$run/data" "$run/cache" \
+  "$run/tui-work" "$profile/Default" "$downloads" "$evidence_root" "$login/state"
 
 bin="$repo/dist/cli.mjs"
 tui_bin="$repo/apps/tui/bin/is-dl-tui"
-build_sha="$(node -e 'const{createHash}=require("node:crypto"),{readFileSync}=require("node:fs");process.stdout.write(createHash("sha256").update(readFileSync(process.argv[1])).digest("hex"))' "$bin")"
+
+# Every chunk, not just cli.mjs. Commands are dynamic imports, so a change to
+# one of them leaves the entry file byte-identical.
+dist_sha() {
+  node -e '
+const {createHash}=require("node:crypto");
+const {readdirSync,readFileSync}=require("node:fs");
+const {join}=require("node:path");
+const dir=process.argv[1];
+const h=createHash("sha256");
+for (const name of readdirSync(dir).filter((n)=>n.endsWith(".mjs")).sort()) {
+  h.update(name);
+  h.update(readFileSync(join(dir,name)));
+}
+process.stdout.write(h.digest("hex"));' "$1" 2>/dev/null
+}
+build_sha="$(dist_sha "$repo/dist")"
 tui_sha="$(node -e 'const{createHash}=require("node:crypto"),{readFileSync}=require("node:fs");process.stdout.write(createHash("sha256").update(readFileSync(process.argv[1])).digest("hex"))' "$tui_bin")"
+
+# Playwright resolves its browser registry through XDG_CACHE_HOME on Linux, so
+# isolating the cache hides the Chromium the developer already installed and
+# every LinkedIn proof fails as a missing dependency. Pin the registry to the
+# host's before the cache moves. is-dl's own cache stays isolated.
+export PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-${XDG_CACHE_HOME:-$HOME/.cache}/ms-playwright}"
 
 export XDG_CONFIG_HOME="$run/config"
 export XDG_DATA_HOME="$run/data"
-export XDG_STATE_HOME="$run/state"
+export XDG_STATE_HOME="$login/state"
 export XDG_CACHE_HOME="$run/cache"
 
 setsid "$bin" serve --host 127.0.0.1 --port "$api_port" >"$run/api.log" 2>&1 &
@@ -145,6 +177,8 @@ done
 {
   printf 'export IS_DL_VERIFY_REPO=%q\n' "$repo"
   printf 'export IS_DL_VERIFY_DIR=%q\n' "$run"
+  printf 'export IS_DL_VERIFY_LOGIN_DIR=%q\n' "$login"
+  printf 'export IS_DL_VERIFY_SESSION_FILE=%q\n' "$login/state/is-dl/storageState.json"
   printf 'export IS_DL_VERIFY_BIN=%q\n' "$bin"
   printf 'export IS_DL_VERIFY_TUI_BIN=%q\n' "$tui_bin"
   printf 'export IS_DL_VERIFY_BUILD_SHA=%q\n' "$build_sha"
@@ -166,9 +200,15 @@ done
   printf 'export XDG_DATA_HOME=%q\n' "$XDG_DATA_HOME"
   printf 'export XDG_STATE_HOME=%q\n' "$XDG_STATE_HOME"
   printf 'export XDG_CACHE_HOME=%q\n' "$XDG_CACHE_HOME"
+  printf 'export PLAYWRIGHT_BROWSERS_PATH=%q\n' "$PLAYWRIGHT_BROWSERS_PATH"
 } >"$session"
 
 "$here/doctor.sh"
 printf '\nWebsite: http://127.0.0.1:%s\n' "$web_port"
 printf 'API: http://127.0.0.1:%s\n' "$api_port"
 printf 'Evidence: %s\n' "$evidence_root"
+if [[ -f "$login/state/is-dl/storageState.json" ]]; then
+  printf 'LinkedIn: stored session reused from %s\n' "$login"
+else
+  printf 'LinkedIn: no stored session. Run scripts/login.sh once in a TTY.\n'
+fi

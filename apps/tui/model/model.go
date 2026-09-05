@@ -19,8 +19,10 @@ const (
 	TabResults
 )
 
-type LogEventMsg struct {
-	Event api.SSEEvent
+// LogEventsMsg carries every event that had arrived by the time the pump woke,
+// so a flood of log lines costs one update rather than one per line.
+type LogEventsMsg struct {
+	Events []api.SSEEvent
 }
 
 type StartScrapeMsg struct {
@@ -85,13 +87,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.tab = Tab(msg.String()[0] - '1')
 			return m, m.refreshResultsIfNeeded()
 		}
-	case LogEventMsg:
-		m.logs.ApplyEvent(msg.Event)
-		if msg.Event.Type == "status" && msg.Event.IsScraping {
-			m.scrape.SetScraping(true)
+	case LogEventsMsg:
+		m.logs.ApplyEvents(msg.Events)
+		stopped := false
+		for _, evt := range msg.Events {
+			if evt.Type != "status" {
+				continue
+			}
+			m.scrape.SetScraping(evt.IsScraping)
+			stopped = !evt.IsScraping
 		}
-		if msg.Event.Type == "status" && !msg.Event.IsScraping {
-			m.scrape.SetScraping(false)
+		if stopped {
 			return m, m.results.Refresh()
 		}
 		return m, nil

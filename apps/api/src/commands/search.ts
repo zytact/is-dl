@@ -9,7 +9,7 @@ import { summarizePay } from '../pay.ts';
 import { knownJobKeys, newRunId, saveRun, writeRunTo } from '../runs.ts';
 import { runScraper } from '../scraper.ts';
 import { knownJobs, noJobsKnown } from '../seen.ts';
-import type { JobSource, KnownJobs, ScraperOutput } from '../types.ts';
+import type { JobSource, ScraperOutput } from '../types.ts';
 import { GLOBAL_OPTIONS, usage } from './shared.ts';
 
 const SEARCH_OPTIONS = {
@@ -36,6 +36,8 @@ const SEARCH_OPTIONS = {
   'unstop-roles': { type: 'string' },
 } as const;
 
+const EMPTY_KEYS: ReadonlySet<string> = new Set();
+
 function toggle(on: boolean | undefined, off: boolean | undefined): boolean | undefined {
   if (off) return false;
   if (on) return true;
@@ -59,12 +61,12 @@ function num(value: string | undefined, flag: string): number | undefined {
 /**
  * `unstated` is never dropped: good listings routinely omit pay entirely.
  *
- * `known` runs again here because a LinkedIn card whose id was unreadable
- * before the click is only identifiable once it has been opened.
+ * `applied` and `seen` run again here because a LinkedIn card whose id was
+ * unreadable before the click is only identifiable once it has been opened.
  */
 function applyTriage(
   output: ScraperOutput,
-  options: { excludeUnpaid: boolean; applied: Set<string>; known: KnownJobs },
+  options: { excludeUnpaid: boolean; applied: ReadonlySet<string>; seen: ReadonlySet<string> },
 ): { output: ScraperOutput; droppedUnpaid: number; droppedApplied: number; droppedKnown: number } {
   let droppedUnpaid = 0;
   let droppedApplied = 0;
@@ -75,11 +77,12 @@ function applyTriage(
       droppedUnpaid++;
       return false;
     }
-    if (job.jobId !== null && options.applied.has(seenKey(job.source, job.jobId))) {
+    const key = job.jobId === null ? null : seenKey(job.source, job.jobId);
+    if (key !== null && options.applied.has(key)) {
       droppedApplied++;
       return false;
     }
-    if (job.jobId !== null && options.known.has(job.source, job.jobId)) {
+    if (key !== null && options.seen.has(key)) {
       droppedKnown++;
       return false;
     }
@@ -134,9 +137,15 @@ export async function searchCommand(base: CliBase, argv: string[]): Promise<void
     await migrateLegacySession(ctx.paths.sessionFile, ctx.cwd, ctx.log);
   }
 
-  // Resolved before the scrape, not after: the sources page on it so that
-  // --limit still yields that many jobs the reader has not already been shown.
-  const known = values['exclude-seen'] ? knownJobs(await knownJobKeys(ctx.paths)) : noJobsKnown;
+  // Both sets are resolved before the scrape, not after: the sources page on
+  // them so that --limit still yields that many jobs worth reading, rather than
+  // that many rows minus whatever gets thrown away here.
+  const seen = values['exclude-seen'] ? await knownJobKeys(ctx.paths) : EMPTY_KEYS;
+  const applied = values['exclude-applied']
+    ? new Set(currentState(await readApplications(ctx.paths.applicationsLog)).keys())
+    : EMPTY_KEYS;
+  const skip = new Set([...seen, ...applied]);
+  const known = skip.size ? knownJobs(skip) : noJobsKnown;
 
   const scraped = await runScraper(
     {
@@ -171,14 +180,10 @@ export async function searchCommand(base: CliBase, argv: string[]): Promise<void
     if (run.status === 'failed') ctx.log(`Skipped ${run.source}: ${run.error}`);
   }
 
-  const applied = values['exclude-applied']
-    ? new Set(currentState(await readApplications(ctx.paths.applicationsLog)).keys())
-    : new Set<string>();
-
   const triaged = applyTriage(scraped, {
     excludeUnpaid: values['exclude-unpaid'] ?? false,
     applied,
-    known,
+    seen,
   });
   const output = triaged.output;
 

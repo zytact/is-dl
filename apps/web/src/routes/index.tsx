@@ -1,57 +1,16 @@
 import { Square, Terminal as TerminalIcon } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useEffect, useState } from 'react';
 import { ScraperForm, type ScraperFormData } from '../components/ScraperForm';
 import { TerminalLogs } from '../components/TerminalLogs';
+import { appendLog, clearLogs, useScraperStream } from '../scraper-stream';
 
 export function TerminalPage() {
-  const [isScraping, setIsScraping] = useState(false);
-  const [logs, setLogs] = useState<string[]>([]);
-
-  useEffect(() => {
-    let eventSource: EventSource | null = null;
-    let reconnectTimeout: ReturnType<typeof setTimeout>;
-
-    const connect = () => {
-      if (eventSource) {
-        eventSource.close();
-      }
-
-      eventSource = new EventSource('http://localhost:3000/api/logs');
-
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === 'log') {
-            setLogs((prev) => [...prev, data.message]);
-          } else if (data.type === 'status') {
-            setIsScraping(data.isScraping);
-          }
-        } catch (err) {
-          console.error('Error parsing SSE data', err);
-        }
-      };
-
-      eventSource.onerror = () => {
-        if (eventSource) eventSource.close();
-        reconnectTimeout = setTimeout(connect, 3000);
-      };
-    };
-
-    connect();
-
-    return () => {
-      clearTimeout(reconnectTimeout);
-      if (eventSource) {
-        eventSource.close();
-      }
-    };
-  }, []);
+  const { logs, isScraping } = useScraperStream();
 
   const handleStartScrape = async (data: ScraperFormData) => {
     console.log('Starting scrape with:', data);
-    setLogs([]);
-    setLogs(['[SYSTEM] Initializing extraction sequence...']);
+    clearLogs();
+    appendLog('[SYSTEM] Initializing extraction sequence...');
 
     try {
       const response = await fetch('http://localhost:3000/api/scrape', {
@@ -62,16 +21,10 @@ export function TerminalPage() {
 
       const result = await response.json();
       if (!response.ok) {
-        setLogs((prev) => [
-          ...prev,
-          `[ERROR] Failed to start: ${result.error || response.statusText}`,
-        ]);
+        appendLog(`[ERROR] Failed to start: ${result.error || response.statusText}`);
       }
     } catch (err) {
-      setLogs((prev) => [
-        ...prev,
-        `[ERROR] Network failure: ${err instanceof Error ? err.message : String(err)}`,
-      ]);
+      appendLog(`[ERROR] Network failure: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
@@ -82,18 +35,14 @@ export function TerminalPage() {
       });
       const result = await response.json();
       if (!response.ok) {
-        setLogs((prev) => [
-          ...prev,
-          `[ERROR] Failed to abort: ${result.error || response.statusText}`,
-        ]);
+        appendLog(`[ERROR] Failed to abort: ${result.error || response.statusText}`);
       } else {
-        setLogs((prev) => [...prev, '[SYSTEM] Abort signal sent to backend.']);
+        appendLog('[SYSTEM] Abort signal sent to backend.');
       }
     } catch (err) {
-      setLogs((prev) => [
-        ...prev,
+      appendLog(
         `[ERROR] Network failure during abort: ${err instanceof Error ? err.message : String(err)}`,
-      ]);
+      );
     }
   };
 

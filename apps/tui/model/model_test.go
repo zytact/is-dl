@@ -51,19 +51,19 @@ func TestTabNavigation_ShiftTab(t *testing.T) {
 	}
 }
 
-func TestLogEventMsg_ScrapingTrue(t *testing.T) {
+func TestLogEventsMsg_ScrapingTrue(t *testing.T) {
 	m := newTestModel()
-	updated, _ := m.Update(LogEventMsg{Event: api.SSEEvent{Type: "status", IsScraping: true}})
+	updated, _ := m.Update(LogEventsMsg{Events: []api.SSEEvent{{Type: "status", IsScraping: true}}})
 	if !updated.(Model).scrape.isScraping {
 		t.Errorf("expected isScraping=true after status event with IsScraping=true")
 	}
 }
 
-func TestLogEventMsg_ScrapingFalse_TriggersRefresh(t *testing.T) {
+func TestLogEventsMsg_ScrapingFalse_TriggersRefresh(t *testing.T) {
 	m := newTestModel()
 	m.scrape.isScraping = true
 
-	_, cmd := m.Update(LogEventMsg{Event: api.SSEEvent{Type: "status", IsScraping: false}})
+	_, cmd := m.Update(LogEventsMsg{Events: []api.SSEEvent{{Type: "status", IsScraping: false}}})
 	if cmd == nil {
 		t.Errorf("expected non-nil cmd (results refresh) after scrape stop")
 	}

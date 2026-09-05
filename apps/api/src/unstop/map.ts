@@ -195,13 +195,15 @@ function requirementsText(item: UnstopItem): string | null {
   return unique.length ? `Skills: ${unique.join(', ')}` : null;
 }
 
-export function toJobListing(item: UnstopItem, now: Date = new Date()): JobListing {
-  const detail = item.jobDetail ?? null;
-  const descriptionText = item.details ? htmlToText(item.details) || null : null;
-  const requirements = requirementsText(item);
+/**
+ * What the row says about itself, before anything is inferred from it. Keyword
+ * and location filtering reads only this, so a row that is not going to be kept
+ * never reaches a classifier.
+ */
+export type UnstopFacts = Omit<JobListing, 'aiAgentSignals' | 'pay' | 'locationConflict'>;
+
+export function toJobFacts(item: UnstopItem, now: Date = new Date()): UnstopFacts {
   const postedAtIso = parseApprovedDate(item.approved_date) ?? item.updated_at ?? null;
-  const jobType = jobTypeText(detail);
-  const location = locationText(item);
 
   return {
     source: 'unstop',
@@ -212,15 +214,30 @@ export function toJobListing(item: UnstopItem, now: Date = new Date()): JobListi
     companyUrl: item.organisation?.public_url
       ? `https://unstop.com/${item.organisation.public_url}`
       : null,
-    locationText: location,
+    locationText: locationText(item),
     postedAtText: relativeDay(postedAtIso, now),
     postedAtIso,
-    jobType,
+    jobType: jobTypeText(item.jobDetail ?? null),
     alumniCount: null,
+    descriptionText: item.details ? htmlToText(item.details) || null : null,
+    requirementsText: requirementsText(item),
+  };
+}
+
+/** The pay, location-conflict and AI-agent readings of a row worth keeping. */
+export function classify(item: UnstopItem, facts: UnstopFacts): JobListing {
+  const detail = item.jobDetail ?? null;
+  const {
     descriptionText,
     requirementsText: requirements,
+    jobType,
+    locationText: location,
+  } = facts;
+
+  return {
+    ...facts,
     aiAgentSignals: detectAiAgentSignals({
-      title: item.title || null,
+      title: facts.title,
       descriptionText,
       requirementsText: requirements,
     }),
@@ -233,4 +250,8 @@ export function toJobListing(item: UnstopItem, now: Date = new Date()): JobListi
       requirementsText: requirements,
     }),
   };
+}
+
+export function toJobListing(item: UnstopItem, now: Date = new Date()): JobListing {
+  return classify(item, toJobFacts(item, now));
 }

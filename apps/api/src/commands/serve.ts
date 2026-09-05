@@ -23,11 +23,19 @@ export async function serveCommand(base: CliBase, argv: string[]): Promise<void>
   }
 
   const settings = resolveServe(ctx.config, ctx.env, { port, host: values.host });
-  const address = await startServer({ ...settings, paths: ctx.paths, onLog: ctx.log });
+  const server = await startServer({ ...settings, paths: ctx.paths, onLog: ctx.log });
 
-  ctx.emit(`API server running at ${address}`, () => ({ ok: true, address, ...settings }));
+  ctx.emit(`API server running at ${server.address}`, () => ({
+    ok: true,
+    address: server.address,
+    ...settings,
+  }));
 
   await new Promise<void>((resolve) => {
     base.signal.addEventListener('abort', () => resolve(), { once: true });
   });
+
+  // Without this the listening socket keeps the process alive and SIGTERM looks
+  // like a hang, both here and under Ctrl-C.
+  await server.close();
 }

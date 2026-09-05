@@ -32,9 +32,25 @@ func main() {
 		}
 	}()
 
+	// Whatever has already queued up goes in one message. The channel is
+	// buffered, so a scrape that logs faster than the UI redraws arrives as a
+	// handful of batches instead of hundreds of updates.
 	go func() {
 		for evt := range logCh {
-			p.Send(model.LogEventMsg{Event: evt})
+			batch := []api.SSEEvent{evt}
+			for draining := true; draining; {
+				select {
+				case next, ok := <-logCh:
+					if !ok {
+						draining = false
+						break
+					}
+					batch = append(batch, next)
+				default:
+					draining = false
+				}
+			}
+			p.Send(model.LogEventsMsg{Events: batch})
 		}
 	}()
 

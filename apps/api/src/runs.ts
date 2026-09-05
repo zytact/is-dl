@@ -5,7 +5,7 @@ import { CliError } from './errors.ts';
 import { ensureDir } from './fs.ts';
 import type { AppPaths } from './paths.ts';
 import { appendSeen, newSeenRecords, readSeen, recordSeen } from './seen.ts';
-import type { PersistedRun, ScraperOutput } from './types.ts';
+import type { PersistedMeta, PersistedRun, ScraperOutput } from './types.ts';
 
 export interface RunSummary {
   runId: string;
@@ -14,6 +14,12 @@ export interface RunSummary {
   query: string;
   location: string;
   count: number;
+  /**
+   * The run's own metadata, cached so that listing history does not mean
+   * parsing every saved listing. An entry written before this existed has none,
+   * and `listRuns` refills it from the file.
+   */
+  meta: PersistedMeta;
 }
 
 export function newRunId(now: Date = new Date()): string {
@@ -36,6 +42,7 @@ function summarize(runId: string, filePath: string, output: PersistedRun): RunSu
     query: output.meta.query,
     location: output.meta.location,
     count: output.jobs.length,
+    meta: output.meta,
   };
 }
 
@@ -100,6 +107,9 @@ export async function knownJobKeys(paths: AppPaths): Promise<Set<string>> {
   return new Set((await readSeen(paths.seenLog)).keys());
 }
 
+/** An index entry as it is on disk, which may predate any field added since. */
+type CachedSummary = Omit<RunSummary, 'meta'> & { meta?: PersistedMeta };
+
 /** The index is a cache. A directory scan is the source of truth when it is stale. */
 export async function listRuns(paths: AppPaths): Promise<RunSummary[]> {
   if (!existsSync(paths.runsDir)) return [];
@@ -109,11 +119,11 @@ export async function listRuns(paths: AppPaths): Promise<RunSummary[]> {
     .sort()
     .reverse();
 
-  const indexed = new Map<string, RunSummary>();
+  const indexed = new Map<string, CachedSummary>();
   if (existsSync(paths.runsIndex)) {
     try {
       const parsed = JSON.parse(await readFile(paths.runsIndex, 'utf-8')) as {
-        runs?: RunSummary[];
+        runs?: CachedSummary[];
       };
       for (const run of parsed.runs ?? []) indexed.set(run.runId, run);
     } catch {
@@ -122,17 +132,32 @@ export async function listRuns(paths: AppPaths): Promise<RunSummary[]> {
   }
 
   const summaries: RunSummary[] = [];
+  let stale = false;
   for (const file of files) {
     const runId = runIdFromFilename(file);
     const cached = indexed.get(runId);
-    if (cached) {
-      summaries.push(cached);
+    // An entry with no meta predates the cache carrying it. Reading the file is
+    // what the caller would otherwise do for every run, every time.
+    if (cached?.meta) {
+      summaries.push({ ...cached, meta: cached.meta });
       continue;
     }
+    stale = true;
     const output = await tryReadRunFile(join(paths.runsDir, file));
     if (output) summaries.push(summarize(runId, join(paths.runsDir, file), output));
   }
+
+  if (stale) await tryWriteIndex(paths, summaries);
   return summaries;
+}
+
+/** The index is a cache, so failing to refresh it costs a rescan and nothing else. */
+async function tryWriteIndex(paths: AppPaths, runs: RunSummary[]): Promise<void> {
+  try {
+    await writeJson(paths.runsIndex, { runs });
+  } catch {
+    // A read-only or unwritable data directory still lists runs correctly.
+  }
 }
 
 /** A missing `sources` becomes an explicit null, so callers cannot read past it. */

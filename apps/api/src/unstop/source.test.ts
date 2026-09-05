@@ -4,8 +4,15 @@ import type { UnstopItem, UnstopPage } from './api.ts';
 import { unstopSource } from './source.ts';
 
 const fetchPage = vi.hoisted(() => vi.fn());
+const classify = vi.hoisted(() => vi.fn());
 
 vi.mock('./api.ts', () => ({ fetchPage }));
+
+vi.mock('./map.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./map.ts')>();
+  classify.mockImplementation(actual.classify);
+  return { ...actual, classify };
+});
 
 function item(id: number, title: string, details: string): UnstopItem {
   return {
@@ -42,6 +49,7 @@ async function run(
 afterEach(() => {
   vi.useRealTimers();
   fetchPage.mockReset();
+  classify.mockClear();
 });
 
 describe('unstop paging', () => {
@@ -82,7 +90,7 @@ describe('unstop paging', () => {
     expect(fetchPage).toHaveBeenCalledTimes(2);
     expect(jobs).toHaveLength(50);
     expect(jobs.every((job) => Number(job.jobId) > 100)).toBe(true);
-    expect(logs).toContain('Skipped 100 already surfaced by an earlier run.');
+    expect(logs).toContain('Skipped 100 already seen or applied to.');
   });
 
   test('a known job does not take a slot from an unseen one', async () => {
@@ -98,6 +106,27 @@ describe('unstop paging', () => {
     });
 
     expect(jobs.map((job) => job.jobId)).toEqual(['2']);
+  });
+
+  test('does not classify a row it is going to skip', async () => {
+    fetchPage.mockResolvedValue(
+      page(
+        [
+          item(1, 'Frontend Engineer', '<p>TypeScript.</p>'),
+          item(2, 'Backend Engineer', '<p>TypeScript.</p>'),
+          item(3, 'Sales Executive', '<p>Cold calling.</p>'),
+        ],
+        1,
+        1,
+      ),
+    );
+
+    const { jobs } = await run({ known: { has: (_source, jobId) => jobId === '1' } });
+
+    // Pay, location and AI-agent classification is the expensive part. Job 1 is
+    // known and job 3 fails the keyword filter, so only job 2 is worth it.
+    expect(jobs.map((job) => job.jobId)).toEqual(['2']);
+    expect(classify).toHaveBeenCalledTimes(1);
   });
 
   test('stops as soon as the limit is met', async () => {

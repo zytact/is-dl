@@ -44,3 +44,4 @@ done
 rm -rf -- "$run"
 echo "Removed $run"
 echo "Evidence kept in $evidence_root"
+echo "LinkedIn login kept in ${IS_DL_VERIFY_LOGIN_DIR:-$repo/.local/verify-is-dl-login}"

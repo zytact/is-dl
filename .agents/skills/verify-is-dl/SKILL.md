@@ -20,8 +20,10 @@ This skill has byte-identical copies under `.agents/skills/verify-is-dl/` and `.
 The launcher:
 
 - refuses to start when port 3000 or 5173 already has a listener
-- runs `vp run build` for the CLI, API, website, and TUI
-- creates four isolated XDG roots under `.local/verify-is-dl/`
+- runs `vp run build` for the CLI, API, website, and TUI, then packs the CLI again so `dist` is
+  this working tree rather than whatever the task cache replayed
+- creates the disposable XDG config, data and cache roots under `.local/verify-is-dl/`
+- points the XDG state root at `.local/verify-is-dl-login/state`, which persists
 - starts the packed API on port 3000
 - starts the built website on port 5173
 - starts a dedicated headless Chromium with a disposable profile and free CDP port
@@ -33,17 +35,31 @@ Source the session before direct commands:
 . ./.local/verify-is-dl/session.env
 ```
 
-Every config file, saved run, seen record, application record, note, resume file, LinkedIn session, and API cache entry produced by the run stays inside `.local/verify-is-dl/`. The TUI starts in `.local/verify-is-dl/tui-work/`, so its ZIP export also stays isolated.
+Three directories, and the differences matter:
+
+- `.local/verify-is-dl/` is **run state**: config, saved runs, seen records, application records, notes, resume output, the browser profile, downloads, logs, and `session.env`. Cleanup deletes all of it. The TUI starts in `tui-work/`, so its ZIP export stays here too.
+- `.local/verify-is-dl-login/` is the **LinkedIn session, and it persists**. Cleanup leaves it alone.
+- `.local/verify-evidence/is-dl/` holds **proofs, and nothing deletes them**.
+
+Playwright is the exception to the isolation, deliberately. It resolves its browser registry through `XDG_CACHE_HOME` on Linux, so an isolated cache hides the Chromium already installed on the machine and every LinkedIn proof fails as a missing dependency. `launch.sh` and `login.sh` pin `PLAYWRIGHT_BROWSERS_PATH` to the host's registry before moving the cache, so they use the same browser binary a real `is-dl` run would, and `npx playwright install chromium` installs where they will look. is-dl's own cache directory stays isolated.
+
+Everything the skill writes is under `.local/`, which `.gitignore` already ignores as a whole, so a verification run leaves `git status` clean. Keep it that way: `.local/verify-is-dl-login/` holds a live LinkedIn cookie jar, and committing it would publish a working account session.
 
 Readiness means `scripts/doctor.sh` passes. The CLI needs no process. Run it through `scripts/drive.sh`. Drive the dedicated verification browser through `scripts/browser.mjs`. Drive the TUI through `scripts/tui.sh`.
 
-LinkedIn needs a session inside the isolated state directory. Create it only for a LinkedIn proof:
+### Signing in
+
+LinkedIn needs a stored session. It is a one-time human step, and it does not need a running verification session:
 
 ```bash
-.agents/skills/verify-is-dl/scripts/drive.sh login
+.agents/skills/verify-is-dl/scripts/login.sh
 ```
 
-That command needs a TTY and opens Chromium. Cleanup deletes this verification-only login.
+It needs a TTY and opens a real Chromium window. The session lands in `.local/verify-is-dl-login/state/is-dl/storageState.json`, and every later `launch.sh` reuses it, so a LinkedIn proof after the first one costs no login. LinkedIn expires the cookie eventually; run `login.sh` again when a search exits 3.
+
+`scripts/login.sh logout` drops the stored session, and `IS_DL_VERIFY_LOGIN_DIR=<dir>` points at a different one, which is how you keep a second account. The launcher prints whether it found a session, and `doctor.sh` ends with the same note.
+
+Only the state directory persists. `login.sh` points config, data and cache at scratch directories of its own, so it never reads or writes the developer's real is-dl state.
 
 ## Doctor
 
@@ -51,7 +67,7 @@ That command needs a TTY and opens Chromium. Cleanup deletes this verification-o
 .agents/skills/verify-is-dl/scripts/doctor.sh
 ```
 
-The doctor is read-only. It checks the session, Node version, packed CLI hash and version, build freshness, isolated paths, TUI binary, recorded process IDs, exact port ownership, `/api/results`, the browser CDP endpoint, React hydration, and the isolated download path.
+The doctor is read-only. It checks the session, Node version, packed CLI hash and version, build freshness, isolated paths, that the LinkedIn session sits outside the run directory, the TUI binary, recorded process IDs, exact port ownership, `/api/results`, the browser CDP endpoint, React hydration, and the isolated download path. It ends with a note saying whether a LinkedIn session is stored, which is a note and not a failure: an Unstop-only run is a correct run without one.
 
 Run it whenever a screen, response, path, or build looks wrong. Cleanup and launch again when it reports a stale build. The product's `is-dl doctor` checks optional LinkedIn and resume dependencies, so it may fail correctly during an Unstop-only proof.
 
@@ -67,7 +83,7 @@ $D search -k software --source unstop --unstop-roles software-development --limi
 $D runs show latest --json
 ```
 
-Pass `--json` whenever supported and parse stdout only. Preserve exit codes before piping. Exit 0 can include a failed source, so inspect `meta.sources[]`. LinkedIn-only exit 3 needs `$D login` in a TTY. Exit 4 needs `vp exec playwright install chromium` followed by a fresh launch.
+Pass `--json` whenever supported and parse stdout only. Preserve exit codes before piping. Exit 0 can include a failed source, so inspect `meta.sources[]`. LinkedIn-only exit 3 needs one `scripts/login.sh` in a TTY, which later runs reuse. Exit 4 needs `vp exec playwright install chromium` followed by a fresh launch. It installs into the host registry the harness pins, so one install serves every run.
 
 ### Website
 
@@ -149,7 +165,7 @@ Store proofs under `.local/verify-evidence/is-dl/<UTC timestamp>/`. Cleanup pres
 .agents/skills/verify-is-dl/scripts/cleanup.sh
 ```
 
-Cleanup stops the exact recorded TUI session, dedicated browser, website, and API. It then removes only `.local/verify-is-dl/`. Evidence under `.local/verify-evidence/is-dl/` survives.
+Cleanup stops the exact recorded TUI session, dedicated browser, website, and API. It then removes only `.local/verify-is-dl/`. Evidence under `.local/verify-evidence/is-dl/` and the stored LinkedIn login under `.local/verify-is-dl-login/` both survive.
 
 Run cleanup after failed attempts. If launch failed before writing `session.env`, it already stops any process it started. Never kill by process name or by port.
 
@@ -158,6 +174,7 @@ Run cleanup after failed attempts. If launch failed before writing `session.env`
 | Script                | Purpose                                                      |
 | --------------------- | ------------------------------------------------------------ |
 | `scripts/launch.sh`   | Build every app and start isolated API, website, and browser |
+| `scripts/login.sh`    | Store one LinkedIn session that survives cleanup             |
 | `scripts/doctor.sh`   | Check builds, isolation, processes, ports, API, and browser  |
 | `scripts/drive.sh`    | Run the packed CLI inside the isolated session               |
 | `scripts/browser.mjs` | Drive and capture the dedicated Chromium over CDP            |
