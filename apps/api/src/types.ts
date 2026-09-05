@@ -135,9 +135,10 @@ export interface PersistedRun {
 }
 
 /**
- * Whether a job has already been surfaced by an earlier run. Sources consult
- * this while paging, so `--limit` counts jobs the reader has not seen instead
- * of counting rows and then dropping most of them.
+ * Whether a job is one the reader is done with: surfaced by an earlier run, or
+ * already in the application log. Sources consult this while paging, so
+ * `--limit` counts jobs worth reading instead of counting rows and then
+ * dropping most of them.
  */
 export interface KnownJobs {
   has(source: JobSource, jobId: string): boolean;
@@ -151,8 +152,9 @@ export interface SearchQuery {
   limit: number;
   remoteOnly?: boolean;
   /**
-   * Jobs an earlier run already surfaced. A source skips these while paging so
-   * `--limit` still yields that many unseen jobs. Absent means filter nothing.
+   * Jobs the reader has already been shown or already applied to. A source
+   * skips these while paging so `--limit` still yields that many jobs worth
+   * reading. Absent means filter nothing.
    */
   known?: KnownJobs;
 }

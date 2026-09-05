@@ -83,8 +83,8 @@ describe('linkedin card processing', () => {
 
     expect(jobs.map((job) => job.jobId)).toEqual(['3']);
     expect(mocks.clickJobCard).toHaveBeenCalledTimes(1);
-    expect(mocks.clickJobCard).toHaveBeenCalledWith(expect.anything(), 2, expect.anything());
-    expect(logs).toContain('Skipped 2 already surfaced by an earlier run.');
+    expect(mocks.clickJobCard).toHaveBeenCalledWith(expect.anything(), 2, expect.anything(), '3');
+    expect(logs).toContain('Skipped 2 already seen or applied to.');
   });
 
   test('a skipped card does not use up the limit', async () => {
