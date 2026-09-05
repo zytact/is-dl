@@ -4,14 +4,14 @@ import type { UnstopItem, UnstopPage } from './api.ts';
 import { unstopSource } from './source.ts';
 
 const fetchPage = vi.hoisted(() => vi.fn());
-const toJobListing = vi.hoisted(() => vi.fn());
+const classify = vi.hoisted(() => vi.fn());
 
 vi.mock('./api.ts', () => ({ fetchPage }));
 
 vi.mock('./map.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./map.ts')>();
-  toJobListing.mockImplementation(actual.toJobListing);
-  return { ...actual, toJobListing };
+  classify.mockImplementation(actual.classify);
+  return { ...actual, classify };
 });
 
 function item(id: number, title: string, details: string): UnstopItem {
@@ -49,7 +49,7 @@ async function run(
 afterEach(() => {
   vi.useRealTimers();
   fetchPage.mockReset();
-  toJobListing.mockClear();
+  classify.mockClear();
 });
 
 describe('unstop paging', () => {
@@ -114,17 +114,19 @@ describe('unstop paging', () => {
         [
           item(1, 'Frontend Engineer', '<p>TypeScript.</p>'),
           item(2, 'Backend Engineer', '<p>TypeScript.</p>'),
+          item(3, 'Sales Executive', '<p>Cold calling.</p>'),
         ],
         1,
         1,
       ),
     );
 
-    await run({ known: { has: (_source, jobId) => jobId === '1' } });
+    const { jobs } = await run({ known: { has: (_source, jobId) => jobId === '1' } });
 
-    // Decoding the description and running the pay, location and AI-agent
-    // classifiers is the expensive part, and job 1 was never going to be kept.
-    expect(toJobListing).toHaveBeenCalledTimes(1);
+    // Pay, location and AI-agent classification is the expensive part. Job 1 is
+    // known and job 3 fails the keyword filter, so only job 2 is worth it.
+    expect(jobs.map((job) => job.jobId)).toEqual(['2']);
+    expect(classify).toHaveBeenCalledTimes(1);
   });
 
   test('stops as soon as the limit is met', async () => {

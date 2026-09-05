@@ -1,14 +1,14 @@
 import { checkAbort, type SourceContext, type SourceRunner, waitOrAbort } from '../sources.ts';
 import type { JobListing, SearchQuery, UnstopOptions } from '../types.ts';
 import { fetchPage } from './api.ts';
-import { toJobListing } from './map.ts';
+import { classify, toJobFacts, type UnstopFacts } from './map.ts';
 
 /**
  * `searchTerm` on the endpoint matches titles only and returns nothing for most
  * tech terms, so keywords are matched here instead, against the title, skills
  * and the full description Unstop already ships with every row.
  */
-function matchesKeywords(job: JobListing, keywords: string): boolean {
+function matchesKeywords(job: UnstopFacts, keywords: string): boolean {
   const tokens = keywords.toLowerCase().split(/\s+/).filter(Boolean);
   if (!tokens.length) return true;
   const haystack = [job.title, job.requirementsText, job.descriptionText]
@@ -18,12 +18,12 @@ function matchesKeywords(job: JobListing, keywords: string): boolean {
   return tokens.every((token) => haystack.includes(token));
 }
 
-function matchesLocation(job: JobListing, location: string): boolean {
+function matchesLocation(job: UnstopFacts, location: string): boolean {
   if (!location.trim()) return true;
   return (job.locationText ?? '').toLowerCase().includes(location.trim().toLowerCase());
 }
 
-function matches(job: JobListing, query: SearchQuery): boolean {
+function matches(job: UnstopFacts, query: SearchQuery): boolean {
   if (query.remoteOnly && !/\bremote\b/i.test(job.jobType ?? '')) return false;
   return matchesKeywords(job, query.keywords) && matchesLocation(job, query.location);
 }
@@ -56,17 +56,17 @@ async function scrape(
       if (kept.length >= query.limit) break;
       if (fetched.has(item.id)) continue;
       fetched.add(item.id);
-      // Ahead of `toJobListing`, which decodes the whole description and runs
-      // the pay, location and AI-agent classifiers. A row the reader is done
-      // with is worth none of that, and it never counted against the limit
-      // anyway, so asking for 25 jobs still pages past it.
+      // A row the reader is done with is worth not even reading, and it never
+      // counted against the limit anyway, so asking for 25 jobs still pages
+      // past it.
       if (query.known?.has('unstop', String(item.id))) {
         known++;
         continue;
       }
-      const job = toJobListing(item);
-      if (!matches(job, query)) continue;
-      kept.push(job);
+      // The classifiers run last, on rows that are actually being kept.
+      const facts = toJobFacts(item);
+      if (!matches(facts, query)) continue;
+      kept.push(classify(item, facts));
     }
 
     onLog(
