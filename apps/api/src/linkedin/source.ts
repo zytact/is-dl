@@ -96,7 +96,7 @@ async function scrape(
         );
 
         try {
-          await clickJobCard(session.page, i, ctx);
+          await clickJobCard(session.page, i, ctx, cardId);
           const jobDetails = await extractJobDetailsFromView(session.page, i, ctx);
           jobs.push(jobDetails);
           consecutiveFailures = 0;
@@ -128,11 +128,13 @@ async function scrape(
         break;
       }
       currentPage++;
+      // Deliberate pacing, not a wait for the page: `goToNextPage` already
+      // returned once the new results were on screen.
       await waitOrAbort(signal, 2000);
     }
 
     onLog(`Successfully extracted ${jobs.length} jobs.`);
-    if (known) onLog(`Skipped ${known} already surfaced by an earlier run.`);
+    if (known) onLog(`Skipped ${known} already seen or applied to.`);
     return jobs;
   } finally {
     await closeBrowser(session, options.sessionFile, onLog);
