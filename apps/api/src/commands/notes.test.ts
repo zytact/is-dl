@@ -1,4 +1,4 @@
-import { mkdtemp } from 'node:fs/promises';
+import { mkdtemp, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vite-plus/test';
@@ -62,6 +62,16 @@ describe('notes edit', () => {
 
     expect(note.url).toBe('https://ex.com/other');
     expect(note.body).toBe('Stipend is 40k a month.\n');
+  });
+
+  test('leaves the file alone when the text comes back unchanged', async () => {
+    const ctx = await base();
+    const [before] = await readJobNotes(ctx.paths, REF);
+    const stamp = (await stat(before!.file)).mtimeMs;
+
+    await notesCommand(ctx, ['edit', '4055', '--quiet', '--text', before!.body]);
+
+    expect((await stat(before!.file)).mtimeMs).toBe(stamp);
   });
 
   test('refuses a job whose id names more than one note', async () => {

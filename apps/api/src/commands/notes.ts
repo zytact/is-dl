@@ -54,7 +54,7 @@ async function flagBody(ctx: Ctx, values: BodyFlags): Promise<string | undefined
     throw new CliError('USAGE', 'Pass --text or --file, not both.');
   }
   if (values.text !== undefined) return nonEmpty(values.text);
-  if (values.file === undefined) return undefined;
+  if (!values.file) return undefined;
   return nonEmpty(await readFile(resolve(ctx.cwd, expandHome(values.file)), 'utf-8'));
 }
 
@@ -79,27 +79,35 @@ async function editedBody(
   if (values.title !== undefined || values.url !== undefined) return undefined;
   if (!process.stdin.isTTY) return nonEmpty(await readStdin());
 
-  const editor = ctx.env.VISUAL ?? ctx.env.EDITOR;
+  const editor = ctx.env.VISUAL || ctx.env.EDITOR;
   if (!editor) {
     throw new CliError('USAGE', 'No $EDITOR set. Pass --text, --file <path>, or pipe the note in.');
   }
   const dir = await mkdtemp(join(tmpdir(), 'is-dl-note-'));
   const file = join(dir, 'note.md');
-  try {
-    await writeFile(file, current, 'utf-8');
-    // $EDITOR carries its own flags ("code -w"), so it goes through a shell. Running from
-    // the temp dir keeps the argument a literal we wrote, with nothing to quote.
-    const { status, error } = spawnSync(`${editor} note.md`, {
-      cwd: dir,
-      stdio: 'inherit',
-      shell: true,
-    });
-    if (error) throw new CliError('ERROR', `Could not run ${editor}: ${error.message}`);
-    if (status !== 0) throw new CliError('ERROR', `${editor} exited ${status ?? 'on a signal'}.`);
-    return nonEmpty(await readFile(file, 'utf-8'));
-  } finally {
-    await rm(dir, { recursive: true, force: true });
+  await writeFile(file, current, 'utf-8');
+  // $EDITOR carries its own flags ("code -w"), so it goes through a shell. Running from
+  // the temp dir keeps the argument a literal we wrote, with nothing to quote.
+  const { status, error } = spawnSync(`${editor} note.md`, {
+    cwd: dir,
+    stdio: 'inherit',
+    shell: true,
+  });
+  // The draft is deleted only once it is safely back in the note. An editor that dies
+  // after a save would otherwise take the text with it, so the error names the file.
+  if (error) {
+    throw new CliError(
+      'ERROR',
+      `Could not run ${editor}: ${error.message}. Draft kept at ${file}.`,
+    );
   }
+  if (status !== 0) {
+    const how = status === null ? 'was killed' : `exited ${status}`;
+    throw new CliError('ERROR', `${editor} ${how}. Draft kept at ${file}.`);
+  }
+  const edited = nonEmpty(await readFile(file, 'utf-8'));
+  await rm(dir, { recursive: true, force: true });
+  return edited;
 }
 
 async function readStdin(): Promise<string> {
@@ -251,15 +259,15 @@ export async function notesCommand(base: CliBase, argv: string[]): Promise<void>
       const source = await resolveSource(ctx, first, flagSource);
       const ref = { source, jobId: first };
       const current = await resolveNote(ctx, ref, values.note);
-      const note = await updateNote(ctx.paths, ref, current.noteId, {
+      const { note, changed } = await updateNote(ctx.paths, ref, current.noteId, {
         title: values.title,
         url: values.url,
         body: await editedBody(ctx, values, current.body),
       });
-      ctx.emit(`Updated ${note.noteId} in ${note.file}`, () => ({
-        ok: true,
-        note: noteMeta(note),
-      }));
+      const human = changed
+        ? `Updated ${note.noteId} in ${note.file}`
+        : `No change to ${note.noteId}. An editor that returns before you close it needs its wait flag, as "code -w" does.`;
+      ctx.emit(human, () => ({ ok: true, changed, note: noteMeta(note) }));
       return;
     }
     case 'path': {

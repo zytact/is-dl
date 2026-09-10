@@ -140,9 +140,10 @@ Notes:
   so a PDF brief or a docx take-home keeps its original form and name.
 
   "notes edit" replaces the text of a note that is already saved. With no
-  --text or --file and nothing piped in, it opens the body in $EDITOR. The
-  file name is the note's identity, so --title rewrites the front matter and
-  leaves the path alone. A job with one note needs no --note.
+  --text or --file and nothing piped in, it opens the body in $EDITOR, which
+  has to block until you close it, so "code" needs its -w flag. The file name
+  is the note's identity, so --title rewrites the front matter and leaves the
+  path alone. A job with one note needs no --note.
 
   cat brief.md | is-dl notes add 4055 -t "Comp and process" -u <doc url>
   is-dl notes attach 4055 --file ~/Downloads/take-home.pdf

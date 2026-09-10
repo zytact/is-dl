@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vite-plus/test';
@@ -141,10 +141,11 @@ describe('editing', () => {
     const paths = await notesPaths();
     const written = await writeNote(paths, note());
 
-    const edited = await updateNote(paths, UNSTOP_4055, written.noteId, {
+    const { note: edited, changed } = await updateNote(paths, UNSTOP_4055, written.noteId, {
       body: 'They raised it.',
     });
 
+    expect(changed).toBe(true);
     expect(edited.noteId).toBe(written.noteId);
     expect(edited.file).toBe(written.file);
     expect(edited.createdAt).toBe('2026-09-03T10:15:00.000Z');
@@ -155,7 +156,7 @@ describe('editing', () => {
     const paths = await notesPaths();
     const written = await writeNote(paths, note());
 
-    const edited = await updateNote(paths, UNSTOP_4055, written.noteId, {
+    const { note: edited } = await updateNote(paths, UNSTOP_4055, written.noteId, {
       title: 'After the call',
     });
 
@@ -193,12 +194,26 @@ describe('editing', () => {
     await writeFile(join(dir, 'recruiter-email.md'), 'They emailed.\n', 'utf-8');
     const ref = { source: 'linkedin', jobId: '999' } as const;
 
-    const edited = await updateNote(paths, ref, 'recruiter-email', {
+    const { note: edited } = await updateNote(paths, ref, 'recruiter-email', {
       body: 'They emailed twice.\n',
     });
 
     expect(edited.createdAt).toBeNull();
     expect((await readNote(paths, ref, 'recruiter-email')).title).toBe('They emailed.');
+  });
+
+  test('leaves the file alone when the edit says nothing new', async () => {
+    const paths = await notesPaths();
+    const written = await writeNote(paths, note());
+    const before = await stat(written.file);
+
+    const { changed } = await updateNote(paths, UNSTOP_4055, written.noteId, {
+      body: written.body,
+      title: written.title,
+    });
+
+    expect(changed).toBe(false);
+    expect((await stat(written.file)).mtimeMs).toBe(before.mtimeMs);
   });
 
   test('names the note when it is not there', async () => {
