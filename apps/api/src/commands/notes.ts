@@ -1,5 +1,7 @@
-import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { buildCtx, type CliBase, type Ctx } from '../cli-context.ts';
 import { CliError } from '../errors.ts';
@@ -9,13 +11,16 @@ import {
   jobNotesDir,
   listAttachments,
   listNotes,
+  type JobRef,
   type Note,
   noteMeta,
   notedSources,
+  readJobNotes,
   readNote,
   removeAttachment,
   removeNote,
   titleFromBody,
+  updateNote,
   writeNote,
 } from '../notes.ts';
 import { expandHome } from '../paths.ts';
@@ -33,17 +38,68 @@ const NOTES_OPTIONS = {
   'from-run': { type: 'string' },
 } as const;
 
-async function readBody(ctx: Ctx, values: { text?: string; file?: string }): Promise<string> {
+interface BodyFlags {
+  text?: string;
+  file?: string;
+}
+
+function nonEmpty(body: string): string {
+  if (!body.trim()) throw new CliError('USAGE', 'The note is empty.');
+  return body;
+}
+
+/** The body given on the command line, or undefined when neither flag was passed. */
+async function flagBody(ctx: Ctx, values: BodyFlags): Promise<string | undefined> {
   if (values.text !== undefined && values.file !== undefined) {
     throw new CliError('USAGE', 'Pass --text or --file, not both.');
   }
-  const body =
-    values.text ??
-    (values.file
-      ? await readFile(resolve(ctx.cwd, expandHome(values.file)), 'utf-8')
-      : await readStdin());
-  if (!body.trim()) throw new CliError('USAGE', 'The note is empty.');
-  return body;
+  if (values.text !== undefined) return nonEmpty(values.text);
+  if (values.file === undefined) return undefined;
+  return nonEmpty(await readFile(resolve(ctx.cwd, expandHome(values.file)), 'utf-8'));
+}
+
+async function readBody(ctx: Ctx, values: BodyFlags): Promise<string> {
+  return (await flagBody(ctx, values)) ?? nonEmpty(await readStdin());
+}
+
+/**
+ * The replacement body for an edit, or undefined to leave the text as it is. An edit that
+ * only names front matter never asks for a body, so `--title` alone rewrites the title
+ * rather than waiting on an editor or an empty stdin. Otherwise the body comes from the
+ * flags, from a pipe, or from $EDITOR. Only the body reaches the editor, so front matter
+ * stays managed by --title and --url.
+ */
+async function editedBody(
+  ctx: Ctx,
+  values: BodyFlags & { title?: string; url?: string },
+  current: string,
+): Promise<string | undefined> {
+  const flagged = await flagBody(ctx, values);
+  if (flagged !== undefined) return flagged;
+  if (values.title !== undefined || values.url !== undefined) return undefined;
+  if (!process.stdin.isTTY) return nonEmpty(await readStdin());
+
+  const editor = ctx.env.VISUAL ?? ctx.env.EDITOR;
+  if (!editor) {
+    throw new CliError('USAGE', 'No $EDITOR set. Pass --text, --file <path>, or pipe the note in.');
+  }
+  const dir = await mkdtemp(join(tmpdir(), 'is-dl-note-'));
+  const file = join(dir, 'note.md');
+  try {
+    await writeFile(file, current, 'utf-8');
+    // $EDITOR carries its own flags ("code -w"), so it goes through a shell. Running from
+    // the temp dir keeps the argument a literal we wrote, with nothing to quote.
+    const { status, error } = spawnSync(`${editor} note.md`, {
+      cwd: dir,
+      stdio: 'inherit',
+      shell: true,
+    });
+    if (error) throw new CliError('ERROR', `Could not run ${editor}: ${error.message}`);
+    if (status !== 0) throw new CliError('ERROR', `${editor} exited ${status ?? 'on a signal'}.`);
+    return nonEmpty(await readFile(file, 'utf-8'));
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 }
 
 async function readStdin(): Promise<string> {
@@ -71,6 +127,17 @@ async function resolveSource(
   const found = await findJob(ctx, jobId, fromRun, undefined);
   if (found) return found.job.source;
   throw new CliError('USAGE', `No run holds ${jobId}, so its board is unknown. Pass --source.`);
+}
+
+/** Which note to edit. A job with one note needs no --note; more than one does. */
+async function resolveNote(ctx: Ctx, ref: JobRef, id: string | undefined): Promise<Note> {
+  if (id) return readNote(ctx.paths, ref, id);
+  const notes = await readJobNotes(ctx.paths, ref);
+  if (notes.length === 1) return notes[0]!;
+  if (!notes.length) {
+    throw new CliError('ERROR', `No notes for ${ref.source}:${ref.jobId}.`);
+  }
+  throw new CliError('USAGE', `${ref.source}:${ref.jobId} has ${notes.length} notes. Pass --note.`);
 }
 
 function line(note: Note): string {
@@ -174,6 +241,27 @@ export async function notesCommand(base: CliBase, argv: string[]): Promise<void>
       ctx.emit(human, () => ({ ok: true, notes, files }));
       return;
     }
+    case 'edit': {
+      if (!first) {
+        throw new CliError(
+          'USAGE',
+          'Usage: is-dl notes edit <jobId> [--note <noteId>] [--text t | --file f]',
+        );
+      }
+      const source = await resolveSource(ctx, first, flagSource);
+      const ref = { source, jobId: first };
+      const current = await resolveNote(ctx, ref, values.note);
+      const note = await updateNote(ctx.paths, ref, current.noteId, {
+        title: values.title,
+        url: values.url,
+        body: await editedBody(ctx, values, current.body),
+      });
+      ctx.emit(`Updated ${note.noteId} in ${note.file}`, () => ({
+        ok: true,
+        note: noteMeta(note),
+      }));
+      return;
+    }
     case 'path': {
       if (!first) throw new CliError('USAGE', 'Usage: is-dl notes path <jobId> [--note <noteId>]');
       const source = await resolveSource(ctx, first, flagSource, values['from-run']);
@@ -198,7 +286,7 @@ export async function notesCommand(base: CliBase, argv: string[]): Promise<void>
     default:
       throw new CliError(
         'USAGE',
-        `Unknown notes subcommand "${sub}". Try add, attach, list, show, path, or rm.`,
+        `Unknown notes subcommand "${sub}". Try add, attach, list, show, edit, path, or rm.`,
       );
   }
 }

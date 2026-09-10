@@ -12,13 +12,18 @@ export interface JobRef {
   jobId: string;
 }
 
-export interface NoteMeta extends JobRef {
-  noteId: string;
+/** What a note file carries. Its id and path live outside the file, in the path itself. */
+export interface NoteFields {
   title: string;
   url: string | null;
   company: string | null;
   role: string | null;
   createdAt: string | null;
+  body: string;
+}
+
+export interface NoteMeta extends JobRef, Omit<NoteFields, 'body'> {
+  noteId: string;
   file: string;
 }
 
@@ -26,14 +31,12 @@ export interface Note extends NoteMeta {
   body: string;
 }
 
-export interface NewNote extends JobRef {
-  title: string;
-  url: string | null;
-  company: string | null;
-  role: string | null;
+export interface NewNote extends JobRef, Omit<NoteFields, 'createdAt'> {
   createdAt: string;
-  body: string;
 }
+
+/** The parts of a note an edit may replace. Everything else is carried over unchanged. */
+export type NoteEdit = Partial<Pick<NoteFields, 'title' | 'url' | 'body'>>;
 
 export interface Attachment {
   name: string;
@@ -96,7 +99,7 @@ export function titleFromBody(body: string): string {
 
 const FRONT_MATTER = /^---\r?\n[\s\S]*?\r?\n---\r?\n/;
 
-export function serializeNote(note: NewNote): string {
+export function serializeNote(note: NoteFields): string {
   const front = stringifyYaml({
     title: note.title,
     url: note.url,
@@ -176,6 +179,27 @@ export async function readNote(paths: AppPaths, ref: JobRef, id: string): Promis
     throw new CliError('ERROR', `No note "${id}" for ${ref.source}:${ref.jobId}.`);
   }
   return parseNote(ref, id, file, await readFile(file, 'utf-8'));
+}
+
+/**
+ * Rewrites a note in place. The file name is the note's identity, so a new title
+ * changes the front matter and never the path.
+ */
+export async function updateNote(
+  paths: AppPaths,
+  ref: JobRef,
+  id: string,
+  edit: NoteEdit,
+): Promise<Note> {
+  const current = await readNote(paths, ref, id);
+  const note: Note = {
+    ...current,
+    title: edit.title ?? current.title,
+    url: edit.url ?? current.url,
+    body: edit.body ?? current.body,
+  };
+  await writeFile(note.file, serializeNote(note), 'utf-8');
+  return note;
 }
 
 export async function readJobNotes(paths: AppPaths, ref: JobRef): Promise<Note[]> {

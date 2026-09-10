@@ -15,6 +15,7 @@ import {
   removeAttachment,
   removeNote,
   titleFromBody,
+  updateNote,
   writeNote,
 } from './notes.ts';
 import type { AppPaths } from './paths.ts';
@@ -132,6 +133,79 @@ describe('listing and reading', () => {
 
     await removeNote(paths, UNSTOP_4055, first.noteId);
     expect((await listNotes(paths, { jobId: '4055' })).map((n) => n.title)).toEqual(['Two']);
+  });
+});
+
+describe('editing', () => {
+  test('replaces the text and leaves the id, path and creation time alone', async () => {
+    const paths = await notesPaths();
+    const written = await writeNote(paths, note());
+
+    const edited = await updateNote(paths, UNSTOP_4055, written.noteId, {
+      body: 'They raised it.',
+    });
+
+    expect(edited.noteId).toBe(written.noteId);
+    expect(edited.file).toBe(written.file);
+    expect(edited.createdAt).toBe('2026-09-03T10:15:00.000Z');
+    expect((await readNote(paths, UNSTOP_4055, written.noteId)).body).toBe('They raised it.');
+  });
+
+  test('a new title rewrites the front matter and never the file name', async () => {
+    const paths = await notesPaths();
+    const written = await writeNote(paths, note());
+
+    const edited = await updateNote(paths, UNSTOP_4055, written.noteId, {
+      title: 'After the call',
+    });
+
+    expect(edited.noteId).toBe('20260903T101500Z-comp-and-process');
+    expect((await readNote(paths, UNSTOP_4055, written.noteId)).title).toBe('After the call');
+  });
+
+  test('carries over what the edit does not name', async () => {
+    const paths = await notesPaths();
+    const written = await writeNote(paths, note());
+
+    await updateNote(paths, UNSTOP_4055, written.noteId, { title: 'After the call' });
+
+    const read = await readNote(paths, UNSTOP_4055, written.noteId);
+    expect(read.body).toBe('Stipend is 40k a month.\nThey interview in three rounds.');
+    expect(read.url).toBe('https://docs.google.com/document/d/abc');
+    expect(read.company).toBe('Acme');
+    expect(read.role).toBe('Backend Intern');
+  });
+
+  test('keeps the new text byte for byte', async () => {
+    const paths = await notesPaths();
+    const written = await writeNote(paths, note());
+    const body = '  indented\n\ntrailing   \n\n';
+
+    await updateNote(paths, UNSTOP_4055, written.noteId, { body });
+
+    expect((await readNote(paths, UNSTOP_4055, written.noteId)).body).toBe(body);
+  });
+
+  test('gives a file dropped in by hand front matter without inventing a creation time', async () => {
+    const paths = await notesPaths();
+    const dir = jobNotesDir(paths, { source: 'linkedin', jobId: '999' });
+    await ensureDir(dir);
+    await writeFile(join(dir, 'recruiter-email.md'), 'They emailed.\n', 'utf-8');
+    const ref = { source: 'linkedin', jobId: '999' } as const;
+
+    const edited = await updateNote(paths, ref, 'recruiter-email', {
+      body: 'They emailed twice.\n',
+    });
+
+    expect(edited.createdAt).toBeNull();
+    expect((await readNote(paths, ref, 'recruiter-email')).title).toBe('They emailed.');
+  });
+
+  test('names the note when it is not there', async () => {
+    const paths = await notesPaths();
+    await expect(updateNote(paths, UNSTOP_4055, 'nope', { body: 'x' })).rejects.toThrow(
+      /No note "nope"/,
+    );
   });
 });
 
