@@ -63,7 +63,7 @@ Commands:
   runs list|show|rm         Inspect past runs
   config get|set|path       Read or write configuration
   apps add|status|list|show Track applications in an append-only log
-  notes add|attach|list|show|path|rm
+  notes add|attach|list|show|edit|path|rm
                             Keep the text and files attached to a job
   resume init|build|check|path
                             Build resume variants with tectonic
@@ -127,7 +127,7 @@ notes flags:
       --text <text>                 The note itself, inline
   -f, --file <path>                 Read the note from a file, or attach it
       --as <name>                   Attachment name, for attach and rm
-  -n, --note <noteId>               Which note, for show, path and rm
+  -n, --note <noteId>               Which note, for show, edit, path and rm
       --from-run <runId>            Look the job up in one run instead of all
 
 Notes:
@@ -139,10 +139,17 @@ Notes:
   "notes attach" copies a file's bytes unchanged into files/ beside the notes,
   so a PDF brief or a docx take-home keeps its original form and name.
 
+  "notes edit" replaces the text of a note that is already saved. With no
+  --text or --file and nothing piped in, it opens the body in $EDITOR, which
+  has to block until you close it, so "code" needs its -w flag. The file name
+  is the note's identity, so --title rewrites the front matter and leaves the
+  path alone. A job with one note needs no --note.
+
   cat brief.md | is-dl notes add 4055 -t "Comp and process" -u <doc url>
   is-dl notes attach 4055 --file ~/Downloads/take-home.pdf
   is-dl notes show 4055 --json
-  $EDITOR "$(is-dl notes path 4055 --note <noteId>)"
+  is-dl notes edit 4055                     # opens the note in $EDITOR
+  is-dl notes edit 4055 -n <noteId> --title "Comp, after the call"
 
 resume flags:
       --variant <name>              Variant to build

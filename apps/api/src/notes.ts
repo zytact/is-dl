@@ -12,13 +12,18 @@ export interface JobRef {
   jobId: string;
 }
 
-export interface NoteMeta extends JobRef {
-  noteId: string;
+/** What a note file carries. Its id and path live outside the file, in the path itself. */
+export interface NoteFields {
   title: string;
   url: string | null;
   company: string | null;
   role: string | null;
   createdAt: string | null;
+  body: string;
+}
+
+export interface NoteMeta extends JobRef, Omit<NoteFields, 'body'> {
+  noteId: string;
   file: string;
 }
 
@@ -26,13 +31,25 @@ export interface Note extends NoteMeta {
   body: string;
 }
 
-export interface NewNote extends JobRef {
-  title: string;
-  url: string | null;
-  company: string | null;
-  role: string | null;
+export interface NewNote extends JobRef, Omit<NoteFields, 'createdAt'> {
   createdAt: string;
-  body: string;
+}
+
+/**
+ * The parts of a note an edit may replace. Everything else is carried over unchanged.
+ * No field is nullable: an edit sets a value or says nothing, and there is no way to
+ * clear a url back to nothing, because a note that came from somewhere still did.
+ */
+export interface NoteEdit {
+  title?: string;
+  url?: string;
+  body?: string;
+}
+
+export interface NoteUpdate {
+  note: Note;
+  /** False when the edit named nothing new, so the file was left as it was. */
+  changed: boolean;
 }
 
 export interface Attachment {
@@ -96,7 +113,7 @@ export function titleFromBody(body: string): string {
 
 const FRONT_MATTER = /^---\r?\n[\s\S]*?\r?\n---\r?\n/;
 
-export function serializeNote(note: NewNote): string {
+export function serializeNote(note: NoteFields): string {
   const front = stringifyYaml({
     title: note.title,
     url: note.url,
@@ -176,6 +193,31 @@ export async function readNote(paths: AppPaths, ref: JobRef, id: string): Promis
     throw new CliError('ERROR', `No note "${id}" for ${ref.source}:${ref.jobId}.`);
   }
   return parseNote(ref, id, file, await readFile(file, 'utf-8'));
+}
+
+/**
+ * Rewrites a note in place. The file name is the note's identity, so a new title
+ * changes the front matter and never the path. An edit that says nothing the note
+ * does not already say leaves the file untouched and reports `changed: false`,
+ * which is how a caller tells a real edit from an editor that never blocked.
+ */
+export async function updateNote(
+  paths: AppPaths,
+  ref: JobRef,
+  id: string,
+  edit: NoteEdit,
+): Promise<NoteUpdate> {
+  const current = await readNote(paths, ref, id);
+  const note: Note = {
+    ...current,
+    title: edit.title ?? current.title,
+    url: edit.url ?? current.url,
+    body: edit.body ?? current.body,
+  };
+  const changed =
+    note.title !== current.title || note.url !== current.url || note.body !== current.body;
+  if (changed) await writeFile(note.file, serializeNote(note), 'utf-8');
+  return { note, changed };
 }
 
 export async function readJobNotes(paths: AppPaths, ref: JobRef): Promise<Note[]> {
