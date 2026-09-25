@@ -157,6 +157,11 @@ describe('variant resolution', () => {
     }
   });
 
+  test('variant names differing only by case are a config error', () => {
+    const twice = `${VARIANTS}  Lean:\n    headline: "Rust Engineer"\n`;
+    expect(() => parseVariants(twice, 'test')).toThrow(CliError);
+  });
+
   test('duplicate ids are rejected at parse time', () => {
     expect(() => parseResume(RESUME.replace('id: "b"', 'id: "a"'), 'test')).toThrow(CliError);
   });

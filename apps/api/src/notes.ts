@@ -3,7 +3,7 @@ import { copyFile, readdir, readFile, stat, unlink, writeFile } from 'node:fs/pr
 import { basename, extname, join } from 'node:path';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import { CliError } from './errors.ts';
-import { ensureDir } from './fs.ts';
+import { ensureDir, isSafeFileName } from './fs.ts';
 import type { AppPaths } from './paths.ts';
 import { JOB_SOURCES, type JobSource } from './types.ts';
 
@@ -58,10 +58,8 @@ export interface Attachment {
   bytes: number;
 }
 
-const SAFE_ID = /^[A-Za-z0-9._-]+$/;
-
 function assertSafeId(kind: 'Job' | 'Note', id: string): string {
-  if (!SAFE_ID.test(id) || id === '.' || id === '..') {
+  if (!isSafeFileName(id)) {
     throw new CliError('USAGE', `${kind} id "${id}" is not a name a file can be stored under.`);
   }
   return id;
