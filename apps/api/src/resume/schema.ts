@@ -218,6 +218,9 @@ export function parseVariants(text: string, where: string): Variants {
   const variants: Variants = {};
   for (const [name, value] of Object.entries(variantsRaw)) {
     const at = `${where} variant "${name}"`;
+    if (!/^[A-Za-z0-9._-]+$/.test(name) || name === '.' || name === '..') {
+      fail(at, 'a variant name is its build folder, so use only letters, digits, ".", "_" and "-"');
+    }
     const variant = record(value, at);
     for (const key of Object.keys(variant)) {
       if (!['headline', 'sections', 'lead', 'drop', 'tags'].includes(key)) {

@@ -44,10 +44,11 @@ async function buildOne(
   const variant = selectVariant(project, name);
   ctx.log(`Building ${name}...`);
 
-  const result = await compile(renderVariant(project, variant), outDir, `resume-${name}`);
+  const variantDir = join(outDir, name);
+  const result = await compile(renderVariant(project, variant), variantDir, 'resume');
 
   if (result.pages > 1) {
-    const culprit = await findOverflowSection(project, variant, join(outDir, 'overflow'));
+    const culprit = await findOverflowSection(project, variant, join(variantDir, 'overflow'));
     throw new CliError(
       'ERROR',
       `Variant "${name}" is ${result.pages} pages. The "${culprit ?? 'last'}" section pushed it over. ` +
