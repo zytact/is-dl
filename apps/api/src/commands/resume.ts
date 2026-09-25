@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { writeFile } from 'node:fs/promises';
+import { rename, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { buildCtx, type CliBase, type Ctx } from '../cli-context.ts';
@@ -44,10 +44,12 @@ async function buildOne(
   const variant = selectVariant(project, name);
   ctx.log(`Building ${name}...`);
 
-  const result = await compile(renderVariant(project, variant), outDir, `resume-${name}`);
+  const variantDir = join(outDir, name);
+  const workDir = join(variantDir, '.build');
+  const result = await compile(renderVariant(project, variant), workDir, name);
 
   if (result.pages > 1) {
-    const culprit = await findOverflowSection(project, variant, join(outDir, 'overflow'));
+    const culprit = await findOverflowSection(project, variant, join(workDir, 'overflow'));
     throw new CliError(
       'ERROR',
       `Variant "${name}" is ${result.pages} pages. The "${culprit ?? 'last'}" section pushed it over. ` +
@@ -71,7 +73,9 @@ async function buildOne(
     );
   }
 
-  return { variant: name, pdf: result.pdf, pages: result.pages, extraction };
+  const pdf = join(variantDir, 'resume.pdf');
+  await rename(result.pdf, pdf);
+  return { variant: name, pdf, pages: result.pages, extraction };
 }
 
 async function initProject(ctx: Ctx, dir: string, buildDir: string): Promise<void> {

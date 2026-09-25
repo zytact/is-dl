@@ -149,6 +149,19 @@ describe('variant resolution', () => {
     expect(() => resolveVariant(resume, { ...variants.lean!, drop: ['nope'] })).toThrow(CliError);
   });
 
+  test('a variant name that cannot be a folder is a config error', () => {
+    for (const name of ['..', 'ai/ml', 'a b']) {
+      expect(() => parseVariants(VARIANTS.replace('lean:', `"${name}":`), 'test')).toThrow(
+        CliError,
+      );
+    }
+  });
+
+  test('variant names differing only by case are a config error', () => {
+    const twice = `${VARIANTS}  Lean:\n    headline: "Rust Engineer"\n`;
+    expect(() => parseVariants(twice, 'test')).toThrow(CliError);
+  });
+
   test('duplicate ids are rejected at parse time', () => {
     expect(() => parseResume(RESUME.replace('id: "b"', 'id: "a"'), 'test')).toThrow(CliError);
   });

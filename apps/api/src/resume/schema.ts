@@ -1,5 +1,6 @@
 import { parse as parseYaml } from 'yaml';
 import { CliError } from '../errors.ts';
+import { isSafeFileName } from '../fs.ts';
 import { type Inline, parseInline } from './inline.ts';
 
 export interface Contact {
@@ -216,8 +217,16 @@ export function parseVariants(text: string, where: string): Variants {
   const variantsRaw = record(raw.variants, `${where} variants`);
 
   const variants: Variants = {};
+  const folders = new Set<string>();
   for (const [name, value] of Object.entries(variantsRaw)) {
     const at = `${where} variant "${name}"`;
+    if (!isSafeFileName(name)) {
+      fail(at, 'a variant name is its build folder, so use only letters, digits, ".", "_" and "-"');
+    }
+    if (folders.has(name.toLowerCase())) {
+      fail(at, 'differs from another variant only by case, so both would build into one folder');
+    }
+    folders.add(name.toLowerCase());
     const variant = record(value, at);
     for (const key of Object.keys(variant)) {
       if (!['headline', 'sections', 'lead', 'drop', 'tags'].includes(key)) {

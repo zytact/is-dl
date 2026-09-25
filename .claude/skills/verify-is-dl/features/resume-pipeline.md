@@ -28,11 +28,12 @@ $D resume build --variant default --json >"$EV/resume-build.json"
 
 ### Proof
 
-Initialization creates `preamble.tex`, `resume.yaml`, and `variants.yaml` inside the isolated config root. Check reports the expected variant and item count. A full build reports one page, an extraction result with `ok: true`, and a PDF inside the isolated data root. `pdftotext` output contains the configured name and the selected content verbatim.
+Initialization creates `preamble.tex`, `resume.yaml`, and `variants.yaml` inside the isolated config root. Check reports the expected variant and item count. A full build reports one page, an extraction result with `ok: true`, and a PDF at `resume/build/<variant>/resume.pdf` inside the isolated data root. `pdftotext` output contains the configured name and the selected content verbatim.
 
 ## Gotchas
 
 - `resume check` needs no Tectonic. A PDF build needs both `tectonic` and `pdftotext`.
 - The pipeline selects existing prose. It never writes or rewrites resume sentences.
 - Invalid inline markup fails while loading YAML.
-- Build output includes `.tex` and `.log` files. Preserve them with the PDF when diagnosing a failure.
+- The `.tex`, `.log` and overflow probes land in `<variant>/.build/`. Preserve them when diagnosing a failure.
+- A build that fails a gate never replaces `<variant>/resume.pdf`, so compare its hash before and after to prove the last good PDF survived.
