@@ -19,10 +19,37 @@ export interface ScraperFormData {
   remoteOnly: boolean;
   postedWithin: string;
   headless: boolean;
+  excludeSeen: boolean;
+  excludeApplied: boolean;
+  excludeUnpaid: boolean;
   sources: JobSource[];
   unstopOpportunity: UnstopOpportunity;
   unstopRoles: string[];
 }
+
+type FlagName = 'remoteOnly' | 'headless' | 'excludeSeen' | 'excludeApplied' | 'excludeUnpaid';
+
+const OK = 'peer-checked:bg-brand-ok peer-checked:border-brand-ok';
+const ACCENT = 'peer-checked:bg-brand-accent peer-checked:border-brand-accent';
+
+// Tailwind only generates classes it finds written out whole, so they are not assembled.
+const FLAGS: { name: FlagName; label: string; checked: string; hover: string }[] = [
+  { name: 'remoteOnly', label: 'REMOTE_ONLY', checked: OK, hover: 'group-hover:text-brand-ok' },
+  {
+    name: 'headless',
+    label: 'HEADLESS_MODE',
+    checked: ACCENT,
+    hover: 'group-hover:text-brand-accent',
+  },
+  { name: 'excludeSeen', label: 'SKIP_SEEN', checked: OK, hover: 'group-hover:text-brand-ok' },
+  {
+    name: 'excludeApplied',
+    label: 'SKIP_APPLIED',
+    checked: OK,
+    hover: 'group-hover:text-brand-ok',
+  },
+  { name: 'excludeUnpaid', label: 'SKIP_UNPAID', checked: OK, hover: 'group-hover:text-brand-ok' },
+];
 
 interface ScraperFormProps {
   onStart: (data: ScraperFormData) => void;
@@ -39,6 +66,9 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
     remoteOnly: false,
     postedWithin: '',
     headless: true,
+    excludeSeen: false,
+    excludeApplied: false,
+    excludeUnpaid: false,
     unstopOpportunity: 'jobs' as UnstopOpportunity,
   });
   const [sources, setSources] = useState<JobSource[]>([...JOB_SOURCES]);
@@ -48,7 +78,9 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    const val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
+    const input = e.target as HTMLInputElement;
+    const val =
+      type === 'checkbox' ? input.checked : type === 'number' ? input.valueAsNumber : value;
     setFormData((prev) => ({ ...prev, [name]: val }));
   };
 
@@ -294,43 +326,28 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
           FLAGS
         </div>
 
-        <label className="flex items-center gap-3 cursor-pointer group">
-          <div className="relative">
-            <input
-              type="checkbox"
-              name="remoteOnly"
-              checked={formData.remoteOnly}
-              onChange={handleChange}
-              disabled={isScraping}
-              className="peer sr-only"
-            />
-            <div className="w-5 h-5 border-2 border-brand-border peer-checked:bg-brand-ok peer-checked:border-brand-ok transition-colors flex items-center justify-center">
-              <div className="w-2 h-2 bg-brand-dark scale-0 peer-checked:scale-100 transition-transform"></div>
+        {FLAGS.map(({ name, label, checked, hover }) => (
+          <label key={name} className="flex items-center gap-3 cursor-pointer group">
+            <div className="relative">
+              <input
+                type="checkbox"
+                name={name}
+                checked={formData[name]}
+                onChange={handleChange}
+                disabled={isScraping}
+                className="peer sr-only"
+              />
+              <div
+                className={`w-5 h-5 border-2 border-brand-border ${checked} transition-colors flex items-center justify-center`}
+              >
+                <div className="w-2 h-2 bg-brand-dark scale-0 peer-checked:scale-100 transition-transform"></div>
+              </div>
             </div>
-          </div>
-          <span className="text-sm uppercase tracking-wider group-hover:text-brand-ok transition-colors">
-            REMOTE_ONLY
-          </span>
-        </label>
-
-        <label className="flex items-center gap-3 cursor-pointer group">
-          <div className="relative">
-            <input
-              type="checkbox"
-              name="headless"
-              checked={formData.headless}
-              onChange={handleChange}
-              disabled={isScraping}
-              className="peer sr-only"
-            />
-            <div className="w-5 h-5 border-2 border-brand-border peer-checked:bg-brand-accent peer-checked:border-brand-accent transition-colors flex items-center justify-center">
-              <div className="w-2 h-2 bg-brand-dark scale-0 peer-checked:scale-100 transition-transform"></div>
-            </div>
-          </div>
-          <span className="text-sm uppercase tracking-wider group-hover:text-brand-accent transition-colors">
-            HEADLESS_MODE
-          </span>
-        </label>
+            <span className={`text-sm uppercase tracking-wider ${hover} transition-colors`}>
+              {label}
+            </span>
+          </label>
+        ))}
       </div>
 
       <button

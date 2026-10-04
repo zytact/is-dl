@@ -32,6 +32,9 @@ type ScrapeOptions struct {
 	PostedWithin      string `json:"postedWithin,omitempty"`
 	RemoteOnly        bool   `json:"remoteOnly"`
 	Headless          bool   `json:"headless"`
+	ExcludeSeen       bool   `json:"excludeSeen"`
+	ExcludeApplied    bool   `json:"excludeApplied"`
+	ExcludeUnpaid     bool   `json:"excludeUnpaid"`
 	Sources           string `json:"sources,omitempty"`
 	UnstopOpportunity string `json:"unstopOpportunity,omitempty"`
 	UnstopRoles       string `json:"unstopRoles,omitempty"`
