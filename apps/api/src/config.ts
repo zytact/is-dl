@@ -84,7 +84,7 @@ export const DEFAULT_SERVE: ServeSettings = { port: 3000, host: 'localhost' };
 
 type FieldType = 'string' | 'number' | 'boolean' | 'string[]';
 
-const SEARCH_FIELDS = {
+export const SEARCH_FIELDS = {
   keywords: 'string',
   location: 'string',
   limit: 'number',

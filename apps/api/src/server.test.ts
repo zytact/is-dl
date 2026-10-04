@@ -3,6 +3,7 @@ import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from 'vite-plus/test';
+import type { LoadedConfig } from './config.ts';
 import type { AppPaths } from './paths.ts';
 import { startServer } from './server.ts';
 
@@ -15,6 +16,8 @@ function freePort(): Promise<number> {
     });
   });
 }
+
+const NO_CONFIG: LoadedConfig = { file: null, base: {}, profiles: {}, serve: {}, resume: {} };
 
 async function paths(): Promise<AppPaths> {
   const data = await mkdtemp(join(tmpdir(), 'is-dl-server-'));
@@ -31,6 +34,8 @@ test('closing releases the port with a log stream still open', async () => {
     port,
     host: '127.0.0.1',
     paths: await paths(),
+    config: NO_CONFIG,
+    env: {},
     onLog: () => {},
   });
 
@@ -53,6 +58,8 @@ test('closing releases the port with a log stream still open', async () => {
     port,
     host: '127.0.0.1',
     paths: await paths(),
+    config: NO_CONFIG,
+    env: {},
     onLog: () => {},
   });
   await second.close();

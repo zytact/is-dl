@@ -7,25 +7,9 @@ import archiver from 'archiver';
 import type { AppPaths } from './paths.ts';
 import { ensureDir } from './fs.ts';
 import { listRuns, newRunId, readRun, removeRun, runIdFromFilename, saveRun } from './runs.ts';
-import { type ScrapeRequest, runScraper } from './scraper.ts';
-import { isJobSource, isUnstopOpportunity, JOB_SOURCES, type JobSource } from './types.ts';
-
-/** Accepts either a JSON array or a comma-joined string. */
-function csv(value: unknown): string[] | undefined {
-  const parts = Array.isArray(value)
-    ? value.filter((item) => typeof item === 'string')
-    : typeof value === 'string'
-      ? value.split(',')
-      : undefined;
-  const items = parts?.map((item) => item.trim()).filter(Boolean);
-  return items?.length ? items : undefined;
-}
-
-/** Unknown names in a request body are ignored; an empty result means both. */
-function readSources(value: unknown): JobSource[] {
-  const names = csv(value)?.filter(isJobSource) ?? [];
-  return names.length ? [...new Set(names)] : [...JOB_SOURCES];
-}
+import { type LoadedConfig, resolveSearch, type SearchSettings } from './config.ts';
+import { CliError } from './errors.ts';
+import { readSearchBody, search, type Triage } from './search.ts';
 
 /** One open `/api/logs` stream. `end` is what lets shutdown release the socket. */
 interface SseClient {
@@ -59,7 +43,8 @@ const notifyStatus = (status: boolean) => {
   broadcast({ type: 'status', isScraping });
 };
 
-async function handleRequest(req: Request, paths: AppPaths) {
+async function handleRequest(req: Request, options: ServerOptions) {
+  const { paths } = options;
   const outputDir = paths.runsDir;
   const url = new URL(req.url);
 
@@ -118,71 +103,50 @@ async function handleRequest(req: Request, paths: AppPaths) {
       });
     }
 
+    let settings: SearchSettings;
+    let triage: Triage;
     try {
-      const body = (await req.json()) as Record<string, unknown>;
-      const opportunity =
-        typeof body.unstopOpportunity === 'string' && isUnstopOpportunity(body.unstopOpportunity)
-          ? body.unstopOpportunity
-          : 'jobs';
-
-      const request: ScrapeRequest = {
-        query: {
-          keywords: typeof body.keywords === 'string' ? body.keywords : '',
-          location: typeof body.location === 'string' ? body.location : '',
-          limit: typeof body.limit === 'number' ? body.limit : Number(body.limit) || 50,
-          remoteOnly: typeof body.remoteOnly === 'boolean' ? body.remoteOnly : false,
-        },
-        sources: readSources(body.sources),
-        linkedin: {
-          sessionFile: paths.sessionFile,
-          debugDir: paths.cache,
-          timeout: 30000,
-          headless: typeof body.headless === 'boolean' ? body.headless : true,
-          debug: typeof body.debug === 'boolean' ? body.debug : false,
-          experienceLevel: csv(body.experienceLevel),
-          jobType: csv(body.jobType),
-          postedWithin:
-            typeof body.postedWithin === 'string' ? body.postedWithin || undefined : undefined,
-        },
-        unstop: { opportunity, roles: csv(body.unstopRoles) },
-      };
-
-      if (!request.query.keywords) {
-        return new Response(JSON.stringify({ error: 'Keywords are required' }), {
-          status: 400,
-          headers: { 'Access-Control-Allow-Origin': '*' },
-        });
-      }
-
-      currentLogs = [];
-      notifyStatus(true);
-
-      scrapeAbortController = new AbortController();
-      const signal = scrapeAbortController.signal;
-
-      runScraper(request, addLog, signal)
-        .then(async (output) => {
-          const outPath = await saveRun(paths, newRunId(), output);
-          addLog(`\n--- SCRAPE FINISHED: ${outPath} ---`);
-          notifyStatus(false);
-          scrapeAbortController = null;
-        })
-        .catch(() => {
-          const msg = signal.aborted ? '\n--- SCRAPE ABORTED ---' : '\n--- SCRAPE FAILED ---';
-          addLog(msg);
-          notifyStatus(false);
-          scrapeAbortController = null;
-        });
-
-      return new Response(JSON.stringify({ success: true, message: 'Scraper started' }), {
-        headers: { 'Access-Control-Allow-Origin': '*' },
-      });
-    } catch {
-      return new Response(JSON.stringify({ error: 'Invalid request body' }), {
+      const { flags, triage: asked } = readSearchBody(await req.json());
+      settings = resolveSearch({ config: options.config, env: options.env, flags });
+      triage = asked;
+    } catch (err) {
+      const error = err instanceof CliError ? err.message : 'Invalid request body';
+      return new Response(JSON.stringify({ error }), {
         status: 400,
         headers: { 'Access-Control-Allow-Origin': '*' },
       });
     }
+
+    if (!settings.keywords) {
+      return new Response(JSON.stringify({ error: 'Keywords are required' }), {
+        status: 400,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+      });
+    }
+
+    currentLogs = [];
+    notifyStatus(true);
+
+    scrapeAbortController = new AbortController();
+    const signal = scrapeAbortController.signal;
+
+    search(paths, settings, triage, addLog, signal)
+      .then(async (output) => {
+        const outPath = await saveRun(paths, newRunId(), output);
+        addLog(`\n--- SCRAPE FINISHED: ${outPath} ---`);
+      })
+      .catch((err: unknown) => {
+        const reason = err instanceof Error ? err.message : String(err);
+        addLog(signal.aborted ? '\n--- SCRAPE ABORTED ---' : `\n--- SCRAPE FAILED: ${reason} ---`);
+      })
+      .finally(() => {
+        notifyStatus(false);
+        scrapeAbortController = null;
+      });
+
+    return new Response(JSON.stringify({ success: true, message: 'Scraper started' }), {
+      headers: { 'Access-Control-Allow-Origin': '*' },
+    });
   }
 
   if (url.pathname === '/api/abort' && req.method === 'POST') {
@@ -331,6 +295,9 @@ export interface ServerOptions {
   port: number;
   host: string;
   paths: AppPaths;
+  /** `/api/scrape` resolves its body over these, the way `search` resolves its flags. */
+  config: LoadedConfig;
+  env: NodeJS.ProcessEnv;
   onLog?: (msg: string) => void;
 }
 
@@ -348,7 +315,7 @@ export interface RunningServer {
 export function startServer(options: ServerOptions): Promise<RunningServer> {
   const log = options.onLog ?? ((msg: string) => process.stderr.write(`${msg}\n`));
   const server = createServer((req, res) => {
-    void respond(req, res, options.paths, log);
+    void respond(req, res, options, log);
   });
 
   const close = (): Promise<void> => {
@@ -377,7 +344,7 @@ export function startServer(options: ServerOptions): Promise<RunningServer> {
 async function respond(
   req: IncomingMessage,
   res: ServerResponse,
-  paths: AppPaths,
+  options: ServerOptions,
   log: (msg: string) => void,
 ) {
   const abortController = new AbortController();
@@ -385,7 +352,7 @@ async function respond(
 
   try {
     const request = nodeRequestToFetchRequest(req, abortController.signal);
-    const response = await handleRequest(request, paths);
+    const response = await handleRequest(request, options);
     await writeFetchResponse(res, response);
   } catch (err) {
     if (abortController.signal.aborted) {
