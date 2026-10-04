@@ -27,14 +27,17 @@ type ScrapeOptions struct {
 	Keywords          string `json:"keywords"`
 	Location          string `json:"location"`
 	Limit             int    `json:"limit"`
-	ExperienceLevel   string `json:"experienceLevel,omitempty"`
-	JobType           string `json:"jobType,omitempty"`
-	PostedWithin      string `json:"postedWithin,omitempty"`
+	ExperienceLevel   string `json:"experienceLevel"`
+	JobType           string `json:"jobType"`
+	PostedWithin      string `json:"postedWithin"`
 	RemoteOnly        bool   `json:"remoteOnly"`
 	Headless          bool   `json:"headless"`
+	ExcludeSeen       bool   `json:"excludeSeen"`
+	ExcludeApplied    bool   `json:"excludeApplied"`
+	ExcludeUnpaid     bool   `json:"excludeUnpaid"`
 	Sources           string `json:"sources,omitempty"`
 	UnstopOpportunity string `json:"unstopOpportunity,omitempty"`
-	UnstopRoles       string `json:"unstopRoles,omitempty"`
+	UnstopRoles       string `json:"unstopRoles"`
 }
 
 type SSEEvent struct {

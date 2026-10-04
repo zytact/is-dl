@@ -45,8 +45,8 @@ type ScrapeModel struct {
 	postedWithinOptions []string
 	postedWithinIndex   int
 
-	remoteOnly bool
-	headless   bool
+	// On or off per toggle field, keyed by its field id.
+	toggles    map[int]bool
 	isScraping bool
 
 	inlineError string
@@ -68,8 +68,22 @@ const (
 	scrapePostedWithin
 	scrapeRemoteOnly
 	scrapeHeadless
+	scrapeExcludeSeen
+	scrapeExcludeApplied
+	scrapeExcludeUnpaid
 	scrapeStartButton
 )
+
+var toggleLabels = []struct {
+	field int
+	label string
+}{
+	{scrapeRemoteOnly, "Remote Only"},
+	{scrapeHeadless, "Headless"},
+	{scrapeExcludeSeen, "Skip Seen"},
+	{scrapeExcludeApplied, "Skip Applied"},
+	{scrapeExcludeUnpaid, "Skip Unpaid"},
+}
 
 func NewScrape(client api.APIClient) *ScrapeModel {
 	inputs := make([]textinput.Model, 3)
@@ -107,7 +121,7 @@ func NewScrape(client api.APIClient) *ScrapeModel {
 		jobTypeOptions:      []string{"Full-time", "Part-time"},
 		jobTypeSelected:     map[int]bool{},
 		postedWithinOptions: []string{"Any Time", "Past 24 hours", "Past week", "Past month"},
-		headless:            true,
+		toggles:             map[int]bool{scrapeHeadless: true},
 		fieldLines:          map[int]int{},
 	}
 	model.viewport = viewport.New(0, 0)
@@ -186,6 +200,9 @@ func (s *ScrapeModel) visibleFields() []int {
 		scrapePostedWithin,
 		scrapeRemoteOnly,
 		scrapeHeadless,
+		scrapeExcludeSeen,
+		scrapeExcludeApplied,
+		scrapeExcludeUnpaid,
 		scrapeStartButton,
 	)
 }
@@ -241,13 +258,11 @@ func (s *ScrapeModel) Update(msg tea.Msg) (*ScrapeModel, tea.Cmd) {
 			s.viewport, cmd = s.viewport.Update(msg)
 			return s, cmd
 		case " ":
-			if s.focusIndex == scrapeRemoteOnly {
-				s.remoteOnly = !s.remoteOnly
-				return s, nil
-			}
-			if s.focusIndex == scrapeHeadless {
-				s.headless = !s.headless
-				return s, nil
+			for _, t := range toggleLabels {
+				if s.focusIndex == t.field {
+					s.toggles[t.field] = !s.toggles[t.field]
+					return s, nil
+				}
 			}
 			if group := s.checkboxField(s.focusIndex); group != nil {
 				group.selected[*group.index] = !group.selected[*group.index]
@@ -329,8 +344,11 @@ func (s *ScrapeModel) startCmd() tea.Cmd {
 		Limit:           limit,
 		ExperienceLevel: strings.Join(s.selectedOptions(s.experienceOptions, s.experienceSelected), ", "),
 		JobType:         strings.Join(s.selectedOptions(s.jobTypeOptions, s.jobTypeSelected), ", "),
-		RemoteOnly:      s.remoteOnly,
-		Headless:        s.headless,
+		RemoteOnly:      s.toggles[scrapeRemoteOnly],
+		Headless:        s.toggles[scrapeHeadless],
+		ExcludeSeen:     s.toggles[scrapeExcludeSeen],
+		ExcludeApplied:  s.toggles[scrapeExcludeApplied],
+		ExcludeUnpaid:   s.toggles[scrapeExcludeUnpaid],
 		Sources:         strings.Join(sources, ","),
 	}
 	if s.unstopEnabled() {
@@ -417,8 +435,9 @@ func (s *ScrapeModel) View() string {
 	f.write("\n")
 
 	f.field(scrapePostedWithin, cycleRow("Posted Within", s.postedWithinOptions[s.postedWithinIndex], s.focusIndex == scrapePostedWithin))
-	f.field(scrapeRemoteOnly, toggleRow("Remote Only", s.remoteOnly, s.focusIndex == scrapeRemoteOnly))
-	f.field(scrapeHeadless, toggleRow("Headless", s.headless, s.focusIndex == scrapeHeadless))
+	for _, t := range toggleLabels {
+		f.field(t.field, toggleRow(t.label, s.toggles[t.field], s.focusIndex == t.field))
+	}
 	f.write("\n")
 
 	if s.inlineError != "" {

@@ -19,7 +19,7 @@ case "${1:-}" in
       exit 2
     fi
     tmux new-session -d -s "$IS_DL_VERIFY_TMUX" -x 120 -y 40 \
-      -c "$IS_DL_VERIFY_DIR/tui-work" "$IS_DL_VERIFY_TUI_BIN"
+      -c "$IS_DL_VERIFY_DIR/tui-work" "$IS_DL_VERIFY_TUI_BIN" --api "$IS_DL_VERIFY_API_URL"
     for _ in {1..40}; do
       tmux capture-pane -p -t "$IS_DL_VERIFY_TMUX" 2>/dev/null | grep -q '1: SCRAPE' && exit 0
       sleep 0.1

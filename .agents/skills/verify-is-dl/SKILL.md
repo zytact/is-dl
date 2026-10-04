@@ -11,6 +11,20 @@ Read `features/README.md`, then read every feature file for the surfaces touched
 
 This skill has byte-identical copies under `.agents/skills/verify-is-dl/` and `.claude/skills/verify-is-dl/`. Commands use the `.agents` copy. Keep both copies identical.
 
+## CLI-only changes
+
+A change that only the CLI can show needs no session. Skip launch and run the working tree's CLI with isolated state:
+
+```bash
+C=.agents/skills/verify-is-dl/scripts/cli.sh
+
+$C notes list --json
+EDITOR='sed -i s/old/new/' $C --tty notes edit 4055 <noteId> --source unstop
+$C --reset
+```
+
+`cli.sh` packs on every call, so it always runs this tree. State lives in `.local/verify-is-dl-cli/`, apart from a full session's, and it shares the stored LinkedIn login. `--tty` runs the command under a pseudo-terminal for paths that check for one, such as the `$EDITOR` flow. Point `EDITOR` at a non-interactive command, as above, and read the merged output on stdout. Use the full session below as soon as the change reaches the API, website or TUI.
+
 ## Launch
 
 ```bash
@@ -19,15 +33,16 @@ This skill has byte-identical copies under `.agents/skills/verify-is-dl/` and `.
 
 The launcher:
 
-- refuses to start when port 3000 or 5173 already has a listener
 - runs `vp run build` for the CLI, API, website, and TUI, then packs the CLI again so `dist` is
   this working tree rather than whatever the task cache replayed
 - creates the disposable XDG config, data and cache roots under `.local/verify-is-dl/`
 - points the XDG state root at `.local/verify-is-dl-login/state`, which persists
-- starts the packed API on port 3000
-- starts the built website on port 5173
+- starts the packed API on a free port
+- starts the built website on a free port, with preview forwarding `/api` to that API
 - starts a dedicated headless Chromium with a disposable profile and free CDP port
 - records process IDs, build hashes, logs, URLs, browser paths, and the TUI tmux name in `session.env`
+
+Free ports mean a session runs next to your own `vp run dev` and next to a session in another worktree. Read the ports from `session.env`, never assume 3000 or 5173.
 
 Source the session before direct commands:
 
@@ -173,6 +188,7 @@ Run cleanup after failed attempts. If launch failed before writing `session.env`
 
 | Script                | Purpose                                                      |
 | --------------------- | ------------------------------------------------------------ |
+| `scripts/cli.sh`      | Run this tree's CLI with isolated state and no session       |
 | `scripts/launch.sh`   | Build every app and start isolated API, website, and browser |
 | `scripts/login.sh`    | Store one LinkedIn session that survives cleanup             |
 | `scripts/doctor.sh`   | Check builds, isolation, processes, ports, API, and browser  |

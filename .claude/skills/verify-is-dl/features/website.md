@@ -34,8 +34,7 @@ The before-and-after screenshots show the real clicks and resulting screens. The
 ## Gotchas
 
 - Both sources start selected. Deselect LinkedIn for an account-free proof.
-- The website hard-codes API port 3000, and Vite uses 5173. Launch refuses occupied ports.
+- The website calls `/api` on its own origin. Vite dev and preview forward it to `IS_DL_API_URL`, else `http://localhost:3000`.
 - Search completion is asynchronous. Waiting only for the POST response proves nothing about the result.
 - Row action icons have stable `title` values. Prefer them over coordinates.
 - Downloads use the browser's download directory. Record the browser artifact path when proving export.
-- The dedicated browser runs locally, so the website's hard-coded `localhost:3000` API URL reaches the verification server.

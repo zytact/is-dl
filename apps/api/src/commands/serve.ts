@@ -23,7 +23,13 @@ export async function serveCommand(base: CliBase, argv: string[]): Promise<void>
   }
 
   const settings = resolveServe(ctx.config, ctx.env, { port, host: values.host });
-  const server = await startServer({ ...settings, paths: ctx.paths, onLog: ctx.log });
+  const server = await startServer({
+    ...settings,
+    paths: ctx.paths,
+    config: ctx.config,
+    env: ctx.env,
+    onLog: ctx.log,
+  });
 
   ctx.emit(`API server running at ${server.address}`, () => ({
     ok: true,

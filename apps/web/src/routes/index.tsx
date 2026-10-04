@@ -13,7 +13,7 @@ export function TerminalPage() {
     appendLog('[SYSTEM] Initializing extraction sequence...');
 
     try {
-      const response = await fetch('http://localhost:3000/api/scrape', {
+      const response = await fetch('/api/scrape', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -30,7 +30,7 @@ export function TerminalPage() {
 
   const handleStopScrape = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/abort', {
+      const response = await fetch('/api/abort', {
         method: 'POST',
       });
       const result = await response.json();

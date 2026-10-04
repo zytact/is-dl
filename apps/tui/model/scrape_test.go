@@ -4,6 +4,8 @@ import (
 	"errors"
 	"testing"
 
+	tea "github.com/charmbracelet/bubbletea"
+
 	"github.com/zytact/is-dl-tui/api"
 )
 
@@ -177,4 +179,21 @@ func containsField(fields []int, target int) bool {
 		}
 	}
 	return false
+}
+
+func TestStartScrapeCmd_SendsToggles(t *testing.T) {
+	mc := &mockClient{}
+	s := newTestScrape(mc)
+	s.inputs[scrapeKeywords].SetValue("engineer")
+	s.focusIndex = scrapeExcludeSeen
+	s.Update(tea.KeyMsg{Type: tea.KeySpace, Runes: []rune{' '}})
+
+	s.startCmd()()
+
+	if !mc.startScrapeOpts.ExcludeSeen || mc.startScrapeOpts.ExcludeApplied {
+		t.Errorf("expected only ExcludeSeen, got %+v", mc.startScrapeOpts)
+	}
+	if !mc.startScrapeOpts.Headless {
+		t.Error("expected Headless to stay on by default")
+	}
 }
