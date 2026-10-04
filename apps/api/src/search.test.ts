@@ -2,7 +2,7 @@ import { expect, test } from 'vite-plus/test';
 import { CliError } from './errors.ts';
 import { readSearchBody } from './search.ts';
 
-test('a body reads like the search flags', () => {
+test('a body reads like the search flags, and an empty field still counts', () => {
   expect(
     readSearchBody({
       keywords: 'developer',
@@ -11,14 +11,18 @@ test('a body reads like the search flags', () => {
       sources: 'linkedin, unstop',
       unstopRoles: ['software-development'],
       experienceLevel: '',
+      debug: true,
       excludeSeen: true,
     }),
   ).toEqual({
     flags: {
       keywords: 'developer',
+      location: '',
       limit: 5,
       sources: ['linkedin', 'unstop'],
       unstopRoles: ['software-development'],
+      experienceLevel: [],
+      debug: true,
     },
     triage: { excludeUnpaid: false, excludeApplied: false, excludeSeen: true },
   });

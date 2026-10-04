@@ -23,14 +23,21 @@ export const NO_TRIAGE: Triage = {
 
 const TRIAGE_KEYS = Object.keys(NO_TRIAGE) as (keyof Triage)[];
 
-/** `out-dir` is the CLI's alone: the server always writes to the run store. */
-const BODY_FIELDS = Object.entries(SEARCH_FIELDS).filter(([key]) => key !== 'out-dir');
+/**
+ * `out-dir` is the CLI's alone: the server always writes to the run store.
+ * `debug` is a flag the config file does not take.
+ */
+const BODY_FIELDS = [
+  ...Object.entries(SEARCH_FIELDS).filter(([key]) => key !== 'out-dir'),
+  ['debug', 'boolean'],
+] as const;
 
 /**
  * Reads a `/api/scrape` body. The search keys are the config keys camelCased, so
  * an option added to the config table reaches the API without a second parser.
- * List fields take an array or a comma-joined string. An empty string or list
- * means unset, which is what a blank form field sends.
+ * List fields take an array or a comma-joined string. A field that is present
+ * counts even when empty, so a blank form field clears a configured default the
+ * way an empty CLI flag does. Only an omitted field inherits.
  */
 export function readSearchBody(body: unknown): { flags: SearchLayer; triage: Triage } {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) {
@@ -44,7 +51,7 @@ export function readSearchBody(body: unknown): { flags: SearchLayer; triage: Tri
     const name = camel(key);
     known.add(name);
     const value = raw[name];
-    if (value === undefined || value === '') continue;
+    if (value === undefined) continue;
 
     const list = type === 'string[]' && typeof value === 'string' ? value.split(',') : value;
     const valid =
@@ -54,8 +61,7 @@ export function readSearchBody(body: unknown): { flags: SearchLayer; triage: Tri
     if (!valid) throw new CliError('USAGE', `"${name}" must be a ${type}.`);
 
     if (Array.isArray(list)) {
-      const items = list.map((item: string) => item.trim()).filter(Boolean);
-      if (items.length) flags[name] = items;
+      flags[name] = list.map((item: string) => item.trim()).filter(Boolean);
     } else {
       flags[name] = value;
     }
