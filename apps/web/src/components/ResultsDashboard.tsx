@@ -46,7 +46,7 @@ export function ResultsDashboard() {
 
   const fetchResults = useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:3000/api/results');
+      const res = await fetch('/api/results');
       const data = (await res.json()) as { results?: ApiFileEntry[] };
       const parsed = (data.results || []).map((file) => ({
         id: file.filename,
@@ -54,7 +54,7 @@ export function ResultsDashboard() {
         company: 'Multiple Targets',
         location: file.meta?.location || 'Any Region',
         date: file.meta?.scrapedAt ? new Date(file.meta.scrapedAt).toLocaleDateString() : 'Unknown',
-        link: `http://localhost:3000/api/results/${file.filename}`,
+        link: `/api/results/${file.filename}`,
         count: file.count,
         filename: file.filename,
         hasAiAgentSignals: (file.aiAgentSummary?.detectedCount || 0) > 0,
@@ -81,7 +81,7 @@ export function ResultsDashboard() {
     setIsDeleting(filename);
     setDeleteError(null);
     try {
-      const res = await fetch(`http://localhost:3000/api/results/${filename}`, {
+      const res = await fetch(`/api/results/${filename}`, {
         method: 'DELETE',
       });
       if (!res.ok) {
@@ -109,7 +109,7 @@ export function ResultsDashboard() {
   const handleDownloadSingle = async (e: React.MouseEvent, filename: string) => {
     e.stopPropagation();
     try {
-      const res = await fetch(`http://localhost:3000/api/results/${filename}`);
+      const res = await fetch(`/api/results/${filename}`);
       if (!res.ok) throw new Error('Download failed');
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
@@ -129,7 +129,7 @@ export function ResultsDashboard() {
     setExporting(true);
     setExportError(null);
     try {
-      const res = await fetch('http://localhost:3000/api/results/export');
+      const res = await fetch('/api/results/export');
       if (!res.ok) {
         const message = await res.text();
         throw new Error(message || 'Export failed');

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"time"
@@ -13,7 +14,14 @@ import (
 )
 
 func main() {
-	client := api.NewClient("http://localhost:3000")
+	apiURL := os.Getenv("IS_DL_API_URL")
+	if apiURL == "" {
+		apiURL = "http://localhost:3000"
+	}
+	flag.StringVar(&apiURL, "api", apiURL, "is-dl serve address (env IS_DL_API_URL)")
+	flag.Parse()
+
+	client := api.NewClient(apiURL)
 	m := model.New(client)
 	p := tea.NewProgram(m, tea.WithAltScreen(), tea.WithMouseAllMotion())
 

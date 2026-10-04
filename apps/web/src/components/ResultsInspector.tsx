@@ -107,7 +107,7 @@ export function ResultsInspector({ filename, onBack, onDeleted }: ResultsInspect
 
   useEffect(() => {
     setLoading(true);
-    fetch(`http://localhost:3000/api/results/${filename}`)
+    fetch(`/api/results/${filename}`)
       .then((res) => {
         if (!res.ok) throw new Error('Failed to fetch data payload');
         return res.json();
@@ -189,7 +189,7 @@ export function ResultsInspector({ filename, onBack, onDeleted }: ResultsInspect
     setIsDeleting(true);
     setDeleteError(null);
     try {
-      const res = await fetch(`http://localhost:3000/api/results/${filename}`, {
+      const res = await fetch(`/api/results/${filename}`, {
         method: 'DELETE',
       });
       if (!res.ok) {
@@ -208,7 +208,7 @@ export function ResultsInspector({ filename, onBack, onDeleted }: ResultsInspect
 
   const handleDownload = async () => {
     try {
-      const res = await fetch(`http://localhost:3000/api/results/${filename}`);
+      const res = await fetch(`/api/results/${filename}`);
       if (!res.ok) throw new Error('Download failed');
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
@@ -304,7 +304,7 @@ export function ResultsInspector({ filename, onBack, onDeleted }: ResultsInspect
             <button
               type="button"
               className="text-brand-muted hover:text-brand-accent transition-colors flex items-center justify-center hover:scale-110 transform"
-              onClick={() => window.open(`http://localhost:3000/api/results/${filename}`, '_blank')}
+              onClick={() => window.open(`/api/results/${filename}`, '_blank')}
               title="View Raw JSON"
             >
               <FileJson className="w-5 h-5" />

@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 
-const LOGS_URL = 'http://localhost:3000/api/logs';
+const LOGS_URL = '/api/logs';
 
 /** Kept short enough that a reconnect burst arrives as a few renders, not hundreds. */
 const FLUSH_MS = 100;
