@@ -13,7 +13,7 @@ The HTTP service used by the website and TUI. It starts searches, streams logs a
 
 ## How to get to it (user POV)
 
-Run `is-dl serve`, then use the `/api/*` routes on port 3000. The normal website and TUI call these routes.
+Run `is-dl serve`, then use the `/api/*` routes on its port, 3000 unless `--port` says otherwise. The normal website and TUI call these routes.
 
 ## Driving it with HTTP
 
@@ -35,5 +35,7 @@ The scrape request returns success, SSE changes from active to idle and includes
 - `POST /api/scrape` returns before the search finishes. Observe SSE or poll results.
 - A second active scrape returns HTTP 400.
 - Abort with no active scrape returns HTTP 409.
-- Source names in JSON arrays and comma-separated strings are both accepted.
-- API state is process-global, so one verification launcher owns port 3000.
+- List fields take a JSON array or a comma-separated string. The search keys are the config keys camelCased, plus `excludeSeen`, `excludeApplied` and `excludeUnpaid`. An unknown key or source is HTTP 400 with the reason.
+- The body resolves over the server's config and `IS_DL_*` env, the way `search` flags do.
+- A failed search logs `SCRAPE FAILED: <reason>` on the SSE stream.
+- API state is process-global, so one verification session owns its API.

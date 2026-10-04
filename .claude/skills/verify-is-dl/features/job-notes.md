@@ -36,5 +36,6 @@ $D notes show "$JOB_ID" --source unstop --json >"$EV/note-show.json"
 
 - The source, job id, and note id come from the path. Front matter does not carry identity.
 - `notes add` needs a saved run unless `--source` supplies the board.
+- `notes edit` with no body opens `$EDITOR` only on a TTY. Drive it with `scripts/cli.sh --tty` and a non-interactive `EDITOR`, as SKILL.md shows.
 - Attachment names are sanitized rather than rejected.
 - Note ids and job ids accept only `[A-Za-z0-9._-]` because they become path segments.

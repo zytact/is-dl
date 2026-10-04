@@ -11,8 +11,8 @@ session="$run/session.env"
 profile="$run/browser-profile"
 downloads="$run/downloads"
 evidence_root="$repo/.local/verify-evidence/is-dl"
-api_port=3000
-web_port=5173
+api_port=""
+web_port=""
 api_pid=""
 web_pid=""
 browser_pid=""
@@ -44,13 +44,6 @@ if [[ -f "$session" ]]; then
   exit 2
 fi
 
-for port in "$api_port" "$web_port"; do
-  if lsof -nP -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null | grep -q .; then
-    echo "Port $port already has a listener. Stop it before verification." >&2
-    exit 2
-  fi
-done
-
 command -v vp >/dev/null 2>&1 || { echo "Vite+ is required." >&2; exit 4; }
 command -v tmux >/dev/null 2>&1 || { echo "tmux is required for the TUI." >&2; exit 4; }
 
@@ -68,6 +61,10 @@ fi
 free_port() {
   node -e 'const s=require("node:net").createServer();s.listen(0,"127.0.0.1",()=>{process.stdout.write(String(s.address().port));s.close()})'
 }
+# Free ports rather than 3000 and 5173, so a session runs next to the developer's
+# own servers and next to sessions in other worktrees.
+api_port="$(free_port)"
+web_port="$(free_port)"
 cdp_port="$(free_port)"
 
 cd "$repo"
@@ -118,7 +115,8 @@ export XDG_CACHE_HOME="$run/cache"
 setsid "$bin" serve --host 127.0.0.1 --port "$api_port" >"$run/api.log" 2>&1 &
 api_pid=$!
 
-setsid bash -c '
+# The website calls /api on its own origin, and preview forwards it to this API.
+IS_DL_API_URL="http://127.0.0.1:$api_port" setsid bash -c '
   cd "$1/apps/web"
   exec node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port "$2" --strictPort
 ' _ "$repo" "$web_port" >"$run/web.log" 2>&1 &

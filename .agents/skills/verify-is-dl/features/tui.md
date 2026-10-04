@@ -42,7 +42,7 @@ The first capture shows the SCRAPE form. RESULTS displays a run also returned by
 ## Gotchas
 
 - `tui.sh send` types literal text. `tui.sh key` sends one tmux key such as `Tab`, `BTab`, `Space`, or `Enter`.
-- The TUI hard-codes API port 3000.
+- The TUI talks to `--api`, else `IS_DL_API_URL`, else `http://localhost:3000`. `tui.sh` passes the session's API.
 - Starting a search moves to LOGS automatically.
 - Export writes `results-export.zip` to `$IS_DL_VERIFY_DIR/tui-work/` because that is the TUI working directory.
 - Key `q` exits the whole app from any screen. Use `b` or `Escape` to leave detail views.
