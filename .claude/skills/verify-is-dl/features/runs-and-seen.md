@@ -13,7 +13,7 @@ Saved searches become immutable run JSON files with an index. A derived seen led
 
 ## How to get to it (user POV)
 
-Run a search without `--out`, then use `is-dl runs list` or `is-dl runs show latest`. Add `--exclude-seen` to a later search when only new listings matter.
+Run a search with the default output setting, then use `is-dl runs list` or `is-dl runs show latest`. Add `--exclude-seen` to a later search when only new listings matter.
 
 ## Driving it with the CLI harness
 
@@ -32,7 +32,8 @@ The run id and count in `runs.json` match `search.json`. `latest.json` contains 
 
 ## Gotchas
 
-- Removing a run can change a rebuilt seen ledger because the run store is authoritative.
+- Removing a run leaves the existing seen ledger intact. A missing ledger is rebuilt on the next saved or `--exclude-seen` search using only remaining runs.
+- Config, profiles, or `IS_DL_OUT_DIR` can override the default output even without `--out`.
 - A null job id cannot be tracked and may resurface.
 - Runs written through `--out <dir>` and `--out -` never enter the ledger.
 - Two boards can use the same numeric id. Compare `source:jobId`, not the id alone.

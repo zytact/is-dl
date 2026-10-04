@@ -16,9 +16,11 @@ Search for a job, copy its job id, then run `is-dl apps add <jobId>`. Update it 
 
 ## Driving it with the CLI harness
 
+Use the launched session, `$EV`, and a nonempty saved Unstop search from the search recipe.
+
 ```bash
 D=.agents/skills/verify-is-dl/scripts/drive.sh
-JOB_ID="$(node -e 'const v=require(process.argv[1]); process.stdout.write(v.jobs[0].jobId)' "$EV/search.json")"
+JOB_ID="$(node -e 'const v=JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf8")); process.stdout.write(v.jobs[0].jobId)' "$EV/search.json")"
 
 $D apps add "$JOB_ID" --source unstop --variant default --json >"$EV/apps-add.json"
 $D apps status "$JOB_ID" interview --source unstop --json >"$EV/apps-status.json"

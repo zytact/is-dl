@@ -33,6 +33,7 @@ Initialization creates `preamble.tex`, `resume.yaml`, and `variants.yaml` inside
 ## Gotchas
 
 - `resume check` needs no Tectonic. A PDF build needs both `tectonic` and `pdftotext`.
+- A fresh isolated Tectonic cache needs network access to download its resource bundle. First builds can take longer; an existing resource cache can be copied into the isolated cache without changing the host cache.
 - The pipeline selects existing prose. It never writes or rewrites resume sentences.
 - Invalid inline markup fails while loading YAML.
 - The `.tex`, `.log` and overflow probes land in `<variant>/.build/`. Preserve them when diagnosing a failure.
