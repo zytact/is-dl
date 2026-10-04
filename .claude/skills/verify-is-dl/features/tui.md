@@ -33,7 +33,7 @@ $T key b
 $T stop
 ```
 
-For a TUI-originated Unstop search, start on SCRAPE, send the keywords, Tab to Sources, toggle LinkedIn off with Space, continue to `[ START SCAN ]`, and press Enter. Capture the form before submission, active LOGS, completed LOGS, and RESULTS.
+For a TUI-originated Unstop search, start on SCRAPE, send the keywords, use Down through the fields to Sources, toggle LinkedIn off with Space, continue with Down to `[ START SCAN ]`, and press Enter. Tab changes screens rather than moving between form fields. Capture the form before submission, active LOGS, completed LOGS, and RESULTS.
 
 ### Proof
 

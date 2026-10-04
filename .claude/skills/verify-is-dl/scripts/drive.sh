@@ -12,4 +12,9 @@ fi
 # shellcheck disable=SC1090
 . "$session_file"
 
+if [[ "${1:-}" == "--tty" ]]; then
+  shift
+  exec python3 -c 'import os, pty, sys; sys.exit(os.waitstatus_to_exitcode(pty.spawn(sys.argv[1:])))' "$IS_DL_VERIFY_BIN" "$@"
+fi
+
 exec "$IS_DL_VERIFY_BIN" "$@"

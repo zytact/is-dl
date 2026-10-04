@@ -19,7 +19,7 @@ A change that only the CLI can show needs no session. Skip launch and run the wo
 C=.agents/skills/verify-is-dl/scripts/cli.sh
 
 $C notes list --json
-EDITOR='sed -i s/old/new/' $C --tty notes edit 4055 <noteId> --source unstop
+VISUAL='' EDITOR='sed -i s/old/new/' $C --tty notes edit 4055 --note <noteId> --source unstop
 $C --reset
 ```
 
@@ -33,8 +33,8 @@ $C --reset
 
 The launcher:
 
-- runs `vp run build` for the CLI, API, website, and TUI, then packs the CLI again so `dist` is
-  this working tree rather than whatever the task cache replayed
+- runs `vp run --no-cache build` for the CLI, API, website, and TUI, so every build
+  comes from this working tree and has fresh timestamps for doctor
 - creates the disposable XDG config, data and cache roots under `.local/verify-is-dl/`
 - points the XDG state root at `.local/verify-is-dl-login/state`, which persists
 - starts the packed API on a free port
@@ -70,7 +70,9 @@ LinkedIn needs a stored session. It is a one-time human step, and it does not ne
 .agents/skills/verify-is-dl/scripts/login.sh
 ```
 
-It needs a TTY and opens a real Chromium window. The session lands in `.local/verify-is-dl-login/state/is-dl/storageState.json`, and every later `launch.sh` reuses it, so a LinkedIn proof after the first one costs no login. LinkedIn expires the cookie eventually; run `login.sh` again when a search exits 3.
+Run it in a TTY. With no session file, it opens Chromium for a person to sign in. The session lands in `.local/verify-is-dl-login/state/is-dl/storageState.json`, which every later `launch.sh` reuses.
+
+An existing session file makes login return without opening a browser. To replace expired cookies, run `login.sh logout`, then `login.sh` again in a TTY. Expired cookies can cause a search timeout rather than exit 3.
 
 `scripts/login.sh logout` drops the stored session, and `IS_DL_VERIFY_LOGIN_DIR=<dir>` points at a different one, which is how you keep a second account. The launcher prints whether it found a session, and `doctor.sh` ends with the same note.
 
@@ -98,7 +100,9 @@ $D search -k software --source unstop --unstop-roles software-development --limi
 $D runs show latest --json
 ```
 
-Pass `--json` whenever supported and parse stdout only. Preserve exit codes before piping. Exit 0 can include a failed source, so inspect `meta.sources[]`. LinkedIn-only exit 3 needs one `scripts/login.sh` in a TTY, which later runs reuse. Exit 4 needs `vp exec playwright install chromium` followed by a fresh launch. It installs into the host registry the harness pins, so one install serves every run.
+Pass `--json` whenever supported and parse stdout only. Preserve exit codes before piping. Exit 0 can include a failed source, so inspect `meta.sources[]`. LinkedIn-only exit 3 needs one `scripts/login.sh` in a TTY, which later runs reuse. Exit 4 names a missing dependency. For Chromium, run `vp exec playwright install chromium` followed by a fresh launch. Resume builds can instead need Tectonic or pdftotext.
+
+`drive.sh --tty <args>` runs in a pseudo-terminal while keeping the full session's state. Use it for a note created through this session, with a non-interactive `EDITOR` and `VISUAL=''`. Python 3 is required for `--tty`; stdout and stderr arrive merged on stdout.
 
 ### Website
 
@@ -186,13 +190,13 @@ Run cleanup after failed attempts. If launch failed before writing `session.env`
 
 ## Helpers
 
-| Script                | Purpose                                                      |
-| --------------------- | ------------------------------------------------------------ |
-| `scripts/cli.sh`      | Run this tree's CLI with isolated state and no session       |
-| `scripts/launch.sh`   | Build every app and start isolated API, website, and browser |
-| `scripts/login.sh`    | Store one LinkedIn session that survives cleanup             |
-| `scripts/doctor.sh`   | Check builds, isolation, processes, ports, API, and browser  |
-| `scripts/drive.sh`    | Run the packed CLI inside the isolated session               |
-| `scripts/browser.mjs` | Drive and capture the dedicated Chromium over CDP            |
-| `scripts/tui.sh`      | Start, drive, capture, and stop the TUI tmux session         |
-| `scripts/cleanup.sh`  | Stop owned processes, remove scratch state, keep evidence    |
+| Script                | Purpose                                                        |
+| --------------------- | -------------------------------------------------------------- |
+| `scripts/cli.sh`      | Run this tree's CLI with isolated state and no session         |
+| `scripts/launch.sh`   | Build every app and start isolated API, website, and browser   |
+| `scripts/login.sh`    | Store one LinkedIn session that survives cleanup               |
+| `scripts/doctor.sh`   | Check builds, isolation, processes, ports, API, and browser    |
+| `scripts/drive.sh`    | Run the packed CLI inside the session, optionally with `--tty` |
+| `scripts/browser.mjs` | Drive and capture the dedicated Chromium over CDP              |
+| `scripts/tui.sh`      | Start, drive, capture, and stop the TUI tmux session           |
+| `scripts/cleanup.sh`  | Stop owned processes, remove scratch state, keep evidence      |
