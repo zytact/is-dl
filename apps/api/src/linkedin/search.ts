@@ -1,12 +1,12 @@
-import type { Page } from 'playwright';
+import { errors, type Page } from 'playwright';
 import { CliError } from '../errors.ts';
 import { type ScrapeContext, debugShot } from './context.ts';
 import { descriptionSelector, linkedinJobId } from './job.ts';
 
 /** LinkedIn keys every card with the job id, which is also how `cardJobId` reads it. */
-const JOB_CARD_SELECTOR = 'div[role="button"][componentkey^="job-card-component-ref-"]';
-
 const CARD_KEY_PREFIX = 'job-card-component-ref-';
+
+const JOB_CARD_SELECTOR = `div[role="button"][componentkey^="${CARD_KEY_PREFIX}"]`;
 
 const NEXT_PAGE_SELECTOR = '[data-testid="pagination-controls-next-button-visible"]';
 
@@ -38,8 +38,9 @@ export async function getJobCardIds(page: Page, ctx: ScrapeContext): Promise<(st
       .or(page.getByText('No results found'))
       .first()
       .waitFor({ timeout: READY_TIMEOUT_MS })
-      .catch(() => {
-        throw layoutChanged('job list', JOB_CARD_SELECTOR);
+      .catch((error: unknown) => {
+        if (!(error instanceof errors.TimeoutError)) throw error;
+        throw new CliError('ERROR', layoutChanged('job list', JOB_CARD_SELECTOR));
       });
 
     const jobCards = await page.$$(JOB_CARD_SELECTOR);
@@ -67,11 +68,8 @@ async function cardJobId(card: JobCard): Promise<string | null> {
 }
 
 /** A hook that never appears means LinkedIn moved its markup, not that the search failed. */
-function layoutChanged(name: string, selector: string): CliError {
-  return new CliError(
-    'ERROR',
-    `LinkedIn's ${name} did not appear within ${READY_TIMEOUT_MS / 1000}s (selector: ${selector}). LinkedIn may have changed its page layout.`,
-  );
+function layoutChanged(name: string, selector: string): string {
+  return `LinkedIn's ${name} did not appear within ${READY_TIMEOUT_MS / 1000}s (selector: ${selector}). LinkedIn may have changed its page layout.`;
 }
 
 /**
@@ -116,12 +114,11 @@ async function waitForJobDetails(
   }
 
   // The description loads last, so it is the sign the pane is complete.
-  const shown = linkedinJobId(page.url()) ?? '';
-  await page
-    .waitForSelector(descriptionSelector(shown), { timeout: READY_TIMEOUT_MS })
-    .catch(() => {
-      if (ctx.debug) ctx.onLog('Job description never appeared in the detail pane');
-    });
+  const description = descriptionSelector(linkedinJobId(page.url()) ?? '');
+  await page.waitForSelector(description, { timeout: READY_TIMEOUT_MS }).catch((error: unknown) => {
+    if (!(error instanceof errors.TimeoutError)) throw error;
+    ctx.onLog(layoutChanged('job description', description));
+  });
 }
 
 export async function clickJobCard(
