@@ -1,39 +1,30 @@
-Job title
-#ember114 > span:nth-child(1) > strong
-#ember124 > span:nth-child(1) > strong
+LinkedIn hashes its class names, so every hook below is an attribute, an id-keyed
+element or a link. <id> is the job id, which the search URL carries as currentJobId.
 
-Job description
-#job-details > div > p
-
-Job location
-#main > div > div.scaffold-layout__list-detail-inner.scaffold-layout__list-detail-inner--grow > div.scaffold-layout__detail.overflow-x-hidden.jobs-search__job-details > div > div.jobs-search__job-details--container > div > div.job-view-layout.jobs-details > div:nth-child(1) > div > div:nth-child(1) > div > div.relative.job-details-jobs-unified-top-card__container--two-pane > div > div.job-details-jobs-unified-top-card__primary-description-container > div > span > span:nth-child(1)
-
-Company name
-#main > div > div.scaffold-layout__list-detail-inner.scaffold-layout__list-detail-inner--grow > div.scaffold-layout__detail.overflow-x-hidden.jobs-search__job-details > div > div.jobs-search__job-details--container > div > div.job-view-layout.jobs-details > div:nth-child(1) > div > div:nth-child(1) > div > div.relative.job-details-jobs-unified-top-card__container--two-pane > div > div.display-flex.align-items-center > div.display-flex.align-items-center.flex-1 > div > a
-
-Job Type
-#main > div > div.scaffold-layout__list-detail-inner.scaffold-layout__list-detail-inner--grow > div.scaffold-layout__detail.overflow-x-hidden.jobs-search__job-details > div > div.jobs-search__job-details--container > div > div.job-view-layout.jobs-details > div:nth-child(1) > div > div:nth-child(1) > div > div.relative.job-details-jobs-unified-top-card__container--two-pane > div > div.job-details-fit-level-preferences
-
-Job Apply URL
-#jobs-apply-button-id
-
-UL of Job postings
-#main > div > div.scaffold-layout__list-detail-inner.scaffold-layout__list-detail-inner--grow > div.scaffold-layout__list > div > ul
-
-Individual Job card
-#ember182 (the id varies depending on the job posting)
-
-Posted how long ago
-#main > div > div.scaffold-layout__list-detail-inner.scaffold-layout__list-detail-inner--grow > div.scaffold-layout__detail.overflow-x-hidden.jobs-search__job-details > div > div.jobs-search__job-details--container > div > div.job-view-layout.jobs-details > div:nth-child(1) > div > div:nth-child(1) > div > div.relative.job-details-jobs-unified-top-card__container--two-pane > div > div.job-details-jobs-unified-top-card__primary-description-container > div > span > span.tvm__text.tvm__text--positive > strong > span
-
-Job details preference
-#main > div > div.scaffold-layout__list-detail-inner.scaffold-layout__list-detail-inner--grow > div.scaffold-layout__detail.overflow-x-hidden.jobs-search__job-details > div > div.jobs-search__job-details--container > div > div.job-view-layout.jobs-details > div:nth-child(1) > div > div:nth-child(1) > div > div.relative.job-details-jobs-unified-top-card__container--two-pane > div > div.job-details-fit-level-preferences
-
-Alumini numbers (if exists)
-#ember138 > div > div > div:nth-child(1) > div.job-card-list__insight > div > div.job-card-container__job-insight-text
-
-No. of pages
-#jobs-search-results-footer > div.jobs-search-pagination.jobs-search-results-list__pagination.p4 > p
+Job card
+div[role="button"][componentkey^="job-card-component-ref-"]  (the key ends in the job id)
 
 Next page
-#ember199
+[data-testid="pagination-controls-next-button-visible"]
+
+Job title (detail pane)
+a[href*="/jobs/view/<id>/"]
+
+Top card (detail pane)
+the title's nearest ancestor that contains [aria-label^="Company, "]
+
+Company name and URL
+[aria-label^="Company, "] a[href*="/company/"]
+
+Location and posted time
+the first <p> in the top card containing " · ", for example "India · 12 hours ago · 79 people clicked apply"
+
+Job type, workplace and pay pills
+non-empty a[href*="currentJobId=<id>"] links that follow the title
+
+Job description
+#JobDetails_AboutTheJob_<id> [data-testid="expandable-text-box"]
+
+Search filters
+Location, remote, experience level and job type are read from the query text.
+Only f_TPR (posted within) and start (paging) still work as URL parameters.

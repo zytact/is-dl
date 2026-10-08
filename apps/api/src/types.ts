@@ -160,9 +160,10 @@ export interface SearchQuery {
 }
 
 /**
- * Playwright, a stored session and the search-URL filters, all needed by
- * LinkedIn and nothing else. `experienceLevel`, `postedWithin` and `jobType`
- * are LinkedIn's own taxonomy and become `f_E`, `f_TPR` and `f_JT`.
+ * Playwright, a stored session and the search filters, all needed by LinkedIn
+ * and nothing else. `experienceLevel`, `postedWithin` and `jobType` are
+ * LinkedIn's own taxonomy. `postedWithin` becomes `f_TPR`, the other two
+ * become phrases in the query text.
  */
 export interface LinkedInOptions {
   debug?: boolean;

@@ -245,6 +245,7 @@ Going through LinkedIn is a mess. It is filled with trash posts and wastes time.
 - Rate limiting is built-in (1-3 second delay between job extractions)
 - The scraper uses Playwright with Chromium for reliable extraction
 - Location can be flexible: "Remote", "United States", "San Francisco, CA", etc.
+- LinkedIn reads location, remote, experience level and job type from the query text, so is-dl appends them to your keywords, for example `software engineer, internship, remote, in India`. LinkedIn interprets that text itself, and a search with no location uses the account's last searched location.
 - CORS is enabled for all API endpoints
 
 Built with [Vite+](https://viteplus.dev/) and [pnpm](https://pnpm.io/).

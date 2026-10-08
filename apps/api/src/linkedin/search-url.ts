@@ -1,83 +1,51 @@
 import type { LinkedInOptions, SearchQuery } from '../types.ts';
 
-function filterCodes(values: string[], codes: Record<string, string>): string[] {
-  return values
-    .map((value) => codes[value.trim().toLowerCase()])
-    .filter((code): code is string => code !== undefined);
+const EXPERIENCE_LEVELS = [
+  'internship',
+  'entry level',
+  'associate',
+  'mid-senior level',
+  'director',
+  'executive',
+];
+
+const JOB_TYPES = ['full-time', 'part-time', 'contract', 'temporary', 'volunteer', 'internship'];
+
+const POSTED_WITHIN: Record<string, string> = {
+  'past 24 hours': 'r86400',
+  'past week': 'r604800',
+  'past month': 'r2592000',
+};
+
+function knownFilters(values: string[] | undefined, names: string[]): string[] {
+  return (values ?? [])
+    .map((value) => value.trim().toLowerCase())
+    .filter((value) => names.includes(value));
+}
+
+/**
+ * LinkedIn's search reads location, workplace, experience level and job type
+ * from the query text and drops the old `location`, `f_WT`, `f_E`, `f_JT` and
+ * `sortBy` parameters, so the filters become phrases. Without a location in
+ * the text it falls back to the account's last searched location.
+ */
+export function searchKeywords(query: SearchQuery, options: LinkedInOptions): string {
+  const phrases = new Set([
+    query.keywords.trim(),
+    ...knownFilters(options.experienceLevel, EXPERIENCE_LEVELS),
+    ...knownFilters(options.jobType, JOB_TYPES),
+  ]);
+  if (query.remoteOnly) phrases.add('remote');
+  if (query.location.trim()) phrases.add(`in ${query.location.trim()}`);
+  phrases.delete('');
+  return [...phrases].join(', ');
 }
 
 export function buildSearchUrl(query: SearchQuery, options: LinkedInOptions): string {
-  const baseUrl = 'https://www.linkedin.com/jobs/search/';
-  const params = new URLSearchParams();
+  const params = new URLSearchParams({ keywords: searchKeywords(query, options) });
 
-  // Keywords
-  if (query.keywords) {
-    params.set('keywords', query.keywords);
-  }
+  const posted = POSTED_WITHIN[options.postedWithin?.trim().toLowerCase() ?? ''];
+  if (posted) params.set('f_TPR', posted);
 
-  // Location (can be remote, country, city, etc.)
-  if (query.location) {
-    params.set('location', query.location);
-  }
-
-  // Filter: Remote only
-  if (query.remoteOnly) {
-    params.set('f_WT', '2'); // 2 = Remote
-  }
-
-  // Filter: Experience level
-  if (options.experienceLevel && options.experienceLevel.length > 0) {
-    const experienceLevelMap: Record<string, string> = {
-      internship: '1',
-      'entry level': '2',
-      associate: '3',
-      'mid-senior level': '4',
-      director: '5',
-      executive: '6',
-    };
-
-    const codes = filterCodes(options.experienceLevel, experienceLevelMap);
-
-    if (codes.length > 0) {
-      params.set('f_E', codes.join(','));
-    }
-  }
-
-  // Filter: Job type
-  if (options.jobType && options.jobType.length > 0) {
-    const jobTypeMap: Record<string, string> = {
-      'full-time': 'F',
-      'part-time': 'P',
-      contract: 'C',
-      temporary: 'T',
-      volunteer: 'V',
-      internship: 'I',
-      other: 'O',
-    };
-
-    const codes = filterCodes(options.jobType, jobTypeMap);
-
-    if (codes.length > 0) {
-      params.set('f_JT', codes.join(','));
-    }
-  }
-
-  // Filter: Posted within
-  if (options.postedWithin) {
-    const postedWithinMap: Record<string, string> = {
-      'past 24 hours': 'r86400',
-      'past week': 'r604800',
-      'past month': 'r2592000',
-    };
-
-    const code = postedWithinMap[options.postedWithin.trim().toLowerCase()];
-    if (code) {
-      params.set('f_TPR', code);
-    }
-  }
-
-  // Sort by most recent
-  params.set('sortBy', 'DD');
-
-  return `${baseUrl}?${params.toString()}`;
+  return `https://www.linkedin.com/jobs/search-results/?${params.toString()}`;
 }
