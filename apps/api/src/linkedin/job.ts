@@ -1,4 +1,4 @@
-import type { Page } from 'playwright';
+import type { Locator, Page } from 'playwright';
 import { type ScrapeContext, debugShot } from './context.ts';
 import { detectAiAgentSignals, emptyAiAgentSignals } from '../ai-agent-detector.ts';
 import { detectLocationConflict } from '../location-conflict.ts';
@@ -6,18 +6,23 @@ import { classifyPay, emptyPay } from '../pay.ts';
 import { parsePostedTime } from '../normalize.ts';
 import type { JobListing } from '../types.ts';
 
-// Selectors from selectors.txt
-const SELECTORS = {
-  description: '#job-details > div > p',
-  location:
-    '#main > div > div.scaffold-layout__list-detail-inner.scaffold-layout__list-detail-inner--grow > div.scaffold-layout__detail.overflow-x-hidden.jobs-search__job-details > div > div.jobs-search__job-details--container > div > div.job-view-layout.jobs-details > div:nth-child(1) > div > div:nth-child(1) > div > div.relative.job-details-jobs-unified-top-card__container--two-pane > div > div.job-details-jobs-unified-top-card__primary-description-container > div > span > span:nth-child(1)',
-  companyName:
-    '#main > div > div.scaffold-layout__list-detail-inner.scaffold-layout__list-detail-inner--grow > div.scaffold-layout__detail.overflow-x-hidden.jobs-search__job-details > div > div.jobs-search__job-details--container > div > div.job-view-layout.jobs-details > div:nth-child(1) > div > div:nth-child(1) > div > div.relative.job-details-jobs-unified-top-card__container--two-pane > div > div.display-flex.align-items-center > div.display-flex.align-items-center.flex-1 > div > a',
-  jobType:
-    '#main > div > div.scaffold-layout__list-detail-inner.scaffold-layout__list-detail-inner--grow > div.scaffold-layout__detail.overflow-x-hidden.jobs-search__job-details > div > div.jobs-search__job-details--container > div > div.job-view-layout.jobs-details > div:nth-child(1) > div > div:nth-child(1) > div > div.relative.job-details-jobs-unified-top-card__container--two-pane > div > div.job-details-fit-level-preferences',
-  postedAgo:
-    '#main > div > div.scaffold-layout__list-detail-inner.scaffold-layout__list-detail-inner--grow > div.scaffold-layout__detail.overflow-x-hidden.jobs-search__job-details > div > div.jobs-search__job-details--container > div > div.job-view-layout.jobs-details > div:nth-child(1) > div > div:nth-child(1) > div > div.relative.job-details-jobs-unified-top-card__container--two-pane > div > div.job-details-jobs-unified-top-card__primary-description-container > div > span > span.tvm__text.tvm__text--positive > strong > span',
-};
+/**
+ * The detail pane has no stable class names, so every hook hangs off the job
+ * id: the title links to `/jobs/view/<id>/`, the description sits in an
+ * id-keyed section, and the top card is the title's nearest ancestor that also
+ * holds the company. `apps/api/linkedin-job-selectors.txt` lists every hook.
+ */
+const titleSelector = (jobId: string) => `a[href*="/jobs/view/${jobId}/"]`;
+
+export const descriptionSelector = (jobId: string) =>
+  `#JobDetails_AboutTheJob_${jobId} [data-testid="expandable-text-box"]`;
+
+const COMPANY_SELECTOR = '[aria-label^="Company, "]';
+
+const TOP_CARD_XPATH = `xpath=ancestor::*[.//*[starts-with(@aria-label, "Company, ")]][1]`;
+
+/** Everything here reads a pane that has already loaded, so a miss should cost little. */
+const READ_TIMEOUT_MS = 1000;
 
 /** The job the detail pane is showing, which LinkedIn keeps in the URL. */
 export function linkedinJobId(currentUrl: string): string | null {
@@ -29,6 +34,21 @@ export function linkedinJobUrl(currentUrl: string): string {
   return jobId ? `https://www.linkedin.com/jobs/view/${jobId}/` : currentUrl;
 }
 
+/** The line under the title, such as "India · 12 hours ago · 79 people clicked apply". */
+export function parseTopCardMeta(text: string | null): {
+  locationText: string | null;
+  postedAtText: string | null;
+} {
+  const parts = (text ?? '')
+    .split('·')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return {
+    locationText: parts[0] ?? null,
+    postedAtText: parts.find((part) => /\bago$/i.test(part)) ?? null,
+  };
+}
+
 export async function extractJobDetailsFromView(
   page: Page,
   jobIndex: number,
@@ -38,87 +58,58 @@ export async function extractJobDetailsFromView(
     ctx.onLog(`Extracting details for job ${jobIndex + 1}...`);
   }
 
+  const currentUrl = page.url();
+  const jobId = linkedinJobId(currentUrl);
+
   try {
-    // Get current URL to extract job ID
-    const currentUrl = page.url();
-    const jobId = linkedinJobId(currentUrl);
+    const title = page.locator(titleSelector(jobId ?? '')).first();
+    const topCard = title.locator(TOP_CARD_XPATH);
+    const companyLink = topCard.locator(COMPANY_SELECTOR).locator('a[href*="/company/"]').first();
 
-    // Extract title - try to find the job title
-    const title = await extractText(page, '.job-details-jobs-unified-top-card__job-title', ctx);
+    const companyName = await readText(companyLink, ctx);
+    const companyUrl = companyName
+      ? await companyLink.getAttribute('href', { timeout: READ_TIMEOUT_MS })
+      : null;
 
-    // Extract company name and URL
-    const companyNameElement = await page.$(SELECTORS.companyName);
-    const companyName = companyNameElement ? await companyNameElement.textContent() : null;
-    const companyUrl = companyNameElement ? await companyNameElement.getAttribute('href') : null;
+    const { locationText, postedAtText } = parseTopCardMeta(
+      await readText(topCard.locator('p').filter({ hasText: '·' }).first(), ctx),
+    );
 
-    // Extract location
-    const locationText = await extractText(page, SELECTORS.location, ctx);
+    // The pills after the title, such as pay, workplace and employment type,
+    // are its first non-empty links back to this job.
+    const pills = await title
+      .locator(`xpath=following::a[contains(@href, "currentJobId=${jobId}")]`)
+      .allInnerTexts()
+      .catch(() => []);
+    const jobType =
+      pills
+        .map((pill) => pill.trim())
+        .filter(Boolean)
+        .join(' · ') || null;
 
-    // Extract posted time
-    let postedAtText = await extractText(page, SELECTORS.postedAgo, ctx);
+    const descriptionText = await readText(
+      page.locator(descriptionSelector(jobId ?? '')).first(),
+      ctx,
+    );
+    const titleText = await readText(title, ctx);
 
-    // Fallback: try other selectors
-    if (!postedAtText) {
-      postedAtText = await extractPostedTime(page, ctx);
-    }
-
-    const postedAtIso = postedAtText ? parsePostedTime(postedAtText) : null;
-
-    // Extract job type/preferences
-    const jobType = await extractText(page, SELECTORS.jobType, ctx);
-
-    // Extract alumni count (if exists)
-    const alumniCount = await extractAlumniCount(page, ctx);
-
-    // Extract job description
-    let descriptionText = await extractText(page, SELECTORS.description, ctx);
-
-    // Fallback: try alternative description selector
-    if (!descriptionText) {
-      descriptionText = await extractText(page, '.jobs-description__content', ctx);
-    }
-
-    // Try to expand description if "Show more" button exists
-    try {
-      const showMoreButton = await page.$(
-        'button[aria-label="Show more, visually expands previously read content above"]',
-      );
-      if (showMoreButton) {
-        await showMoreButton.click();
-        await page.waitForTimeout(500);
-        // Re-extract description after expanding
-        descriptionText = await extractText(page, SELECTORS.description, ctx);
-        if (!descriptionText) {
-          descriptionText = await extractText(page, '.jobs-description__content', ctx);
-        }
-      }
-    } catch {
-      // Button might not exist or already expanded
-    }
-
-    // Extract requirements (heuristic from description)
     const requirementsText = extractRequirements(descriptionText, ctx);
-    const aiAgentSignals = detectAiAgentSignals({
-      title,
-      requirementsText,
-      descriptionText,
-    });
 
     return {
       source: 'linkedin',
       jobId,
       jobUrl: linkedinJobUrl(currentUrl),
-      title: title?.trim() || null,
-      companyName: companyName?.trim() || null,
+      title: titleText,
+      companyName,
       companyUrl,
-      locationText: locationText?.trim() || null,
+      locationText,
       postedAtText,
-      postedAtIso,
-      jobType: jobType?.trim() || null,
-      alumniCount,
-      descriptionText: descriptionText?.trim() || null,
+      postedAtIso: postedAtText ? parsePostedTime(postedAtText) : null,
+      jobType,
+      alumniCount: await readText(page.getByText(/alumni work here/i).first(), ctx),
+      descriptionText,
       requirementsText,
-      aiAgentSignals,
+      aiAgentSignals: detectAiAgentSignals({ title: titleText, requirementsText, descriptionText }),
       pay: classifyPay({ descriptionText, requirementsText }),
       locationConflict: detectLocationConflict({
         jobType,
@@ -133,12 +124,10 @@ export async function extractJobDetailsFromView(
       await debugShot(ctx, page, `debug-job-error-${jobIndex}.png`);
     }
 
-    const currentUrl = page.url();
-
     // Return partial data on error
     return {
       source: 'linkedin',
-      jobId: linkedinJobId(currentUrl),
+      jobId,
       jobUrl: linkedinJobUrl(currentUrl),
       title: null,
       companyName: null,
@@ -157,71 +146,14 @@ export async function extractJobDetailsFromView(
   }
 }
 
-async function extractText(
-  page: Page,
-  selector: string,
-  ctx: ScrapeContext,
-): Promise<string | null> {
+/** The visible text of the first match, or null when there is none. */
+async function readText(locator: Locator, ctx: ScrapeContext): Promise<string | null> {
   try {
-    const element = await page.$(selector);
-    if (!element) return null;
-
-    const text = await element.textContent();
-    return text?.trim() || null;
+    if ((await locator.count()) === 0) return null;
+    const text = await locator.innerText({ timeout: READ_TIMEOUT_MS });
+    return text.trim() || null;
   } catch (error) {
-    if (ctx.debug) {
-      ctx.onLog(`Error extracting text for selector ${selector}:: ${String(error)}`);
-    }
-    return null;
-  }
-}
-
-async function extractPostedTime(page: Page, ctx: ScrapeContext): Promise<string | null> {
-  try {
-    // Try multiple selectors for posted time
-    const selectors = [
-      '.job-details-jobs-unified-top-card__posted-date',
-      '.jobs-unified-top-card__posted-date',
-      '[class*="posted"]',
-    ];
-
-    for (const selector of selectors) {
-      const text = await extractText(page, selector, ctx);
-      if (text?.includes('ago')) {
-        return text;
-      }
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-async function extractAlumniCount(page: Page, ctx: ScrapeContext): Promise<string | null> {
-  try {
-    // Look for alumni information - try multiple patterns
-    const selectors = [
-      '.job-card-container__job-insight-text',
-      '[class*="alumni"]',
-      '[class*="insight"]',
-    ];
-
-    for (const selector of selectors) {
-      const elements = await page.$$(selector);
-      for (const element of elements) {
-        const text = await element.textContent();
-        if (text?.toLowerCase().includes('alumni')) {
-          return text.trim();
-        }
-      }
-    }
-
-    return null;
-  } catch (error) {
-    if (ctx.debug) {
-      ctx.onLog(`Error extracting alumni count: ${String(error)}`);
-    }
+    if (ctx.debug) ctx.onLog(`Error reading ${String(locator)}: ${String(error)}`);
     return null;
   }
 }

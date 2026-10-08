@@ -1,14 +1,14 @@
 import type { Page } from 'playwright';
+import { CliError } from '../errors.ts';
 import { type ScrapeContext, debugShot } from './context.ts';
-import { linkedinJobId } from './job.ts';
+import { descriptionSelector, linkedinJobId } from './job.ts';
 
-const JOB_LIST_SELECTOR =
-  '#main > div > div.scaffold-layout__list-detail-inner.scaffold-layout__list-detail-inner--grow > div.scaffold-layout__list > div > ul';
+/** LinkedIn keys every card with the job id, which is also how `cardJobId` reads it. */
+const JOB_CARD_SELECTOR = 'div[role="button"][componentkey^="job-card-component-ref-"]';
 
-const PAGINATION_INFO_SELECTOR =
-  '#jobs-search-results-footer > div.jobs-search-pagination.jobs-search-results-list__pagination.p4 > p';
+const CARD_KEY_PREFIX = 'job-card-component-ref-';
 
-const JOB_TITLE_SELECTOR = '.job-details-jobs-unified-top-card__job-title';
+const NEXT_PAGE_SELECTOR = '[data-testid="pagination-controls-next-button-visible"]';
 
 /** How long a click or a page turn has to show its result before we give up on it. */
 const READY_TIMEOUT_MS = 15000;
@@ -19,7 +19,7 @@ const POLL_INTERVAL_MS = 100;
  * The job ids of every card on the page, in card order, so the caller can skip
  * a job before paying for the click and the detail fetch.
  *
- * An entry is null when neither attribute is on the card. That is not fatal:
+ * An entry is null when a card has no id in its key. That is not fatal:
  * the caller opens the job and reads the id from the URL as it always has, and
  * only loses the chance to skip it early.
  */
@@ -32,15 +32,17 @@ export async function getJobCardIds(page: Page, ctx: ScrapeContext): Promise<(st
       await debugShot(ctx, page, 'debug-search-page.png');
     }
 
-    // Wait for the job list container
-    await page.waitForSelector(JOB_LIST_SELECTOR, { timeout: 15000 });
+    // An empty search is a valid answer, so it settles the wait as well as a card does.
+    await page
+      .locator(JOB_CARD_SELECTOR)
+      .or(page.getByText('No results found'))
+      .first()
+      .waitFor({ timeout: READY_TIMEOUT_MS })
+      .catch(() => {
+        throw layoutChanged('job list', JOB_CARD_SELECTOR);
+      });
 
-    if (ctx.debug) {
-      ctx.onLog('Found job list container');
-    }
-
-    // Get all job cards (li elements)
-    const jobCards = await page.$$(`${JOB_LIST_SELECTOR} > li`);
+    const jobCards = await page.$$(JOB_CARD_SELECTOR);
     const ids = await Promise.all(jobCards.map((card) => cardJobId(card)));
 
     ctx.onLog(`Found ${jobCards.length} job cards on current page`);
@@ -55,17 +57,21 @@ export async function getJobCardIds(page: Page, ctx: ScrapeContext): Promise<(st
 /** Whatever `page.$$` hands back, without naming DOM types this project has no lib for. */
 type JobCard = Awaited<ReturnType<Page['$$']>>[number];
 
-/** LinkedIn puts the id on the list item, or on the card div inside it. */
 async function cardJobId(card: JobCard): Promise<string | null> {
   try {
-    const own = await card.getAttribute('data-occludable-job-id');
-    if (own?.trim()) return own.trim();
-    const inner = await card.$('[data-job-id]');
-    const nested = await inner?.getAttribute('data-job-id');
-    return nested?.trim() ? nested.trim() : null;
+    const key = await card.getAttribute('componentkey');
+    return key?.startsWith(CARD_KEY_PREFIX) ? key.slice(CARD_KEY_PREFIX.length) || null : null;
   } catch {
     return null;
   }
+}
+
+/** A hook that never appears means LinkedIn moved its markup, not that the search failed. */
+function layoutChanged(name: string, selector: string): CliError {
+  return new CliError(
+    'ERROR',
+    `LinkedIn's ${name} did not appear within ${READY_TIMEOUT_MS / 1000}s (selector: ${selector}). LinkedIn may have changed its page layout.`,
+  );
 }
 
 /**
@@ -109,9 +115,13 @@ async function waitForJobDetails(
     return;
   }
 
-  await page.waitForSelector(JOB_TITLE_SELECTOR, { timeout: READY_TIMEOUT_MS }).catch(() => {
-    if (ctx.debug) ctx.onLog('Job title never appeared in the detail pane');
-  });
+  // The description loads last, so it is the sign the pane is complete.
+  const shown = linkedinJobId(page.url()) ?? '';
+  await page
+    .waitForSelector(descriptionSelector(shown), { timeout: READY_TIMEOUT_MS })
+    .catch(() => {
+      if (ctx.debug) ctx.onLog('Job description never appeared in the detail pane');
+    });
 }
 
 export async function clickJobCard(
@@ -121,7 +131,7 @@ export async function clickJobCard(
   expectedJobId: string | null = null,
 ): Promise<void> {
   try {
-    const jobCards = await page.$$(`${JOB_LIST_SELECTOR} > li`);
+    const jobCards = await page.$$(JOB_CARD_SELECTOR);
     const card = jobCards[index];
 
     if (!card) {
@@ -130,8 +140,6 @@ export async function clickJobCard(
 
     const before = linkedinJobId(page.url());
 
-    // Find and click the job title within the card
-    // The title is in a strong tag, but we need to click the clickable element
     await card.click();
 
     await waitForJobDetails(page, expectedJobId, before, ctx);
@@ -147,39 +155,10 @@ export async function clickJobCard(
   }
 }
 
-export async function getPaginationInfo(
-  page: Page,
-  ctx: ScrapeContext,
-): Promise<{ current: number; total: number } | null> {
-  try {
-    const paginationElement = await page.$(PAGINATION_INFO_SELECTOR);
-    if (!paginationElement) return null;
-
-    const text = await paginationElement.textContent();
-    if (!text) return null;
-
-    // Parse text like "Page 1 of 5" or "1 of 5"
-    const match = text.match(/(\d+)\s+of\s+(\d+)/);
-    if (match?.[1] && match?.[2]) {
-      return {
-        current: Number.parseInt(match[1], 10),
-        total: Number.parseInt(match[2], 10),
-      };
-    }
-
-    return null;
-  } catch (error) {
-    if (ctx.debug) {
-      ctx.onLog(`Error getting pagination info: ${String(error)}`);
-    }
-    return null;
-  }
-}
-
 /** The id of the topmost card, which is what tells one results page from the next. */
 async function firstCardId(page: Page): Promise<string | null> {
   try {
-    const first = await page.$(`${JOB_LIST_SELECTOR} > li`);
+    const first = await page.$(JOB_CARD_SELECTOR);
     return first ? await cardJobId(first) : null;
   } catch {
     return null;
@@ -208,9 +187,8 @@ async function waitForNewResults(
 
 export async function goToNextPage(page: Page, ctx: ScrapeContext): Promise<boolean> {
   try {
-    // Look for next page button - the selector from selectors.txt has dynamic ID
-    // We'll use a more stable selector
-    const nextButton = await page.$('button[aria-label="View next page"]');
+    // LinkedIn swaps in a "-hidden" test id on the last page.
+    const nextButton = await page.$(NEXT_PAGE_SELECTOR);
 
     if (!nextButton) {
       if (ctx.debug) {

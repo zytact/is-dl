@@ -5,7 +5,7 @@ import type { JobListing, LinkedInOptions, SearchQuery } from '../types.ts';
 import { closeBrowser, launchBrowser } from './browser.ts';
 import type { ScrapeContext } from './context.ts';
 import { extractJobDetailsFromView } from './job.ts';
-import { clickJobCard, getJobCardIds, getPaginationInfo, goToNextPage } from './search.ts';
+import { clickJobCard, getJobCardIds, goToNextPage } from './search.ts';
 import { buildSearchUrl } from './search-url.ts';
 
 /** A failing card no longer uses up the limit, so a DOM change needs its own bound. */
@@ -49,13 +49,6 @@ async function scrape(
       await session.page.screenshot({ path: shotPath });
       onLog(`Screenshot saved to ${shotPath}`);
     }
-
-    const paginationInfo = await getPaginationInfo(session.page, ctx);
-    if (paginationInfo) {
-      onLog(`Pagination: Page ${paginationInfo.current} of ${paginationInfo.total}`);
-    }
-
-    checkAbort(signal);
 
     const jobs: JobListing[] = [];
     let currentPage = 1;

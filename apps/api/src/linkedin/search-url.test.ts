@@ -9,31 +9,33 @@ const query: SearchQuery = {
   remoteOnly: true,
 };
 
-function searchParams(options: Partial<LinkedInOptions>): URLSearchParams {
-  const url = buildSearchUrl(query, {
-    sessionFile: 'session.json',
-    debugDir: 'cache',
-    timeout: 30_000,
-    ...options,
-  });
+function searchParams(
+  options: Partial<LinkedInOptions>,
+  overrides: Partial<SearchQuery> = {},
+): URLSearchParams {
+  const url = buildSearchUrl(
+    { ...query, ...overrides },
+    { sessionFile: 'session.json', debugDir: 'cache', timeout: 30_000, ...options },
+  );
   return new URL(url).searchParams;
 }
 
 describe('buildSearchUrl', () => {
-  test('normalizes job type names before applying them', () => {
-    const params = searchParams({ jobType: ['internship', 'FULL-TIME'] });
+  test('writes known filters into the query text and drops unknown ones', () => {
+    const params = searchParams(
+      { experienceLevel: ['Internship', 'guru'], jobType: ['internship', 'FULL-TIME'] },
+      { location: ' Berlin, Germany ' },
+    );
 
-    expect(params.get('f_JT')).toBe('I,F');
-    expect(params.get('f_WT')).toBe('2');
+    expect(params.get('keywords')).toBe(
+      'developer, internship, full-time, remote, in Berlin, Germany',
+    );
   });
 
-  test('keeps job type and experience level as separate filters', () => {
-    const params = searchParams({
-      jobType: ['Internship'],
-      experienceLevel: ['internship'],
-    });
+  test('keeps the posting age as a URL filter', () => {
+    const params = searchParams({ postedWithin: 'Past Week' }, { remoteOnly: false });
 
-    expect(params.get('f_JT')).toBe('I');
-    expect(params.get('f_E')).toBe('1');
+    expect(params.get('keywords')).toBe('developer');
+    expect(params.get('f_TPR')).toBe('r604800');
   });
 });
