@@ -1,25 +1,30 @@
 import type { Locator, Page } from 'playwright';
 import { type ScrapeContext, debugShot } from './context.ts';
-import { detectAiAgentSignals, emptyAiAgentSignals } from '../ai-agent-detector.ts';
+import { detectAiAgentSignals } from '../ai-agent-detector.ts';
 import { detectLocationConflict } from '../location-conflict.ts';
-import { classifyPay, emptyPay } from '../pay.ts';
+import { classifyPay } from '../pay.ts';
 import { parsePostedTime } from '../normalize.ts';
 import type { JobListing } from '../types.ts';
 
 /**
  * The detail pane has no stable class names, so every hook hangs off the job
- * id: the title links to `/jobs/view/<id>/`, the description sits in an
- * id-keyed section, and the top card is the title's nearest ancestor that also
- * holds the company. `apps/api/linkedin-job-selectors.txt` lists every hook.
+ * id or the pane's shape: the title links to `/jobs/view/<id>/`, the
+ * description sits in an id-keyed section, and the top card is the title's
+ * nearest ancestor that holds the company logo and stops short of the
+ * description. `apps/api/linkedin-job-selectors.txt` lists every hook.
  */
 const titleSelector = (jobId: string) => `a[href*="/jobs/view/${jobId}/"]`;
 
+const descriptionSectionId = (jobId: string) => `JobDetails_AboutTheJob_${jobId}`;
+
 export const descriptionSelector = (jobId: string) =>
-  `#JobDetails_AboutTheJob_${jobId} [data-testid="expandable-text-box"]`;
+  `#${descriptionSectionId(jobId)} [data-testid="expandable-text-box"]`;
 
-const COMPANY_SELECTOR = '[aria-label^="Company, "]';
+const topCardXPath = (jobId: string) =>
+  `xpath=ancestor::*[.//figure][1][not(.//*[@id="${descriptionSectionId(jobId)}"])]`;
 
-const TOP_CARD_XPATH = `xpath=ancestor::*[.//*[starts-with(@aria-label, "Company, ")]][1]`;
+/** The name beside the logo, which is a link only when the company has a LinkedIn page. */
+const COMPANY_SELECTOR = 'figure + p';
 
 /** Everything here reads a pane that has already loaded, so a miss should cost little. */
 const READ_TIMEOUT_MS = 1000;
@@ -60,98 +65,89 @@ export async function extractJobDetailsFromView(
 
   const currentUrl = page.url();
   const jobId = linkedinJobId(currentUrl);
+  if (!jobId) throw new Error('The detail pane has no job id in its URL');
 
-  try {
-    const title = page.locator(titleSelector(jobId ?? '')).first();
-    const topCard = title.locator(TOP_CARD_XPATH);
-    const companyLink = topCard.locator(COMPANY_SELECTOR).locator('a[href*="/company/"]').first();
+  const title = page.locator(titleSelector(jobId)).first();
+  const topCard = title.locator(topCardXPath(jobId));
 
-    const companyName = await readText(companyLink, ctx);
-    const companyUrl = companyName
-      ? await companyLink.getAttribute('href', { timeout: READ_TIMEOUT_MS })
-      : null;
+  // A pane with no title never loaded. Returning it would save an empty
+  // listing as seen, where failing leaves the job for the next search.
+  const titleText = await readText(title, ctx);
+  if (!titleText) {
+    await debugShot(ctx, page, `debug-job-error-${jobIndex}.png`).catch(() => {});
+    throw new Error(`The detail pane for job ${jobId} did not load`);
+  }
 
-    const { locationText, postedAtText } = parseTopCardMeta(
-      await readText(topCard.locator('p').filter({ hasText: '·' }).first(), ctx),
-    );
+  const company = topCard.locator(COMPANY_SELECTOR).first();
+  const companyName = await readText(company, ctx);
+  const companyUrl = await readIfPresent(
+    company.locator('a[href*="/company/"]').first(),
+    ctx,
+    (link) => link.getAttribute('href', { timeout: READ_TIMEOUT_MS }),
+  );
 
-    // The pills after the title, such as pay, workplace and employment type,
-    // are its first non-empty links back to this job.
-    const pills = await title
-      .locator(`xpath=following::a[contains(@href, "currentJobId=${jobId}")]`)
-      .allInnerTexts()
-      .catch(() => []);
-    const jobType =
-      pills
-        .map((pill) => pill.trim())
-        .filter(Boolean)
-        .join(' · ') || null;
+  const { locationText, postedAtText } = parseTopCardMeta(
+    await readText(topCard.locator('p').filter({ hasText: '·' }).first(), ctx),
+  );
 
-    const descriptionText = await readText(
-      page.locator(descriptionSelector(jobId ?? '')).first(),
-      ctx,
-    );
-    const titleText = await readText(title, ctx);
+  // The pills after the title, such as pay, workplace and employment type,
+  // are its first non-empty links back to this job.
+  const pills = await title
+    .locator(`xpath=following::a[contains(@href, "currentJobId=${jobId}")]`)
+    .allInnerTexts()
+    .catch(() => []);
+  const jobType =
+    pills
+      .map((pill) => pill.trim())
+      .filter(Boolean)
+      .join(' · ') || null;
 
-    const requirementsText = extractRequirements(descriptionText, ctx);
+  const descriptionText = await readText(page.locator(descriptionSelector(jobId)).first(), ctx);
+  const requirementsText = extractRequirements(descriptionText, ctx);
 
-    return {
-      source: 'linkedin',
-      jobId,
-      jobUrl: linkedinJobUrl(currentUrl),
-      title: titleText,
-      companyName,
-      companyUrl,
-      locationText,
-      postedAtText,
-      postedAtIso: postedAtText ? parsePostedTime(postedAtText) : null,
+  return {
+    source: 'linkedin',
+    jobId,
+    jobUrl: linkedinJobUrl(currentUrl),
+    title: titleText,
+    companyName,
+    companyUrl,
+    locationText,
+    postedAtText,
+    postedAtIso: postedAtText ? parsePostedTime(postedAtText) : null,
+    jobType,
+    alumniCount: await readText(page.getByText(/alumni work here/i).first(), ctx),
+    descriptionText,
+    requirementsText,
+    aiAgentSignals: detectAiAgentSignals({ title: titleText, requirementsText, descriptionText }),
+    pay: classifyPay({ descriptionText, requirementsText }),
+    locationConflict: detectLocationConflict({
       jobType,
-      alumniCount: await readText(page.getByText(/alumni work here/i).first(), ctx),
+      locationText,
       descriptionText,
       requirementsText,
-      aiAgentSignals: detectAiAgentSignals({ title: titleText, requirementsText, descriptionText }),
-      pay: classifyPay({ descriptionText, requirementsText }),
-      locationConflict: detectLocationConflict({
-        jobType,
-        locationText,
-        descriptionText,
-        requirementsText,
-      }),
-    };
-  } catch (error) {
-    if (ctx.debug) {
-      ctx.onLog(`Error extracting job details: ${String(error)}`);
-      await debugShot(ctx, page, `debug-job-error-${jobIndex}.png`);
-    }
-
-    // Return partial data on error
-    return {
-      source: 'linkedin',
-      jobId,
-      jobUrl: linkedinJobUrl(currentUrl),
-      title: null,
-      companyName: null,
-      companyUrl: null,
-      locationText: null,
-      postedAtText: null,
-      postedAtIso: null,
-      jobType: null,
-      alumniCount: null,
-      descriptionText: null,
-      requirementsText: null,
-      aiAgentSignals: emptyAiAgentSignals(),
-      pay: emptyPay(),
-      locationConflict: null,
-    };
-  }
+    }),
+  };
 }
 
 /** The visible text of the first match, or null when there is none. */
-async function readText(locator: Locator, ctx: ScrapeContext): Promise<string | null> {
+function readText(locator: Locator, ctx: ScrapeContext): Promise<string | null> {
+  return readIfPresent(
+    locator,
+    ctx,
+    async (match) => (await match.innerText({ timeout: READ_TIMEOUT_MS })).trim() || null,
+  );
+}
+
+/** What `read` makes of the match, or null when nothing matches or the read fails. */
+async function readIfPresent(
+  locator: Locator,
+  ctx: ScrapeContext,
+  read: (match: Locator) => Promise<string | null>,
+): Promise<string | null> {
   try {
     if ((await locator.count()) === 0) return null;
-    const text = await locator.innerText({ timeout: READ_TIMEOUT_MS });
-    return text.trim() || null;
+    return await read(locator);
   } catch (error) {
     if (ctx.debug) ctx.onLog(`Error reading ${String(locator)}: ${String(error)}`);
     return null;

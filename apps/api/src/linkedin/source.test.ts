@@ -53,14 +53,17 @@ afterEach(() => {
   for (const mock of Object.values(mocks)) mock.mockReset();
 });
 
-/** The job the detail pane yields, identified by the card that was clicked. */
+/**
+ * The job the detail pane yields, identified by the card that was clicked. A
+ * card with no id still yields one, read from the URL.
+ */
 function detailsFrom(cardIds: (string | null)[]): void {
   mocks.launchBrowser.mockResolvedValue({ page: { goto: vi.fn(), screenshot: vi.fn() } });
   mocks.getPaginationInfo.mockResolvedValue(null);
   mocks.goToNextPage.mockResolvedValue(false);
   mocks.getJobCardIds.mockResolvedValue(cardIds);
   mocks.extractJobDetailsFromView.mockImplementation((_page: unknown, index: number) =>
-    Promise.resolve({ source: 'linkedin', jobId: cardIds[index] } as JobListing),
+    Promise.resolve({ source: 'linkedin', jobId: cardIds[index] ?? 'from-url' } as JobListing),
   );
 }
 
@@ -100,7 +103,7 @@ describe('linkedin card processing', () => {
 
     const { jobs } = await run({ known: { has: () => true } });
 
-    expect(jobs.map((job) => job.jobId)).toEqual([null]);
+    expect(jobs.map((job) => job.jobId)).toEqual(['from-url']);
     expect(mocks.clickJobCard).toHaveBeenCalledTimes(1);
   });
 
@@ -111,6 +114,16 @@ describe('linkedin card processing', () => {
     const { jobs } = await run();
 
     expect(jobs.map((job) => job.jobId)).toEqual(['2', '3']);
+  });
+
+  test('leaves out a job whose detail pane never loaded', async () => {
+    detailsFrom(['1', '2', '3']);
+    mocks.extractJobDetailsFromView.mockRejectedValueOnce(new Error('did not load'));
+
+    const { jobs, logs } = await run();
+
+    expect(jobs.map((job) => job.jobId)).toEqual(['2', '3']);
+    expect(logs).toContain('Error processing job 1: did not load');
   });
 
   test('stops rather than walking every page when nothing can be extracted', async () => {

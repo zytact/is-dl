@@ -74,8 +74,8 @@ function layoutChanged(name: string, selector: string): string {
 
 /**
  * Polls `ready` from Node rather than injecting a page function, which keeps
- * this project free of DOM types. Returns false on timeout; every caller
- * carries on regardless, so a slow page costs a wait and not a job.
+ * this project free of DOM types. Returns false on timeout rather than
+ * throwing, so what a slow page costs is each caller's decision.
  */
 async function pollUntil(ready: () => Promise<boolean>, page: Page): Promise<boolean> {
   const deadline = Date.now() + READY_TIMEOUT_MS;
@@ -107,8 +107,8 @@ async function waitForJobDetails(
   }, page);
 
   if (!settled) {
-    // The extractor reads the pane either way and reports what it found.
-    // Failing here would turn a slow load into a lost job.
+    // The extractor decides: it reads whatever job the URL names and rejects
+    // a pane with no title.
     if (ctx.debug) ctx.onLog(`Detail pane never settled on job ${expected ?? 'unknown'}`);
     return;
   }
