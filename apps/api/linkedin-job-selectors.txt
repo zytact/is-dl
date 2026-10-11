@@ -11,10 +11,15 @@ Job title (detail pane)
 a[href*="/jobs/view/<id>/"]
 
 Top card (detail pane)
-the title's nearest ancestor that contains [aria-label^="Company, "]
+the title's nearest ancestor that contains a <figure>, the company logo, and does
+not contain #JobDetails_AboutTheJob_<id>
 
-Company name and URL
-[aria-label^="Company, "] a[href*="/company/"]
+Company name
+figure + p in the top card. A company with a LinkedIn page also gets an
+[aria-label="Company, <name>."] wrapper. One without a page gets plain text.
+
+Company URL
+a[href*="/company/"] inside the company name, absent for a company without a LinkedIn page
 
 Location and posted time
 the first <p> in the top card containing " · ", for example "India · 12 hours ago · 79 people clicked apply"
