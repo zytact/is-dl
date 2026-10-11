@@ -95,6 +95,19 @@ describe('config precedence', () => {
     expect(withFlag.location).toBe('Remote');
   });
 
+  test('blocked companies come from config, and an empty flag clears them for one search', async () => {
+    await writeUser('blocked-companies = ["Mill", "UM IT"]\n');
+    const config = await loadConfig({ cwd: root, userConfigFile });
+
+    expect(resolveSearch({ config, env: {}, flags: {} }).blockedCompanies).toEqual([
+      'Mill',
+      'UM IT',
+    ]);
+    expect(
+      resolveSearch({ config, env: {}, flags: { blockedCompanies: [] } }).blockedCompanies,
+    ).toEqual([]);
+  });
+
   test('--no-config ignores every file', async () => {
     await writeUser('limit = 50\n');
     const config = await loadConfig({ cwd: root, userConfigFile, noConfig: true });

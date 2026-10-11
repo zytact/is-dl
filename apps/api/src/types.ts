@@ -144,11 +144,19 @@ export interface KnownJobs {
   has(source: JobSource, jobId: string): boolean;
 }
 
+/**
+ * Whether a company is one the reader never wants listed. Sources consult this
+ * while paging, the way they consult `KnownJobs`.
+ */
+export interface BlockedCompanies {
+  has(companyName: string): boolean;
+}
+
 /** What every source is asked for. Nothing source-specific belongs here. */
 export interface SearchQuery {
   keywords: string;
   location: string;
-  /** Per source, not across all of them, and counted in jobs `known` let through. */
+  /** Per source, not across all of them, and counted in jobs `known` and `blocked` let through. */
   limit: number;
   remoteOnly?: boolean;
   /**
@@ -157,6 +165,8 @@ export interface SearchQuery {
    * reading. Absent means filter nothing.
    */
   known?: KnownJobs;
+  /** Companies whose listings a source skips while paging. Absent means block nothing. */
+  blocked?: BlockedCompanies;
 }
 
 /**

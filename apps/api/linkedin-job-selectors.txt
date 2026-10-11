@@ -4,6 +4,9 @@ element or a link. <id> is the job id, which the search URL carries as currentJo
 Job card
 div[role="button"][componentkey^="job-card-component-ref-"]  (the key ends in the job id)
 
+Company name (job card)
+the card's second <p>. The first is the title and the third the location. No attribute marks it.
+
 Next page
 [data-testid="pagination-controls-next-button-visible"]
 

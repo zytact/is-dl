@@ -108,6 +108,23 @@ describe('unstop paging', () => {
     expect(jobs.map((job) => job.jobId)).toEqual(['2']);
   });
 
+  test('a blocked company does not take a slot either', async () => {
+    const rows = [
+      item(1, 'Frontend Engineer', '<p>TypeScript.</p>'),
+      item(2, 'Backend Engineer', '<p>TypeScript.</p>'),
+    ];
+    rows[0]!.organisation = { name: 'Mill' };
+    fetchPage.mockResolvedValue(page(rows, 1, 1));
+
+    const { jobs, logs } = await run({
+      limit: 1,
+      blocked: { has: (company) => company === 'Mill' },
+    });
+
+    expect(jobs.map((job) => job.jobId)).toEqual(['2']);
+    expect(logs).toContain('Skipped 1 from blocked companies: Mill.');
+  });
+
   test('does not classify a row it is going to skip', async () => {
     fetchPage.mockResolvedValue(
       page(

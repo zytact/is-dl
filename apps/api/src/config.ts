@@ -27,6 +27,8 @@ export interface SearchSettings {
   experienceLevel?: string[];
   jobType?: string[];
   postedWithin?: string;
+  /** Companies whose listings every source skips. Matched by `companyBlocklist`. */
+  blockedCompanies?: string[];
   remoteOnly: boolean;
   headless: boolean;
   outDir?: string;
@@ -91,6 +93,7 @@ export const SEARCH_FIELDS = {
   'experience-level': 'string[]',
   'job-type': 'string[]',
   'posted-within': 'string',
+  'blocked-companies': 'string[]',
   'remote-only': 'boolean',
   headless: 'boolean',
   'out-dir': 'string',
@@ -326,6 +329,7 @@ export function envSearchLayer(env: NodeJS.ProcessEnv): SearchLayer {
     experienceLevel: envList(env, 'EXPERIENCE_LEVEL'),
     jobType: envList(env, 'JOB_TYPE'),
     postedWithin: envString(env, 'POSTED_WITHIN'),
+    blockedCompanies: envList(env, 'BLOCKED_COMPANIES'),
     remoteOnly: envBool(env, 'REMOTE_ONLY'),
     headless: envBool(env, 'HEADLESS'),
     outDir: envString(env, 'OUT_DIR'),

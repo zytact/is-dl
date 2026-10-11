@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, test, vi } from 'vite-plus/test';
 import type { JobListing, LinkedInOptions, SearchQuery } from '../types.ts';
+import type { JobCardFacts } from './search.ts';
 import { linkedinSource } from './source.ts';
 
 const mocks = vi.hoisted(() => ({
-  getJobCardIds: vi.fn(),
+  getJobCards: vi.fn(),
   clickJobCard: vi.fn(),
   extractJobDetailsFromView: vi.fn(),
   goToNextPage: vi.fn(),
@@ -13,7 +14,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('./search.ts', () => ({
-  getJobCardIds: mocks.getJobCardIds,
+  getJobCards: mocks.getJobCards,
   clickJobCard: mocks.clickJobCard,
   goToNextPage: mocks.goToNextPage,
   getPaginationInfo: mocks.getPaginationInfo,
@@ -58,12 +59,21 @@ afterEach(() => {
  * card with no id still yields one, read from the URL.
  */
 function detailsFrom(cardIds: (string | null)[]): void {
+  detailsFromCards(cardIds.map((id) => ({ id, company: null })));
+}
+
+/** `paneCompany` is for a card whose company read differs from the detail pane's. */
+function detailsFromCards(cards: JobCardFacts[], paneCompany?: string): void {
   mocks.launchBrowser.mockResolvedValue({ page: { goto: vi.fn(), screenshot: vi.fn() } });
   mocks.getPaginationInfo.mockResolvedValue(null);
   mocks.goToNextPage.mockResolvedValue(false);
-  mocks.getJobCardIds.mockResolvedValue(cardIds);
+  mocks.getJobCards.mockResolvedValue(cards);
   mocks.extractJobDetailsFromView.mockImplementation((_page: unknown, index: number) =>
-    Promise.resolve({ source: 'linkedin', jobId: cardIds[index] ?? 'from-url' } as JobListing),
+    Promise.resolve({
+      source: 'linkedin',
+      jobId: cards[index]?.id ?? 'from-url',
+      companyName: paneCompany ?? cards[index]?.company,
+    } as JobListing),
   );
 }
 
@@ -105,6 +115,36 @@ describe('linkedin card processing', () => {
 
     expect(jobs.map((job) => job.jobId)).toEqual(['from-url']);
     expect(mocks.clickJobCard).toHaveBeenCalledTimes(1);
+  });
+
+  test('never opens a card from a blocked company, and it does not use up the limit', async () => {
+    detailsFromCards([
+      { id: '1', company: 'Mill' },
+      { id: '2', company: 'Acme' },
+      { id: '3', company: 'Mill' },
+      { id: '4', company: 'Globex' },
+    ]);
+
+    const { jobs, logs } = await run({ blocked: { has: (company) => company === 'Mill' } });
+
+    expect(jobs.map((job) => job.jobId)).toEqual(['2', '4']);
+    expect(mocks.clickJobCard).toHaveBeenCalledTimes(2);
+    expect(logs).toContain('Skipped 2 from blocked companies: Mill.');
+  });
+
+  test('drops a blocked company the card did not name, without using up the limit', async () => {
+    detailsFromCards(
+      [
+        { id: '1', company: null },
+        { id: '2', company: null },
+      ],
+      'Mill',
+    );
+
+    const { jobs, logs } = await run({ blocked: { has: (company) => company === 'Mill' } });
+
+    expect(jobs).toEqual([]);
+    expect(logs).toContain('Skipped 2 from blocked companies: Mill.');
   });
 
   test('a card that fails to open does not use up the limit either', async () => {

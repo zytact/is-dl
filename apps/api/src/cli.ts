@@ -91,6 +91,7 @@ search flags:
       --experience-level <csv>      For example "Internship,Entry level"
       --job-type <csv>              For example "Full-time,Internship"
       --posted-within <timeframe>   For example "Past week"
+      --blocked-companies <csv>     Skip listings from these companies
       --remote-only / --no-remote-only
   -o, --out <dir|->                 Output directory, or "-" for stdout
       --headless / --no-headless
@@ -105,6 +106,16 @@ Seen listings:
   filters on it while the sources page, so --limit still yields that many jobs
   you have not been shown. The ledger is rebuilt from the run store when it is
   missing, so it already knows about runs made before it existed.
+
+Blocked companies:
+  Set blocked-companies in the config file to a list of names, and every
+  source skips their listings while it pages, so they cost no slot under
+  --limit. An entry matches a company whose name contains it as whole words,
+  ignoring case and punctuation: "UM IT" blocks "UM IT Solutions" and leaves
+  "Premium IT" alone. The log names every company it skipped.
+  --blocked-companies replaces the list for one search, and
+  --blocked-companies "" turns it off. The flag and "config set" split on
+  commas, so write a name with a comma in it into the config file by hand.
 
 Sources:
   search queries LinkedIn and Unstop together and merges the results, newest
