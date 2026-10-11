@@ -9,6 +9,7 @@ test.each([
   ['Uni.AiHUb', 'uni aihub', true],
   ["Dexter's Tech", 'Dexter’s  Tech', true],
   ['Café', 'Cafe\u0301 Labs', true],
+  ['टे', 'टेक', false],
   ['internmo', 'internmode', false],
   ['Solutions UM', 'UM IT Solutions', false],
 ])('entry %j against company %j blocks: %j', (entry, company, blocked) => {

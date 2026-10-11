@@ -114,8 +114,8 @@ Blocked companies:
   ignoring case and punctuation: "UM IT" blocks "UM IT Solutions" and leaves
   "Premium IT" alone. The log names every company it skipped.
   --blocked-companies replaces the list for one search, and
-  --blocked-companies "" turns it off. The flag splits on commas, so a name
-  with a comma in it belongs in the config file.
+  --blocked-companies "" turns it off. The flag and "config set" split on
+  commas, so write a name with a comma in it into the config file by hand.
 
 Sources:
   search queries LinkedIn and Unstop together and merges the results, newest

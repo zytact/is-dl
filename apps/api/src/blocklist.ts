@@ -5,7 +5,7 @@ function words(text: string): string {
   return text
     .normalize('NFKC')
     .toLowerCase()
-    .split(/[^\p{L}\p{N}]+/u)
+    .split(/[^\p{L}\p{M}\p{N}]+/u)
     .filter(Boolean)
     .join(' ');
 }
