@@ -9,6 +9,7 @@ Search LinkedIn, Unstop, or both, normalize the listings, classify pay and locat
 - LinkedIn filters for experience level, job type, posting age, location, and remote. Posting age is the `f_TPR` URL parameter. The rest are appended to the keywords as text, for example `software engineer intern, internship, remote, in India`, and LinkedIn interprets that text itself.
 - Local Unstop keyword, location, and remote filtering.
 - Unpaid, applied, and seen filtering across sources.
+- A company blocklist from the `blocked-companies` config key or `--blocked-companies`, which every source applies while it pages.
 - Partial source failure with per-source status in `meta.sources[]`.
 - JSON output, explicit output directories, and the default run store.
 
@@ -39,6 +40,27 @@ $D search -k "software engineer intern" --source linkedin -l India --remote-only
 printf '%s\n' "$?" >"$EV/linkedin.exit"
 ```
 
+The blocklist needs a company the live corpus is showing right now, so take one from a first search and block it in a second. `--verbose` keeps the log on stderr next to `--json`:
+
+```bash
+BLOCK="$(node -e 'const v=JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf8")); process.stdout.write(v.jobs[0].companyName)' "$EV/search.json")"
+
+$D search -k software --source unstop --unstop-roles software-development --limit 3 \
+  --blocked-companies "$BLOCK" --json --verbose \
+  >"$EV/blocked.json" 2>"$EV/blocked.stderr"
+printf '%s\n' "$?" >"$EV/blocked.exit"
+
+$D config set blocked-companies "$BLOCK" --json >"$EV/blocked-config-set.json"
+$D search -k software --source unstop --unstop-roles software-development --limit 3 --json --verbose \
+  >"$EV/blocked-config.json" 2>"$EV/blocked-config.stderr"
+$D search -k software --source unstop --unstop-roles software-development --limit 3 \
+  --blocked-companies "" --json --verbose \
+  >"$EV/blocked-cleared.json" 2>"$EV/blocked-cleared.stderr"
+$D config set blocked-companies "" --json >"$EV/blocked-config-restore.json"
+```
+
+For LinkedIn, run the LinkedIn recipe once with `--limit 5`, take `BLOCK` from the company that fills the most of its jobs, and run it again with `--blocked-companies "$BLOCK" --verbose`.
+
 ### Proof
 
 Exit code is 0. `search.json` has `ok: true`, one saved `path`, and at least one job when the live corpus contains a match. The Unstop entry in `meta.sources[]` has `status: "ok"`, and every returned job has `source: "unstop"`. The file at `path` exists and contains the same run data.
@@ -55,11 +77,17 @@ printf '%s\n' "$?" >"$EV/linkedin-pageless.exit"
 
 Its job has a non-null `companyName`, `locationText` and `postedAtText` with a null `companyUrl`. Any other job in the run with a non-null `companyUrl` covers the usual layout. Without one, the recipe above covers it.
 
+For the blocklist, no job in `blocked.json` or `blocked-config.json` has the blocked `companyName`, and each stderr has `Skipped <n> from blocked companies: <names>.` naming it. The source count in `meta.sources[]` still reaches the limit when the corpus has enough other listings. `blocked-cleared.stderr` has no such line, and the company may be back in `blocked-cleared.json`. On LinkedIn, also count the `Processing job` lines in stderr: there is one per returned job, which shows that a blocked card was never opened.
+
 For multi-source behavior, prove each entry in `meta.sources[]`. Exit 0 alone is insufficient because partial failure is normal.
 
 ## Gotchas
 
-- `--limit` applies to each source and counts listings that passed `known`.
+- `--limit` applies to each source and counts listings that passed `known` and the company blocklist.
+- A blocklist entry matches a company whose name contains it as whole words, ignoring case and punctuation. `UM IT` blocks `UM IT Solutions` and leaves `Premium IT` alone.
+- `--blocked-companies` and `config set blocked-companies` split on commas. A name with a comma in it becomes two entries, so write it into the TOML array by hand. An empty value clears the list.
+- The blocklist line is a log line. With `--json` it appears on stderr only when `--verbose` is also passed, and the saved run does not record the list.
+- LinkedIn reads a card's company from the card's second paragraph. If a blocked company shows up in the `Processing job` lines, that read has drifted, and the source drops the job after opening it instead.
 - `--out -` prints data but bypasses saved runs and the seen ledger.
 - LinkedIn exit 3 means a session is required. Existing but expired cookies can instead cause a timeout. Replace them with `scripts/login.sh logout`, then `scripts/login.sh` in a TTY.
 - LinkedIn ignores the `location`, `f_WT`, `f_E`, `f_JT` and `sortBy` URL parameters since its redesign. A search with no `-l` uses the LinkedIn account's last searched location, so results may not match the location you expect. A location such as "Worldwide" can resolve to a specific country.
