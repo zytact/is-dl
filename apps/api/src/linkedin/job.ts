@@ -24,9 +24,9 @@ const topCardXPath = (jobId: string) =>
   `xpath=ancestor::*[.//figure][1][not(.//*[@id="${descriptionSectionId(jobId)}"])]`;
 
 /**
- * The pay, workplace and employment type pills are the first row after the top
- * card that holds one link back to the job per cell. Other such links, like
- * "I'm interested", sit elsewhere in the pane.
+ * The pay, workplace and employment type pills are links back to the job, each
+ * in its own cell of the first such row after the top card. Other links back
+ * to the job, like "I'm interested", sit elsewhere in the pane.
  */
 const pillsXPath = (jobId: string) => {
   const pill = `*/a[contains(@href, "currentJobId=${jobId}")]`;
