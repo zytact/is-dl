@@ -24,12 +24,14 @@ const topCardXPath = (jobId: string) =>
   `xpath=ancestor::*[.//figure][1][not(.//*[@id="${descriptionSectionId(jobId)}"])]`;
 
 /**
- * The pay, workplace and employment type pills are the row right after the top
- * card, one link per cell. Other links back to the job, such as "I'm
- * interested", sit elsewhere in the pane.
+ * The pay, workplace and employment type pills are the first row after the top
+ * card that holds one link back to the job per cell. Other such links, like
+ * "I'm interested", sit elsewhere in the pane.
  */
-const pillsXPath = (jobId: string) =>
-  `xpath=following-sibling::*[1]/*/a[contains(@href, "currentJobId=${jobId}")]`;
+const pillsXPath = (jobId: string) => {
+  const pill = `*/a[contains(@href, "currentJobId=${jobId}")]`;
+  return `xpath=following-sibling::*[${pill}][1]/${pill}`;
+};
 
 /** The name beside the logo, which is a link only when the company has a LinkedIn page. */
 const COMPANY_SELECTOR = 'figure + p';

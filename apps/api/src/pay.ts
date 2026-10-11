@@ -36,6 +36,9 @@ const MONEY = new RegExp(
   'i',
 );
 
+/** A pay pill is an amount per period in any currency, such as "30K GBP/yr". */
+const PAY_PILL = /\d.*\/(?:hr|month|yr)\b/i;
+
 const PAY_CONTEXT = /\b(?:stipend|salary|compensation|ctc|remuneration|package|pay|paid)\b/i;
 
 const PAID_CLAIMS = [
@@ -82,7 +85,7 @@ export function classifyPay(input: {
   descriptionText: string | null;
   requirementsText: string | null;
 }): PayInfo {
-  const payPill = input.pills?.find((pill) => MONEY.test(pill));
+  const payPill = input.pills?.find((pill) => PAY_PILL.test(pill));
   if (payPill) return { kind: 'paid', evidence: clean(payPill), amount: null };
 
   const text = [input.descriptionText, input.requirementsText].filter(Boolean).join('\n');

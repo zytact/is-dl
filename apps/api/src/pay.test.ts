@@ -52,18 +52,27 @@ describe('pay classification', () => {
     });
   });
 
-  // The pills and description of LinkedIn job 4475112492, which never repeats the figure.
-  test('a figure in a pill is pay the description need not repeat', () => {
-    expect(
-      classifyPay({
-        pills: ['$18.75/hr - $22.25/hr', 'Remote', 'Internship'],
-        descriptionText: 'Join our front-end team as an intern.',
-        requirementsText: null,
-      }),
-    ).toEqual({ kind: 'paid', evidence: '$18.75/hr - $22.25/hr', amount: null });
-  });
+  // Pills seen verbatim on LinkedIn listings.
+  const payPills = [
+    '$18.75/hr - $22.25/hr',
+    'Up to 10K INR/month',
+    '1,500 EUR/month - 2,000 EUR/month',
+    '30K GBP/yr',
+  ];
 
-  test('pills without a figure leave pay to the description', () => {
+  for (const payPill of payPills) {
+    test(`a pay pill is pay the description need not repeat: ${payPill}`, () => {
+      expect(
+        classifyPay({
+          pills: [payPill, 'Remote', 'Internship'],
+          descriptionText: 'Join our team.',
+          requirementsText: null,
+        }),
+      ).toEqual({ kind: 'paid', evidence: payPill, amount: null });
+    });
+  }
+
+  test('pills without pay leave pay to the description', () => {
     expect(
       classifyPay({
         pills: ['Remote', 'Internship'],
