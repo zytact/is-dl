@@ -112,8 +112,10 @@ Blocked companies:
   source skips their listings while it pages, so they cost no slot under
   --limit. An entry matches a company whose name contains it as whole words,
   ignoring case and punctuation: "UM IT" blocks "UM IT Solutions" and leaves
-  "Premium IT" alone. --blocked-companies replaces the list for one search,
-  and --blocked-companies "" turns it off.
+  "Premium IT" alone. The log names every company it skipped.
+  --blocked-companies replaces the list for one search, and
+  --blocked-companies "" turns it off. The flag splits on commas, so a name
+  with a comma in it belongs in the config file.
 
 Sources:
   search queries LinkedIn and Unstop together and merges the results, newest

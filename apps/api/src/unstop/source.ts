@@ -1,3 +1,4 @@
+import { blockedSummary } from '../blocklist.ts';
 import { checkAbort, type SourceContext, type SourceRunner, waitOrAbort } from '../sources.ts';
 import type { JobListing, SearchQuery, UnstopOptions } from '../types.ts';
 import { fetchPage } from './api.ts';
@@ -42,7 +43,7 @@ async function scrape(
   let lastPage = 1;
   let total = 0;
   let known = 0;
-  let blocked = 0;
+  const blocked: string[] = [];
 
   // The filters run here, not on the endpoint, so paging has to continue until
   // enough rows have passed them. Counting fetched rows stops on page one and
@@ -67,7 +68,7 @@ async function scrape(
       // The classifiers run last, on rows that are actually being kept.
       const facts = toJobFacts(item);
       if (facts.companyName !== null && query.blocked?.has(facts.companyName)) {
-        blocked++;
+        blocked.push(facts.companyName);
         continue;
       }
       if (!matches(facts, query)) continue;
@@ -92,7 +93,7 @@ async function scrape(
   const jobs = kept.slice(0, query.limit);
   onLog(`Kept ${jobs.length} of ${fetched.size} fetched after keyword and location filters.`);
   if (known) onLog(`Skipped ${known} already seen or applied to.`);
-  if (blocked) onLog(`Skipped ${blocked} from blocked companies.`);
+  if (blocked.length) onLog(blockedSummary(blocked));
   return jobs;
 }
 

@@ -1,5 +1,5 @@
 import { currentState, readApplications, seenKey } from './applications.ts';
-import { blockedCompanies } from './blocklist.ts';
+import { companyBlocklist } from './blocklist.ts';
 import { camel, SEARCH_FIELDS, type SearchLayer, type SearchSettings } from './config.ts';
 import { CliError } from './errors.ts';
 import { summarizePay } from './pay.ts';
@@ -157,7 +157,7 @@ export async function search(
         limit: settings.limit,
         remoteOnly: settings.remoteOnly,
         known,
-        blocked: blockedCompanies(settings.blockedCompanies ?? []),
+        blocked: companyBlocklist(settings.blockedCompanies ?? []),
       },
       sources: settings.sources,
       linkedin: {

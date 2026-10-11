@@ -27,7 +27,7 @@ export interface SearchSettings {
   experienceLevel?: string[];
   jobType?: string[];
   postedWithin?: string;
-  /** Companies whose listings every source skips. Matched by `blockedCompanies`. */
+  /** Companies whose listings every source skips. Matched by `companyBlocklist`. */
   blockedCompanies?: string[];
   remoteOnly: boolean;
   headless: boolean;

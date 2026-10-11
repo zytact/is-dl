@@ -1,4 +1,5 @@
 import { join } from 'node:path';
+import { blockedSummary } from '../blocklist.ts';
 import { ensureDir } from '../fs.ts';
 import { checkAbort, type SourceContext, type SourceRunner, waitOrAbort } from '../sources.ts';
 import type { JobListing, LinkedInOptions, SearchQuery } from '../types.ts';
@@ -53,7 +54,7 @@ async function scrape(
     const jobs: JobListing[] = [];
     let currentPage = 1;
     let known = 0;
-    let blocked = 0;
+    const blocked: string[] = [];
     let consecutiveFailures = 0;
 
     while (jobs.length < query.limit) {
@@ -85,7 +86,7 @@ async function scrape(
           continue;
         }
         if (company !== null && query.blocked?.has(company)) {
-          blocked++;
+          blocked.push(company);
           continue;
         }
 
@@ -100,7 +101,7 @@ async function scrape(
 
           // The card's company is read by position, so the detail pane has the last word.
           if (jobDetails.companyName !== null && query.blocked?.has(jobDetails.companyName)) {
-            blocked++;
+            blocked.push(jobDetails.companyName);
           } else {
             jobs.push(jobDetails);
           }
@@ -139,7 +140,7 @@ async function scrape(
 
     onLog(`Successfully extracted ${jobs.length} jobs.`);
     if (known) onLog(`Skipped ${known} already seen or applied to.`);
-    if (blocked) onLog(`Skipped ${blocked} from blocked companies.`);
+    if (blocked.length) onLog(blockedSummary(blocked));
     return jobs;
   } finally {
     await closeBrowser(session, options.sessionFile, onLog);

@@ -122,7 +122,7 @@ describe('unstop paging', () => {
     });
 
     expect(jobs.map((job) => job.jobId)).toEqual(['2']);
-    expect(logs).toContain('Skipped 1 from blocked companies.');
+    expect(logs).toContain('Skipped 1 from blocked companies: Mill.');
   });
 
   test('does not classify a row it is going to skip', async () => {

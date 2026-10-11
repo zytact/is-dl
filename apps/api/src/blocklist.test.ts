@@ -1,5 +1,5 @@
 import { expect, test } from 'vite-plus/test';
-import { blockedCompanies } from './blocklist.ts';
+import { companyBlocklist } from './blocklist.ts';
 
 test.each([
   ['UM IT', 'UM IT PRIVATE LIMITED', true],
@@ -8,12 +8,13 @@ test.each([
   ['UM IT', 'Premium IT Services', false],
   ['Uni.AiHUb', 'uni aihub', true],
   ["Dexter's Tech", 'Dexter’s  Tech', true],
+  ['Café', 'Cafe\u0301 Labs', true],
   ['internmo', 'internmode', false],
   ['Solutions UM', 'UM IT Solutions', false],
 ])('entry %j against company %j blocks: %j', (entry, company, blocked) => {
-  expect(blockedCompanies([entry]).has(company)).toBe(blocked);
+  expect(companyBlocklist([entry]).has(company)).toBe(blocked);
 });
 
 test('an entry with no letters or digits blocks nothing', () => {
-  expect(blockedCompanies(['', ' - ']).has('Acme')).toBe(false);
+  expect(companyBlocklist(['', ' - ']).has('Acme')).toBe(false);
 });

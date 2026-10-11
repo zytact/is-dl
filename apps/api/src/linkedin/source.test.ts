@@ -129,7 +129,7 @@ describe('linkedin card processing', () => {
 
     expect(jobs.map((job) => job.jobId)).toEqual(['2', '4']);
     expect(mocks.clickJobCard).toHaveBeenCalledTimes(2);
-    expect(logs).toContain('Skipped 2 from blocked companies.');
+    expect(logs).toContain('Skipped 2 from blocked companies: Mill.');
   });
 
   test('drops a blocked company the card did not name, without using up the limit', async () => {
@@ -144,7 +144,7 @@ describe('linkedin card processing', () => {
     const { jobs, logs } = await run({ blocked: { has: (company) => company === 'Mill' } });
 
     expect(jobs).toEqual([]);
-    expect(logs).toContain('Skipped 2 from blocked companies.');
+    expect(logs).toContain('Skipped 2 from blocked companies: Mill.');
   });
 
   test('a card that fails to open does not use up the limit either', async () => {
