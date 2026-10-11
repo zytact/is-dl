@@ -71,14 +71,20 @@ function firstMatch(text: string, patterns: RegExp[]): RegExpMatchArray | null {
 }
 
 /**
- * Rules run in order: explicit unpaid, then token stipends, then a concrete
- * figure or an unambiguous paid claim. Anything else is unstated, which is
- * labelled but never filtered.
+ * Rules run in order: a figure in the source's own pills, then explicit
+ * unpaid, then token stipends, then a concrete figure or an unambiguous paid
+ * claim in the prose. Anything else is unstated, which is labelled but never
+ * filtered.
  */
 export function classifyPay(input: {
+  /** The source's pills for the listing, where a figure is its pay field. */
+  pills?: readonly string[];
   descriptionText: string | null;
   requirementsText: string | null;
 }): PayInfo {
+  const payPill = input.pills?.find((pill) => MONEY.test(pill));
+  if (payPill) return { kind: 'paid', evidence: clean(payPill), amount: null };
+
   const text = [input.descriptionText, input.requirementsText].filter(Boolean).join('\n');
   if (!text.trim()) return emptyPay();
 

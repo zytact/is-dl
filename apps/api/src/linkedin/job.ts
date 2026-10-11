@@ -23,6 +23,14 @@ export const descriptionSelector = (jobId: string) =>
 const topCardXPath = (jobId: string) =>
   `xpath=ancestor::*[.//figure][1][not(.//*[@id="${descriptionSectionId(jobId)}"])]`;
 
+/**
+ * The pay, workplace and employment type pills are the row right after the top
+ * card, one link per cell. Other links back to the job, such as "I'm
+ * interested", sit elsewhere in the pane.
+ */
+const pillsXPath = (jobId: string) =>
+  `xpath=following-sibling::*[1]/*/a[contains(@href, "currentJobId=${jobId}")]`;
+
 /** The name beside the logo, which is a link only when the company has a LinkedIn page. */
 const COMPANY_SELECTOR = 'figure + p';
 
@@ -90,17 +98,15 @@ export async function extractJobDetailsFromView(
     await readText(topCard.locator('p').filter({ hasText: '·' }).first(), ctx),
   );
 
-  // The pills after the title, such as pay, workplace and employment type,
-  // are its first non-empty links back to this job.
-  const pills = await title
-    .locator(`xpath=following::a[contains(@href, "currentJobId=${jobId}")]`)
-    .allInnerTexts()
-    .catch(() => []);
-  const jobType =
-    pills
-      .map((pill) => pill.trim())
-      .filter(Boolean)
-      .join(' · ') || null;
+  const pills = (
+    await topCard
+      .locator(pillsXPath(jobId))
+      .allInnerTexts()
+      .catch(() => [])
+  )
+    .map((pill) => pill.trim())
+    .filter(Boolean);
+  const jobType = pills.join(' · ') || null;
 
   const descriptionText = await readText(page.locator(descriptionSelector(jobId)).first(), ctx);
   const requirementsText = extractRequirements(descriptionText, ctx);
@@ -120,7 +126,7 @@ export async function extractJobDetailsFromView(
     descriptionText,
     requirementsText,
     aiAgentSignals: detectAiAgentSignals({ title: titleText, requirementsText, descriptionText }),
-    pay: classifyPay({ descriptionText, requirementsText }),
+    pay: classifyPay({ pills, descriptionText, requirementsText }),
     locationConflict: detectLocationConflict({
       jobType,
       locationText,

@@ -52,6 +52,27 @@ describe('pay classification', () => {
     });
   });
 
+  // The pills and description of LinkedIn job 4475112492, which never repeats the figure.
+  test('a figure in a pill is pay the description need not repeat', () => {
+    expect(
+      classifyPay({
+        pills: ['$18.75/hr - $22.25/hr', 'Remote', 'Internship'],
+        descriptionText: 'Join our front-end team as an intern.',
+        requirementsText: null,
+      }),
+    ).toEqual({ kind: 'paid', evidence: '$18.75/hr - $22.25/hr', amount: null });
+  });
+
+  test('pills without a figure leave pay to the description', () => {
+    expect(
+      classifyPay({
+        pills: ['Remote', 'Internship'],
+        descriptionText: 'Stipend: Unpaid',
+        requirementsText: null,
+      }).kind,
+    ).toBe('unpaid');
+  });
+
   test('hours and years do not read as rupees', () => {
     expect(kind('Stipend discussed later. Expect 40 hours a week and 2 years of growth.')).toBe(
       'unstated',

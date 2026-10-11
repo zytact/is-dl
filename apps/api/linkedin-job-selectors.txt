@@ -28,7 +28,9 @@ Location and posted time
 the first <p> in the top card containing " · ", for example "India · 12 hours ago · 79 people clicked apply"
 
 Job type, workplace and pay pills
-non-empty a[href*="currentJobId=<id>"] links that follow the title
+the top card's next sibling is the pill row, and each of its children holds one
+a[href*="currentJobId=<id>"] link. Other links back to the job, such as "I'm interested"
+under "About the company", sit outside that row.
 
 Job description
 #JobDetails_AboutTheJob_<id> [data-testid="expandable-text-box"]
