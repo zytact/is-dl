@@ -5,7 +5,7 @@ import type { JobListing, LinkedInOptions, SearchQuery } from '../types.ts';
 import { closeBrowser, launchBrowser } from './browser.ts';
 import type { ScrapeContext } from './context.ts';
 import { extractJobDetailsFromView } from './job.ts';
-import { clickJobCard, getJobCardIds, goToNextPage } from './search.ts';
+import { clickJobCard, getJobCards, goToNextPage } from './search.ts';
 import { buildSearchUrl } from './search-url.ts';
 
 /** A failing card no longer uses up the limit, so a DOM change needs its own bound. */
@@ -53,23 +53,24 @@ async function scrape(
     const jobs: JobListing[] = [];
     let currentPage = 1;
     let known = 0;
+    let blocked = 0;
     let consecutiveFailures = 0;
 
     while (jobs.length < query.limit) {
       checkAbort(signal);
       onLog(`=== Processing Page ${currentPage} ===`);
 
-      const cardIds = await getJobCardIds(session.page, ctx);
-      onLog(`Found ${cardIds.length} jobs on page ${currentPage}`);
+      const cards = await getJobCards(session.page, ctx);
+      onLog(`Found ${cards.length} jobs on page ${currentPage}`);
 
-      if (cardIds.length === 0) {
+      if (cards.length === 0) {
         onLog('No more jobs found.');
         break;
       }
 
       for (
         let i = 0;
-        i < cardIds.length &&
+        i < cards.length &&
         jobs.length < query.limit &&
         consecutiveFailures < MAX_CONSECUTIVE_FAILURES;
         i++
@@ -77,10 +78,14 @@ async function scrape(
         checkAbort(signal);
 
         // Skipping here rather than after the fact is the whole point: an
-        // already-seen job costs neither a click nor a slot under the limit.
-        const cardId = cardIds[i] ?? null;
+        // already-seen or blocked job costs neither a click nor a slot under the limit.
+        const { id: cardId, company } = cards[i]!;
         if (cardId !== null && query.known?.has('linkedin', cardId)) {
           known++;
+          continue;
+        }
+        if (company !== null && query.blocked?.has(company)) {
+          blocked++;
           continue;
         }
 
@@ -91,8 +96,14 @@ async function scrape(
         try {
           await clickJobCard(session.page, i, ctx, cardId);
           const jobDetails = await extractJobDetailsFromView(session.page, i, ctx);
-          jobs.push(jobDetails);
           consecutiveFailures = 0;
+
+          // The card's company is read by position, so the detail pane has the last word.
+          if (jobDetails.companyName !== null && query.blocked?.has(jobDetails.companyName)) {
+            blocked++;
+          } else {
+            jobs.push(jobDetails);
+          }
 
           if (options.debug) {
             onLog(`  Title: ${jobDetails.title}, Company: ${jobDetails.companyName}`);
@@ -128,6 +139,7 @@ async function scrape(
 
     onLog(`Successfully extracted ${jobs.length} jobs.`);
     if (known) onLog(`Skipped ${known} already seen or applied to.`);
+    if (blocked) onLog(`Skipped ${blocked} from blocked companies.`);
     return jobs;
   } finally {
     await closeBrowser(session, options.sessionFile, onLog);

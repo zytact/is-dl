@@ -15,15 +15,21 @@ const READY_TIMEOUT_MS = 15000;
 
 const POLL_INTERVAL_MS = 100;
 
+/** What a card says about its job before it is opened. */
+export interface JobCardFacts {
+  id: string | null;
+  company: string | null;
+}
+
 /**
- * The job ids of every card on the page, in card order, so the caller can skip
- * a job before paying for the click and the detail fetch.
+ * The id and company of every card on the page, in card order, so the caller
+ * can skip a job before paying for the click and the detail fetch.
  *
- * An entry is null when a card has no id in its key. That is not fatal:
- * the caller opens the job and reads the id from the URL as it always has, and
+ * A field is null when the card does not yield it. That is not fatal: the
+ * caller opens the job and reads it from the detail pane as it always has, and
  * only loses the chance to skip it early.
  */
-export async function getJobCardIds(page: Page, ctx: ScrapeContext): Promise<(string | null)[]> {
+export async function getJobCards(page: Page, ctx: ScrapeContext): Promise<JobCardFacts[]> {
   ctx.onLog('Getting job cards...');
 
   try {
@@ -44,11 +50,16 @@ export async function getJobCardIds(page: Page, ctx: ScrapeContext): Promise<(st
       });
 
     const jobCards = await page.$$(JOB_CARD_SELECTOR);
-    const ids = await Promise.all(jobCards.map((card) => cardJobId(card)));
+    const cards = await Promise.all(
+      jobCards.map(async (card) => ({
+        id: await cardJobId(card),
+        company: await cardCompany(card),
+      })),
+    );
 
     ctx.onLog(`Found ${jobCards.length} job cards on current page`);
 
-    return ids;
+    return cards;
   } catch (error) {
     ctx.onLog(`Error getting job cards: ${String(error)}`);
     throw error;
@@ -62,6 +73,16 @@ async function cardJobId(card: JobCard): Promise<string | null> {
   try {
     const key = await card.getAttribute('componentkey');
     return key?.startsWith(CARD_KEY_PREFIX) ? key.slice(CARD_KEY_PREFIX.length) || null : null;
+  } catch {
+    return null;
+  }
+}
+
+/** A card has no hook for the company, only its place: the paragraph after the title. */
+async function cardCompany(card: JobCard): Promise<string | null> {
+  try {
+    const company = await card.$('p >> nth=1');
+    return (await company?.innerText())?.trim() || null;
   } catch {
     return null;
   }

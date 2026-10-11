@@ -119,6 +119,7 @@ Every other command refuses to prompt. Without a session they exit `3` immediate
 --remote-only                    Only show remote jobs
 --posted-within <timeframe>      Filter by posting date
 --job-type <types>               Comma-separated job types
+--blocked-companies <names>      Comma-separated companies to skip, replaces the config list
 -p, --profile <name>             Use a saved profile from config
 -o, --out <dir|->                Output directory, or "-" for stdout
 --timeout <ms>                   Navigation timeout (default: 30000)
