@@ -52,6 +52,36 @@ describe('pay classification', () => {
     });
   });
 
+  // Pills seen verbatim on LinkedIn listings.
+  const payPills = [
+    '$18.75/hr - $22.25/hr',
+    'Up to 10K INR/month',
+    '1,500 EUR/month - 2,000 EUR/month',
+    '30K GBP/yr',
+  ];
+
+  for (const payPill of payPills) {
+    test(`a pay pill is pay the description need not repeat: ${payPill}`, () => {
+      expect(
+        classifyPay({
+          pills: [payPill, 'Remote', 'Internship'],
+          descriptionText: 'Join our team.',
+          requirementsText: null,
+        }),
+      ).toEqual({ kind: 'paid', evidence: payPill, amount: null });
+    });
+  }
+
+  test('pills without pay leave pay to the description', () => {
+    expect(
+      classifyPay({
+        pills: ['Remote', 'Internship'],
+        descriptionText: 'Stipend: Unpaid',
+        requirementsText: null,
+      }).kind,
+    ).toBe('unpaid');
+  });
+
   test('hours and years do not read as rupees', () => {
     expect(kind('Stipend discussed later. Expect 40 hours a week and 2 years of growth.')).toBe(
       'unstated',

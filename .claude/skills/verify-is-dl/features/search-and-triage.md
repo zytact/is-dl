@@ -77,6 +77,20 @@ printf '%s\n' "$?" >"$EV/linkedin-pageless.exit"
 
 Its job has a non-null `companyName`, `locationText` and `postedAtText` with a null `companyUrl`. Any other job in the run with a non-null `companyUrl` covers the usual layout. Without one, the recipe above covers it.
 
+The pills under the title become `jobType`, and a pay pill also decides `pay`. Prove both when a change touches the detail pane. A US internship search shows pay pills and the "I'm interested" button more often than an India one, and 10 listings are enough to meet both:
+
+```bash
+$D search -k "software engineer intern" --source linkedin -l "United States" --remote-only \
+  --experience-level Internship --posted-within "Past week" --limit 10 --json \
+  >"$EV/linkedin-pills.json" 2>"$EV/linkedin-pills.stderr"
+printf '%s\n' "$?" >"$EV/linkedin-pills.exit"
+
+node -e 'const v=JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf8")); for (const j of v.jobs) console.log([j.jobId, j.companyName, j.jobType, j.pay.kind, j.pay.evidence].join(" | "))' \
+  "$EV/linkedin-pills.json" >"$EV/linkedin-pills.txt"
+```
+
+Every `jobType` is pills joined by `·`, such as `Remote · Internship` or `$18.75/hr - $22.25/hr · Remote · Internship`, and none holds a button label such as `I’m interested` or `Show all`. Most listings have a workplace or employment type pill, so a run where every `jobType` is null means the pill row has moved. A job whose `jobType` starts with an amount per period has `pay.kind: "paid"` and that pill as `pay.evidence`. If the run has no pay pill, search again with that kind of company in the keywords, or say that the pay half went unproven.
+
 For the blocklist, no job in `blocked.json` or `blocked-config.json` has the blocked `companyName`, and each stderr has `Skipped <n> from blocked companies: <names>.` naming it. The source count in `meta.sources[]` still reaches the limit when the corpus has enough other listings. `blocked-cleared.stderr` has no such line, and the company may be back in `blocked-cleared.json`. On LinkedIn, also count the `Processing job` lines in stderr: there is one per returned job, which shows that a blocked card was never opened.
 
 For multi-source behavior, prove each entry in `meta.sources[]`. Exit 0 alone is insufficient because partial failure is normal.
@@ -89,6 +103,7 @@ For multi-source behavior, prove each entry in `meta.sources[]`. Exit 0 alone is
 - The blocklist line is a log line. With `--json` it appears on stderr only when `--verbose` is also passed, and the saved run does not record the list.
 - LinkedIn reads a card's company from the card's second paragraph. If a blocked company shows up in the `Processing job` lines, that read has drifted, and the source drops the job after opening it instead.
 - `--out -` prints data but bypasses saved runs and the seen ledger.
+- A LinkedIn pay pill is an amount per period in any currency, such as `30K GBP/yr`. It classifies the listing as `paid` ahead of anything the description says, and the rupee token ceiling does not apply to it.
 - LinkedIn exit 3 means a session is required. Existing but expired cookies can instead cause a timeout. Replace them with `scripts/login.sh logout`, then `scripts/login.sh` in a TTY.
 - LinkedIn ignores the `location`, `f_WT`, `f_E`, `f_JT` and `sortBy` URL parameters since its redesign. A search with no `-l` uses the LinkedIn account's last searched location, so results may not match the location you expect. A location such as "Worldwide" can resolve to a specific country.
 - A LinkedIn job list that never appears fails the source with `LinkedIn's job list did not appear within 15s ... LinkedIn may have changed its page layout.` A missing job description logs a warning to stderr and keeps the job with a null `descriptionText`.
