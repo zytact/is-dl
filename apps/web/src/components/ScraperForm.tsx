@@ -8,6 +8,7 @@ import {
   UNSTOP_OPPORTUNITIES,
   UNSTOP_ROLES,
   type UnstopOpportunity,
+  YCOMBINATOR_ROLES,
 } from '../types';
 
 export interface ScraperFormData {
@@ -25,9 +26,23 @@ export interface ScraperFormData {
   sources: JobSource[];
   unstopOpportunity: UnstopOpportunity;
   unstopRoles: string[];
+  ycombinatorRoles: string[];
+  /** Left out when any experience is fine. */
+  ycombinatorMaxExperience?: number;
+  ycombinatorSkipUsOnly: boolean;
 }
 
-type FlagName = 'remoteOnly' | 'headless' | 'excludeSeen' | 'excludeApplied' | 'excludeUnpaid';
+type FlagName =
+  | 'remoteOnly'
+  | 'headless'
+  | 'excludeSeen'
+  | 'excludeApplied'
+  | 'excludeUnpaid'
+  | 'ycombinatorSkipUsOnly';
+
+const TOGGLE_ON = 'border-brand-accent bg-brand-accent/10 text-brand-accent';
+const TOGGLE_OFF =
+  'border-brand-border text-brand-muted hover:border-brand-text hover:text-brand-text';
 
 const OK = 'peer-checked:bg-brand-ok peer-checked:border-brand-ok';
 const ACCENT = 'peer-checked:bg-brand-accent peer-checked:border-brand-accent';
@@ -49,6 +64,12 @@ const FLAGS: { name: FlagName; label: string; checked: string; hover: string }[]
     hover: 'group-hover:text-brand-ok',
   },
   { name: 'excludeUnpaid', label: 'SKIP_UNPAID', checked: OK, hover: 'group-hover:text-brand-ok' },
+  {
+    name: 'ycombinatorSkipUsOnly',
+    label: 'YC_SKIP_US_ONLY',
+    checked: OK,
+    hover: 'group-hover:text-brand-ok',
+  },
 ];
 
 interface ScraperFormProps {
@@ -70,11 +91,16 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
     excludeApplied: false,
     excludeUnpaid: false,
     unstopOpportunity: 'jobs' as UnstopOpportunity,
+    ycombinatorMaxExperience: '',
+    ycombinatorSkipUsOnly: false,
   });
   const [sources, setSources] = useState<JobSource[]>([...JOB_SOURCES]);
   const [unstopRoles, setUnstopRoles] = useState<string[]>(['software-development']);
+  const [ycombinatorRoles, setYcombinatorRoles] = useState<string[]>(['software-engineer']);
 
   const unstopSelected = sources.includes('unstop');
+  const ycombinatorSelected = sources.includes('ycombinator');
+  const missingRole = ycombinatorSelected && ycombinatorRoles.length === 0;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -90,18 +116,25 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
     );
   };
 
-  const toggleRole = (role: string) => {
-    setUnstopRoles((prev) =>
+  const toggleIn = (setRoles: typeof setUnstopRoles) => (role: string) => {
+    setRoles((prev) =>
       prev.includes(role) ? prev.filter((item) => item !== role) : [...prev, role],
     );
   };
+  const toggleRole = toggleIn(setUnstopRoles);
+  const toggleYcombinatorRole = toggleIn(setYcombinatorRoles);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const { ycombinatorMaxExperience, ...rest } = formData;
     onStart({
-      ...formData,
+      ...rest,
       sources,
       unstopRoles: unstopSelected ? unstopRoles : [],
+      ycombinatorRoles,
+      ...(ycombinatorMaxExperience !== '' && {
+        ycombinatorMaxExperience: Number(ycombinatorMaxExperience),
+      }),
     });
   };
 
@@ -115,7 +148,7 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
         <div className="absolute top-0 right-0 bg-brand-cyan text-brand-dark text-xs px-2 font-bold uppercase">
           BOARDS
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {JOB_SOURCES.map((source) => (
             <button
               key={source}
@@ -123,7 +156,7 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
               onClick={() => toggleSource(source)}
               disabled={isScraping}
               aria-pressed={sources.includes(source)}
-              className={`border px-3 py-2 text-xs font-mono uppercase tracking-widest transition-colors disabled:opacity-50 ${
+              className={`border px-1 py-2 text-xs font-mono uppercase tracking-wider transition-colors disabled:opacity-50 ${
                 sources.includes(source)
                   ? 'border-brand-cyan bg-brand-cyan/10 text-brand-cyan'
                   : 'border-brand-border text-brand-muted hover:border-brand-text hover:text-brand-text'
@@ -136,7 +169,7 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
         <span className="text-[10px] text-brand-muted uppercase tracking-widest">
           {sources.length === 0
             ? 'PICK AT LEAST ONE BOARD'
-            : 'LINKEDIN NEEDS A STORED SESSION. UNSTOP NEEDS NONE.'}
+            : 'LINKEDIN NEEDS A STORED SESSION. THE OTHERS NEED NONE.'}
         </span>
       </div>
 
@@ -182,9 +215,7 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
                   disabled={isScraping}
                   aria-pressed={unstopRoles.includes(role)}
                   className={`border px-2 py-2 text-[10px] font-mono uppercase tracking-widest transition-colors disabled:opacity-50 ${
-                    unstopRoles.includes(role)
-                      ? 'border-brand-accent bg-brand-accent/10 text-brand-accent'
-                      : 'border-brand-border text-brand-muted hover:border-brand-text hover:text-brand-text'
+                    unstopRoles.includes(role) ? TOGGLE_ON : TOGGLE_OFF
                   }`}
                 >
                   {roleLabel(role)}
@@ -196,6 +227,62 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
                 ? 'NO FILTER: MOSTLY SALES AND SUPPORT ROLES'
                 : 'UNSTOP LISTS EVERY FUNCTION. NARROW IT OR EXPECT SALES.'}
             </span>
+          </div>
+        </div>
+      )}
+
+      {ycombinatorSelected && (
+        <div className="p-4 border border-brand-border bg-brand-panel relative flex flex-col gap-4">
+          <div className="absolute top-0 right-0 bg-brand-border text-brand-dark text-xs px-2 font-bold uppercase">
+            Y COMBINATOR
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <span className="text-xs uppercase text-brand-muted tracking-widest">ROLE</span>
+            <div className="grid grid-cols-3 gap-2">
+              {YCOMBINATOR_ROLES.map((role) => (
+                <button
+                  key={role}
+                  type="button"
+                  onClick={() => toggleYcombinatorRole(role)}
+                  disabled={isScraping}
+                  aria-pressed={ycombinatorRoles.includes(role)}
+                  className={`border px-1 py-2 text-[10px] font-mono uppercase tracking-wider transition-colors disabled:opacity-50 ${
+                    ycombinatorRoles.includes(role) ? TOGGLE_ON : TOGGLE_OFF
+                  }`}
+                >
+                  {roleLabel(role)}
+                </button>
+              ))}
+            </div>
+            <span className="text-[10px] text-brand-muted uppercase tracking-widest">
+              {missingRole
+                ? 'PICK AT LEAST ONE ROLE'
+                : 'THE ROLE PICKS THE LISTINGS. KEYWORDS ARE NOT MATCHED HERE.'}
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-1 relative group">
+            <label
+              htmlFor="ycombinatorMaxExperience"
+              className="text-xs uppercase text-brand-muted tracking-widest bg-brand-panel px-1 absolute -top-2 left-2 group-focus-within:text-brand-cyan transition-colors z-10"
+            >
+              MAX_EXPERIENCE
+            </label>
+            <select
+              id="ycombinatorMaxExperience"
+              name="ycombinatorMaxExperience"
+              className="brutal-input py-3 mt-1 appearance-none bg-brand-dark"
+              value={formData.ycombinatorMaxExperience}
+              onChange={handleChange}
+              disabled={isScraping}
+            >
+              <option value="">ANY</option>
+              <option value="0">NEW GRADS OK</option>
+              <option value="1">1 YEAR</option>
+              <option value="3">3 YEARS</option>
+              <option value="5">5 YEARS</option>
+            </select>
           </div>
         </div>
       )}
@@ -313,7 +400,7 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
           id="jobType"
           name="jobType"
           type="text"
-          placeholder="Full-time, Part-time"
+          placeholder="Full-time, Internship"
           className="brutal-input py-3 mt-1"
           value={formData.jobType}
           onChange={handleChange}
@@ -326,33 +413,35 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
           FLAGS
         </div>
 
-        {FLAGS.map(({ name, label, checked, hover }) => (
-          <label key={name} className="flex items-center gap-3 cursor-pointer group">
-            <div className="relative">
-              <input
-                type="checkbox"
-                name={name}
-                checked={formData[name]}
-                onChange={handleChange}
-                disabled={isScraping}
-                className="peer sr-only"
-              />
-              <div
-                className={`w-5 h-5 border-2 border-brand-border ${checked} transition-colors flex items-center justify-center`}
-              >
-                <div className="w-2 h-2 bg-brand-dark scale-0 peer-checked:scale-100 transition-transform"></div>
+        {FLAGS.filter(({ name }) => name !== 'ycombinatorSkipUsOnly' || ycombinatorSelected).map(
+          ({ name, label, checked, hover }) => (
+            <label key={name} className="flex items-center gap-3 cursor-pointer group">
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  name={name}
+                  checked={formData[name]}
+                  onChange={handleChange}
+                  disabled={isScraping}
+                  className="peer sr-only"
+                />
+                <div
+                  className={`w-5 h-5 border-2 border-brand-border ${checked} transition-colors flex items-center justify-center`}
+                >
+                  <div className="w-2 h-2 bg-brand-dark scale-0 peer-checked:scale-100 transition-transform"></div>
+                </div>
               </div>
-            </div>
-            <span className={`text-sm uppercase tracking-wider ${hover} transition-colors`}>
-              {label}
-            </span>
-          </label>
-        ))}
+              <span className={`text-sm uppercase tracking-wider ${hover} transition-colors`}>
+                {label}
+              </span>
+            </label>
+          ),
+        )}
       </div>
 
       <button
         type="submit"
-        disabled={isScraping || sources.length === 0}
+        disabled={isScraping || sources.length === 0 || missingRole}
         className="brutal-btn primary w-full mt-4 flex justify-center items-center gap-3 text-lg py-4 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-brand-accent disabled:active:translate-x-0 disabled:active:translate-y-0 disabled:shadow-none"
       >
         <Play fill="currentColor" />

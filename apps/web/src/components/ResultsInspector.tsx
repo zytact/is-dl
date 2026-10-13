@@ -58,6 +58,7 @@ interface Job {
   pay?: PayInfo;
   jobId: string | null;
   jobUrl: string;
+  applyUrl?: string;
   title: string | null;
   companyName: string | null;
   companyUrl: string | null;
@@ -574,6 +575,16 @@ export function ResultsInspector({ filename, onBack, onDeleted }: ResultsInspect
                     >
                       ACCESS_SOURCE <ExternalLink className="w-4 h-4" />
                     </a>
+                    {selectedJob.applyUrl && (
+                      <a
+                        href={selectedJob.applyUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="brutal-btn flex items-center gap-2 text-sm"
+                      >
+                        APPLY_LINK <ExternalLink className="w-4 h-4" />
+                      </a>
+                    )}
                     {selectedJob.jobType && (
                       <div className="px-4 py-2 border border-brand-border bg-brand-dark text-xs font-mono text-brand-muted flex items-center">
                         TYPE: {selectedJob.jobType.replace(/\s+/g, ' ').trim()}

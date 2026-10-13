@@ -22,6 +22,12 @@ export interface SearchSettings {
   unstopOpportunity: UnstopOpportunity;
   /** Unstop work function slugs, for example "software-development". */
   unstopRoles?: string[];
+  /** Y Combinator role page slugs, for example "software-engineer". */
+  ycombinatorRoles: string[];
+  /** Y Combinator listings asking for more years than this are dropped. */
+  ycombinatorMaxExperience?: number;
+  /** Drops Y Combinator listings open to US citizens and visa holders only. */
+  ycombinatorSkipUsOnly: boolean;
   location: string;
   limit: number;
   experienceLevel?: string[];
@@ -74,6 +80,8 @@ export const DEFAULT_SEARCH: SearchSettings = {
   keywords: '',
   sources: [...JOB_SOURCES],
   unstopOpportunity: 'jobs',
+  ycombinatorRoles: ['software-engineer'],
+  ycombinatorSkipUsOnly: false,
   location: '',
   limit: 50,
   remoteOnly: false,
@@ -101,6 +109,9 @@ export const SEARCH_FIELDS = {
   sources: 'string[]',
   'unstop-opportunity': 'string',
   'unstop-roles': 'string[]',
+  'ycombinator-roles': 'string[]',
+  'ycombinator-max-experience': 'number',
+  'ycombinator-skip-us-only': 'boolean',
 } as const satisfies Record<string, FieldType>;
 
 type SearchFieldKey = keyof typeof SEARCH_FIELDS;
@@ -337,6 +348,9 @@ export function envSearchLayer(env: NodeJS.ProcessEnv): SearchLayer {
     sources: envList(env, 'SOURCES') as JobSource[] | undefined,
     unstopOpportunity: envString(env, 'UNSTOP_OPPORTUNITY') as UnstopOpportunity | undefined,
     unstopRoles: envList(env, 'UNSTOP_ROLES'),
+    ycombinatorRoles: envList(env, 'YCOMBINATOR_ROLES'),
+    ycombinatorMaxExperience: envNumber(env, 'YCOMBINATOR_MAX_EXPERIENCE'),
+    ycombinatorSkipUsOnly: envBool(env, 'YCOMBINATOR_SKIP_US_ONLY'),
   });
 }
 
@@ -417,6 +431,21 @@ export function resolveSearch(input: ResolveSearchInput): SearchSettings {
     throw new CliError(
       'CONFIG',
       `Unknown Unstop opportunity "${opportunity}". Use one of: ${UNSTOP_OPPORTUNITIES.join(', ')}`,
+    );
+  }
+
+  if (merged.sources.includes('ycombinator') && !merged.ycombinatorRoles.length) {
+    throw new CliError(
+      'USAGE',
+      'Y Combinator needs at least one role, for example software-engineer.',
+    );
+  }
+  // A role becomes a URL path segment, so only a slug is let through.
+  const badRole = merged.ycombinatorRoles.find((role) => !/^[a-z0-9-]+$/.test(role));
+  if (badRole !== undefined) {
+    throw new CliError(
+      'CONFIG',
+      `Unknown Y Combinator role "${badRole}". Use a role page slug such as software-engineer.`,
     );
   }
   return merged;

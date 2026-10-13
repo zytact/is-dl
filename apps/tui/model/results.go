@@ -695,6 +695,7 @@ func buildFullJobDetail(jobs []api.JobListing, index int, width int) string {
 	writeField("Posted ISO", displayValue(job.PostedAtIso, ""))
 	writeField("Alumni Count", displayValue(job.AlumniCount, ""))
 	writeField("Job URL", job.JobURL)
+	writeField("Apply URL", displayValue(job.ApplyURL, ""))
 	writeField("Company URL", displayValue(job.CompanyURL, ""))
 	writeField("Job ID", displayValue(job.JobID, ""))
 

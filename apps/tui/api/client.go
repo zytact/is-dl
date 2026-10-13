@@ -38,6 +38,10 @@ type ScrapeOptions struct {
 	Sources           string `json:"sources,omitempty"`
 	UnstopOpportunity string `json:"unstopOpportunity,omitempty"`
 	UnstopRoles       string `json:"unstopRoles"`
+	YcombinatorRoles  string `json:"ycombinatorRoles,omitempty"`
+	// Nil means any experience.
+	YcombinatorMaxExperience *int `json:"ycombinatorMaxExperience,omitempty"`
+	YcombinatorSkipUsOnly    bool `json:"ycombinatorSkipUsOnly"`
 }
 
 type SSEEvent struct {
@@ -64,6 +68,7 @@ type JobListing struct {
 	Source           string   `json:"source"`
 	JobID            *string  `json:"jobId"`
 	JobURL           string   `json:"jobUrl"`
+	ApplyURL         *string  `json:"applyUrl"`
 	Title            *string  `json:"title"`
 	CompanyName      *string  `json:"companyName"`
 	LocationText     *string  `json:"locationText"`

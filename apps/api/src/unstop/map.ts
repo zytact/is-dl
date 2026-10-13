@@ -1,43 +1,9 @@
 import { detectAiAgentSignals } from '../ai-agent-detector.ts';
+import { decodeEntities } from '../html.ts';
 import { detectLocationConflict } from '../location-conflict.ts';
 import { classifyPay, emptyPay, TOKEN_CEILING_INR } from '../pay.ts';
 import type { JobListing, PayAmount, PayInfo, PayPeriod, WorkplaceClaim } from '../types.ts';
 import type { UnstopItem, UnstopJobDetail } from './api.ts';
-
-const ENTITIES: Record<string, string> = {
-  amp: '&',
-  lt: '<',
-  gt: '>',
-  quot: '"',
-  apos: "'",
-  nbsp: ' ',
-  rsquo: '’',
-  lsquo: '‘',
-  ldquo: '“',
-  rdquo: '”',
-  hellip: '…',
-  mdash: '-',
-  ndash: '-',
-  rarr: '->',
-  larr: '<-',
-  bull: '-',
-  middot: '·',
-  deg: '°',
-  times: '×',
-};
-
-function decodeEntities(text: string): string {
-  return text.replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (whole, body: string) => {
-    if (body.startsWith('#')) {
-      const code =
-        body.startsWith('#x') || body.startsWith('#X')
-          ? Number.parseInt(body.slice(2), 16)
-          : Number.parseInt(body.slice(1), 10);
-      return Number.isFinite(code) ? String.fromCodePoint(code) : whole;
-    }
-    return ENTITIES[body.toLowerCase()] ?? whole;
-  });
-}
 
 /**
  * `details` is HTML, and pay, location and AI-agent detection all expect prose.

@@ -174,6 +174,12 @@ export async function search(
         opportunity: settings.unstopOpportunity,
         roles: settings.unstopRoles,
       },
+      ycombinator: {
+        roles: settings.ycombinatorRoles,
+        jobType: settings.jobType,
+        maxExperience: settings.ycombinatorMaxExperience,
+        skipUsOnly: settings.ycombinatorSkipUsOnly,
+      },
     },
     log,
     signal,

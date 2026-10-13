@@ -247,6 +247,7 @@ Going through LinkedIn is a mess. It is filled with trash posts and wastes time.
 - The scraper uses Playwright with Chromium for reliable extraction
 - Location can be flexible: "Remote", "United States", "San Francisco, CA", etc.
 - LinkedIn reads location, remote, experience level and job type from the query text, so is-dl appends them to your keywords, for example `software engineer, internship, remote, in India`. LinkedIn interprets that text itself, and a search with no location uses the account's last searched location.
+- `--source ycombinator` reads the Y Combinator job board over plain HTTP with no login. `--ycombinator-roles` picks the role pages, each about 35 listings, and keywords are not matched there. The filters read fields the listing publishes: `--job-type`, `--remote-only`, `--location`, `--ycombinator-max-experience` and `--ycombinator-skip-us-only`. Each job carries `applyUrl`, which needs a signed-in Y Combinator account.
 - CORS is enabled for all API endpoints
 
 Built with [Vite+](https://viteplus.dev/) and [pnpm](https://pnpm.io/).

@@ -61,7 +61,7 @@ export interface LocationConflict {
   claimed: { kind: WorkplaceClaim; evidence: string };
 }
 
-export const JOB_SOURCES = ['linkedin', 'unstop'] as const;
+export const JOB_SOURCES = ['linkedin', 'unstop', 'ycombinator'] as const;
 
 export type JobSource = (typeof JOB_SOURCES)[number];
 
@@ -73,6 +73,8 @@ export interface JobListing {
   source: JobSource;
   jobId: string | null;
   jobUrl: string;
+  /** Where the board sends applicants, when that is not `jobUrl`. */
+  applyUrl?: string;
   title: string | null;
   companyName: string | null;
   companyUrl: string | null;
@@ -171,9 +173,8 @@ export interface SearchQuery {
 
 /**
  * Playwright, a stored session and the search filters, all needed by LinkedIn
- * and nothing else. `experienceLevel`, `postedWithin` and `jobType` are
- * LinkedIn's own taxonomy. `postedWithin` becomes `f_TPR`, the other two
- * become phrases in the query text.
+ * and nothing else. `postedWithin` becomes `f_TPR`. `experienceLevel` and
+ * `jobType` become phrases in the query text.
  */
 export interface LinkedInOptions {
   debug?: boolean;
@@ -200,4 +201,16 @@ export interface UnstopOptions {
   opportunity: UnstopOpportunity;
   /** Work function slugs, for example "software-development". */
   roles?: string[];
+}
+
+/** Plain HTTP against the public job board. No browser, no session. */
+export interface YcombinatorOptions {
+  /** Role page slugs, for example "software-engineer". Each one is one request. */
+  roles: string[];
+  /** Keeps listings whose `type` is one of these, for example "Internship". */
+  jobType?: string[];
+  /** Drops listings that ask for more years than this. */
+  maxExperience?: number;
+  /** Drops listings whose visa field is "US citizen/visa only". */
+  skipUsOnly?: boolean;
 }

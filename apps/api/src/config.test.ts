@@ -52,6 +52,7 @@ describe('config precedence', () => {
     expect(resolveSearch({ config: empty, env: {}, flags: {} }).sources).toEqual([
       'linkedin',
       'unstop',
+      'ycombinator',
     ]);
     expect(resolveSearch({ config, env: {}, flags: {} }).sources).toEqual(['linkedin']);
     expect(resolveSearch({ config, env: { IS_DL_SOURCES: 'unstop' }, flags: {} }).sources).toEqual([
@@ -64,6 +65,15 @@ describe('config precedence', () => {
         flags: { sources: ['unstop', 'linkedin', 'unstop'] },
       }).sources,
     ).toEqual(['unstop', 'linkedin']);
+  });
+
+  test('a Y Combinator role has to be a role page slug', () => {
+    const roles = (ycombinatorRoles: string[]) =>
+      resolveSearch({ config: empty, env: {}, flags: { ycombinatorRoles } }).ycombinatorRoles;
+
+    expect(roles(['designer', 'product-manager'])).toEqual(['designer', 'product-manager']);
+    expect(() => roles(['../companies'])).toThrow('Unknown Y Combinator role "../companies"');
+    expect(() => roles([])).toThrow('Y Combinator needs at least one role');
   });
 
   test('an unknown source name is a config error', () => {
