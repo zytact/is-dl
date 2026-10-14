@@ -172,10 +172,14 @@ if (command === 'targets') {
   await evaluate(
     match,
     `(() => { const el = ${pick(selector)};
-      const proto = el instanceof HTMLTextAreaElement
-        ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
-      Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, ${quote(value)});
-      el.dispatchEvent(new Event('input', { bubbles: true })); })()`,
+      const proto = [HTMLTextAreaElement, HTMLSelectElement].find((type) => el instanceof type)
+        ?? HTMLInputElement;
+      if (el.options && ![...el.options].some((option) => option.value === ${quote(value)})) {
+        throw new Error('No such value for ' + ${quote(selector)});
+      }
+      Object.getOwnPropertyDescriptor(proto.prototype, 'value').set.call(el, ${quote(value)});
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true })); })()`,
   );
   process.stdout.write(`${selector}=${value}\n`);
 } else if (command === 'close') {

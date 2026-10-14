@@ -138,6 +138,8 @@ Stable handles owned by the website:
 | Inspector        | heading `INSPECTOR_PROTOCOL`, button title `Back to List`             |
 | Result actions   | button titles `View Raw JSON`, `Download JSON`, `Purge Record`        |
 
+`fill` sets a text input, a textarea, or a `<select>`, where the value is the option's `value` attribute, and fails on a value the select does not offer. A flag in the FLAGS panel is a hidden checkbox, so click its label: `click-text "$U" 'label span' SKIP_SEEN`.
+
 Drive the DOM through clicks and typing. A fetch call from the browser console proves the API, not the website.
 
 ### TUI
