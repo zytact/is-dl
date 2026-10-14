@@ -7,19 +7,24 @@ import type {
   SearchMeta,
   SearchQuery,
   UnstopOptions,
+  YcombinatorOptions,
 } from './types.ts';
 import { unstopSource } from './unstop/source.ts';
+import { ycombinatorSource } from './ycombinator/source.ts';
 
 export interface ScrapeRequest {
   query: SearchQuery;
   sources: JobSource[];
   linkedin: LinkedInOptions;
   unstop: UnstopOptions;
+  ycombinator: YcombinatorOptions;
 }
 
-function buildRunner(source: JobSource, request: ScrapeRequest): SourceRunner {
-  return source === 'linkedin' ? linkedinSource(request.linkedin) : unstopSource(request.unstop);
-}
+const RUNNERS: Record<JobSource, (request: ScrapeRequest) => SourceRunner> = {
+  linkedin: (request) => linkedinSource(request.linkedin),
+  unstop: (request) => unstopSource(request.unstop),
+  ycombinator: (request) => ycombinatorSource(request.ycombinator),
+};
 
 /** The run file records what was asked for, wherever the request kept it. */
 function metaFilters(request: ScrapeRequest): SearchMeta['filters'] {
@@ -36,6 +41,6 @@ export function runScraper(
   onLog: (msg: string) => void = console.error,
   signal?: AbortSignal,
 ): Promise<ScraperOutput> {
-  const runners = request.sources.map((source) => buildRunner(source, request));
+  const runners = request.sources.map((source) => RUNNERS[source](request));
   return runSources(request.query, runners, { filters: metaFilters(request), onLog, signal });
 }

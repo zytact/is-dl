@@ -34,6 +34,14 @@ type ScrapeModel struct {
 	unstopRoleSelected map[int]bool
 	unstopRoleIndex    int
 
+	ycombinatorRoleOptions  []string
+	ycombinatorRoleSelected map[int]bool
+	ycombinatorRoleIndex    int
+
+	// The first option is "Any", the rest are years.
+	ycombinatorExperienceOptions []string
+	ycombinatorExperienceIndex   int
+
 	experienceOptions  []string
 	experienceSelected map[int]bool
 	experienceIndex    int
@@ -63,6 +71,8 @@ const (
 	scrapeSources
 	scrapeUnstopOpportunity
 	scrapeUnstopRoles
+	scrapeYcombinatorRoles
+	scrapeYcombinatorExperience
 	scrapeExperience
 	scrapeJobType
 	scrapePostedWithin
@@ -71,6 +81,7 @@ const (
 	scrapeExcludeSeen
 	scrapeExcludeApplied
 	scrapeExcludeUnpaid
+	scrapeYcombinatorSkipUsOnly
 	scrapeStartButton
 )
 
@@ -83,6 +94,7 @@ var toggleLabels = []struct {
 	{scrapeExcludeSeen, "Skip Seen"},
 	{scrapeExcludeApplied, "Skip Applied"},
 	{scrapeExcludeUnpaid, "Skip Unpaid"},
+	{scrapeYcombinatorSkipUsOnly, "YC Skip US-only"},
 }
 
 func NewScrape(client api.APIClient) *ScrapeModel {
@@ -106,8 +118,8 @@ func NewScrape(client api.APIClient) *ScrapeModel {
 	model := &ScrapeModel{
 		client:                   client,
 		inputs:                   inputs,
-		sourceOptions:            []string{"linkedin", "unstop"},
-		sourceSelected:           map[int]bool{0: true, 1: true},
+		sourceOptions:            []string{"linkedin", "unstop", "ycombinator"},
+		sourceSelected:           map[int]bool{0: true, 1: true, 2: true},
 		unstopOpportunityOptions: []string{"jobs", "internships", "hackathons", "competitions"},
 		unstopRoleOptions: []string{
 			"software-development",
@@ -115,14 +127,27 @@ func NewScrape(client api.APIClient) *ScrapeModel {
 			"full-stack-development",
 			"backend-development",
 		},
-		unstopRoleSelected:  map[int]bool{0: true},
-		experienceOptions:   []string{"Internship", "Entry level", "Associate", "Mid-Senior level", "Director"},
-		experienceSelected:  map[int]bool{},
-		jobTypeOptions:      []string{"Full-time", "Part-time"},
-		jobTypeSelected:     map[int]bool{},
-		postedWithinOptions: []string{"Any Time", "Past 24 hours", "Past week", "Past month"},
-		toggles:             map[int]bool{scrapeHeadless: true},
-		fieldLines:          map[int]int{},
+		unstopRoleSelected: map[int]bool{0: true},
+		ycombinatorRoleOptions: []string{
+			"software-engineer",
+			"designer",
+			"product-manager",
+			"science",
+			"sales-manager",
+			"marketing",
+			"support",
+			"operations",
+			"recruiting-hr",
+		},
+		ycombinatorRoleSelected:      map[int]bool{0: true},
+		ycombinatorExperienceOptions: []string{"Any", "0", "1", "3", "5"},
+		experienceOptions:            []string{"Internship", "Entry level", "Associate", "Mid-Senior level", "Director"},
+		experienceSelected:           map[int]bool{},
+		jobTypeOptions:               []string{"Full-time", "Part-time", "Internship"},
+		jobTypeSelected:              map[int]bool{},
+		postedWithinOptions:          []string{"Any Time", "Past 24 hours", "Past week", "Past month"},
+		toggles:                      map[int]bool{scrapeHeadless: true},
+		fieldLines:                   map[int]int{},
 	}
 	model.viewport = viewport.New(0, 0)
 	return model
@@ -161,6 +186,8 @@ func (s *ScrapeModel) checkboxField(field int) *checkboxField {
 		return &checkboxField{s.sourceOptions, s.sourceSelected, &s.sourceIndex}
 	case scrapeUnstopRoles:
 		return &checkboxField{s.unstopRoleOptions, s.unstopRoleSelected, &s.unstopRoleIndex}
+	case scrapeYcombinatorRoles:
+		return &checkboxField{s.ycombinatorRoleOptions, s.ycombinatorRoleSelected, &s.ycombinatorRoleIndex}
 	case scrapeExperience:
 		return &checkboxField{s.experienceOptions, s.experienceSelected, &s.experienceIndex}
 	case scrapeJobType:
@@ -173,28 +200,41 @@ func (s *ScrapeModel) cycleField(field int) (options []string, index *int) {
 	switch field {
 	case scrapeUnstopOpportunity:
 		return s.unstopOpportunityOptions, &s.unstopOpportunityIndex
+	case scrapeYcombinatorExperience:
+		return s.ycombinatorExperienceOptions, &s.ycombinatorExperienceIndex
 	case scrapePostedWithin:
 		return s.postedWithinOptions, &s.postedWithinIndex
 	}
 	return nil, nil
 }
 
-func (s *ScrapeModel) unstopEnabled() bool {
+func (s *ScrapeModel) sourceEnabled(source string) bool {
 	for i, name := range s.sourceOptions {
-		if name == "unstop" && s.sourceSelected[i] {
+		if name == source && s.sourceSelected[i] {
 			return true
 		}
 	}
 	return false
 }
 
-// The Unstop fields only exist while Unstop is one of the selected sources.
+func (s *ScrapeModel) unstopEnabled() bool {
+	return s.sourceEnabled("unstop")
+}
+
+func (s *ScrapeModel) ycombinatorEnabled() bool {
+	return s.sourceEnabled("ycombinator")
+}
+
+// A source's own fields only exist while it is one of the selected sources.
 func (s *ScrapeModel) visibleFields() []int {
 	fields := []int{scrapeKeywords, scrapeLocation, scrapeLimit, scrapeSources}
 	if s.unstopEnabled() {
 		fields = append(fields, scrapeUnstopOpportunity, scrapeUnstopRoles)
 	}
-	return append(fields,
+	if s.ycombinatorEnabled() {
+		fields = append(fields, scrapeYcombinatorRoles, scrapeYcombinatorExperience)
+	}
+	fields = append(fields,
 		scrapeExperience,
 		scrapeJobType,
 		scrapePostedWithin,
@@ -203,8 +243,11 @@ func (s *ScrapeModel) visibleFields() []int {
 		scrapeExcludeSeen,
 		scrapeExcludeApplied,
 		scrapeExcludeUnpaid,
-		scrapeStartButton,
 	)
+	if s.ycombinatorEnabled() {
+		fields = append(fields, scrapeYcombinatorSkipUsOnly)
+	}
+	return append(fields, scrapeStartButton)
 }
 
 func (s *ScrapeModel) moveFocus(delta int, wrap bool) {
@@ -351,6 +394,20 @@ func (s *ScrapeModel) startCmd() tea.Cmd {
 		ExcludeUnpaid:   s.toggles[scrapeExcludeUnpaid],
 		Sources:         strings.Join(sources, ","),
 	}
+	if s.ycombinatorEnabled() {
+		roles := s.selectedOptions(s.ycombinatorRoleOptions, s.ycombinatorRoleSelected)
+		if len(roles) == 0 {
+			s.inlineError = "select at least one Y Combinator role"
+			return nil
+		}
+		options.YcombinatorRoles = strings.Join(roles, ",")
+		options.YcombinatorSkipUsOnly = s.toggles[scrapeYcombinatorSkipUsOnly]
+		if s.ycombinatorExperienceIndex > 0 {
+			// The options are fixed digits, so this cannot fail.
+			years, _ := strconv.Atoi(s.ycombinatorExperienceOptions[s.ycombinatorExperienceIndex])
+			options.YcombinatorMaxExperience = &years
+		}
+	}
 	if s.unstopEnabled() {
 		options.UnstopOpportunity = s.unstopOpportunityOptions[s.unstopOpportunityIndex]
 		options.UnstopRoles = strings.Join(s.selectedOptions(s.unstopRoleOptions, s.unstopRoleSelected), ",")
@@ -426,6 +483,12 @@ func (s *ScrapeModel) View() string {
 		f.group(scrapeUnstopRoles, s.unstopRoleIndex,
 			checkboxGroup("Unstop Roles", s.unstopRoleOptions, s.unstopRoleSelected, s.unstopRoleIndex, s.focusIndex == scrapeUnstopRoles))
 	}
+	if s.ycombinatorEnabled() {
+		f.group(scrapeYcombinatorRoles, s.ycombinatorRoleIndex,
+			checkboxGroup("YC Roles", s.ycombinatorRoleOptions, s.ycombinatorRoleSelected, s.ycombinatorRoleIndex, s.focusIndex == scrapeYcombinatorRoles))
+		f.field(scrapeYcombinatorExperience,
+			cycleRow("YC Max Experience", s.ycombinatorExperienceOptions[s.ycombinatorExperienceIndex], s.focusIndex == scrapeYcombinatorExperience))
+	}
 	f.write("\n")
 
 	f.group(scrapeExperience, s.experienceIndex,
@@ -436,6 +499,9 @@ func (s *ScrapeModel) View() string {
 
 	f.field(scrapePostedWithin, cycleRow("Posted Within", s.postedWithinOptions[s.postedWithinIndex], s.focusIndex == scrapePostedWithin))
 	for _, t := range toggleLabels {
+		if t.field == scrapeYcombinatorSkipUsOnly && !s.ycombinatorEnabled() {
+			continue
+		}
 		f.field(t.field, toggleRow(t.label, s.toggles[t.field], s.focusIndex == t.field))
 	}
 	f.write("\n")

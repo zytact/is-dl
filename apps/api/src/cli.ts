@@ -51,7 +51,7 @@ const COMMANDS: Record<string, () => Promise<Command>> = {
   resume: async () => (await import('./commands/resume.ts')).resumeCommand,
 };
 
-const HELP = `is-dl ${version} - job search CLI for LinkedIn and Unstop
+const HELP = `is-dl ${version} - job search CLI for LinkedIn, Unstop and Y Combinator
 
 Usage:
   is-dl <command> [flags]
@@ -81,10 +81,17 @@ Global flags:
 
 search flags:
   -k, --keywords <query>            Search keywords (required unless --profile)
-  -s, --source <csv>                linkedin, unstop, or both (default both)
+  -s, --source <csv>                linkedin, unstop, ycombinator (default all)
       --unstop-opportunity <name>   jobs, internships, hackathons, competitions
       --unstop-roles <csv>          Unstop work functions, for example
                                     "software-development,backend-development"
+      --ycombinator-roles <csv>     Y Combinator role pages (default
+                                    "software-engineer")
+      --ycombinator-max-experience <years>
+                                    Drop Y Combinator listings asking for more
+      --ycombinator-skip-us-only / --no-ycombinator-skip-us-only
+                                    Drop Y Combinator listings open to US
+                                    citizens and visa holders only
   -p, --profile <name>              Use a saved profile from config
   -l, --location <location>         Location, for example "Remote" or "India"
       --limit <n>                   Maximum jobs to scrape (default 50)
@@ -118,11 +125,22 @@ Blocked companies:
   commas, so write a name with a comma in it into the config file by hand.
 
 Sources:
-  search queries LinkedIn and Unstop together and merges the results, newest
-  first. LinkedIn needs "is-dl login"; Unstop needs nothing. A source that
-  fails is reported and skipped, and the command only fails when every source
-  failed. --limit applies per source. meta.sources in the output records what
-  each source returned.
+  search queries LinkedIn, Unstop and Y Combinator together and merges the
+  results, newest first. LinkedIn needs "is-dl login"; the other two need
+  nothing. A source that fails is reported and skipped, and the command only
+  fails when every source failed. --limit applies per source. meta.sources in
+  the output records what each source returned.
+
+Y Combinator:
+  Each role in --ycombinator-roles is one page of the Y Combinator job board,
+  about 35 listings with no further pages: software-engineer, designer,
+  product-manager, recruiting-hr, sales-manager, marketing, support,
+  operations, science. Keywords are not matched against it. The role picks
+  the category and the filters read fields the listing publishes: --job-type
+  against its type ("Full-time", "Internship"), --remote-only and --location
+  against its location, --ycombinator-max-experience against its minimum
+  experience, --ycombinator-skip-us-only against its visa field. Each job
+  carries applyUrl, which needs a signed-in Y Combinator account.
 
 apps flags:
       --variant <name>              Which resume variant was sent
@@ -185,6 +203,7 @@ Examples:
   is-dl login
   is-dl search -k "frontend intern" -l Remote --limit 20 --json
   is-dl search -k developer --source unstop --unstop-roles software-development
+  is-dl search -k intern --source ycombinator --job-type Internship --remote-only
   is-dl runs show latest --json
   is-dl search -k "intern" --exclude-unpaid --exclude-applied
   is-dl search -k "intern" --exclude-seen   # only what I have not been shown

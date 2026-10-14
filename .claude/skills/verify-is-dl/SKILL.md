@@ -84,7 +84,7 @@ Only the state directory persists. `login.sh` points config, data and cache at s
 .agents/skills/verify-is-dl/scripts/doctor.sh
 ```
 
-The doctor is read-only. It checks the session, Node version, packed CLI hash and version, build freshness, isolated paths, that the LinkedIn session sits outside the run directory, the TUI binary, recorded process IDs, exact port ownership, `/api/results`, the browser CDP endpoint, React hydration, and the isolated download path. It ends with a note saying whether a LinkedIn session is stored, which is a note and not a failure: an Unstop-only run is a correct run without one.
+The doctor is read-only. It checks the session, Node version, packed CLI hash and version, build freshness, isolated paths, that the LinkedIn session sits outside the run directory, the TUI binary, recorded process IDs, exact port ownership, `/api/results`, the browser CDP endpoint, React hydration, and the isolated download path. It ends with a note saying whether a LinkedIn session is stored, which is a note and not a failure: an Unstop or Y Combinator run is a correct run without one.
 
 Run it whenever a screen, response, path, or build looks wrong. Cleanup and launch again when it reports a stale build. The product's `is-dl doctor` checks optional LinkedIn and resume dependencies, so it may fail correctly during an Unstop-only proof.
 
@@ -129,13 +129,16 @@ Stable handles owned by the website:
 | Control          | Handle                                                                |
 | ---------------- | --------------------------------------------------------------------- |
 | Navigation       | links `Terminal`, `Payloads`                                          |
-| Source selection | buttons `LinkedIn`, `Unstop`, with `aria-pressed`                     |
+| Source selection | buttons `LinkedIn`, `Unstop`, `Y Combinator`, with `aria-pressed`     |
 | Search form      | `#keywords`, `#location`, `#limit`, `#unstopOpportunity`              |
+| Y Combinator     | `#ycombinatorMaxExperience`, role buttons with `aria-pressed`         |
 | Search action    | button `INITIATE_SEQUENCE`, then `EXECUTING...`                       |
 | Abort            | button `ABORT`                                                        |
 | Results          | heading `DATA_REPOSITORIES`, result row text, footer `Total Datasets` |
 | Inspector        | heading `INSPECTOR_PROTOCOL`, button title `Back to List`             |
 | Result actions   | button titles `View Raw JSON`, `Download JSON`, `Purge Record`        |
+
+`fill` sets a text input, a textarea, or a `<select>`, where the value is the option's `value` attribute, and fails on a value the select does not offer. A flag in the FLAGS panel is a hidden checkbox, so click its label: `click-text "$U" 'label span' SKIP_SEEN`.
 
 Drive the DOM through clicks and typing. A fetch call from the browser console proves the API, not the website.
 
@@ -174,7 +177,7 @@ Keep action and result evidence together:
 
 Use the real public path. A website proof types into the form and clicks its button. A TUI proof sends keys to the running binary. Stateful proofs inspect both the visible result and the persisted file. Mocks stay in unit tests at existing source boundaries.
 
-Unstop is the default live source because it needs no account. `--out -` skips the run store and cannot prove cross-surface persistence. Never submit an application during verification. `apps add` only records local state.
+Unstop is the default live source because it needs no account. Y Combinator needs none either, and costs one request per role page plus one per returned job. `--out -` skips the run store and cannot prove cross-surface persistence. Never submit an application during verification. `apps add` only records local state.
 
 Store proofs under `.local/verify-evidence/is-dl/<UTC timestamp>/`. Cleanup preserves that tree, and `.gitignore` excludes `.local/`.
 

@@ -32,6 +32,10 @@ const SEARCH_OPTIONS = {
   source: { type: 'string', short: 's' },
   'unstop-opportunity': { type: 'string' },
   'unstop-roles': { type: 'string' },
+  'ycombinator-roles': { type: 'string' },
+  'ycombinator-max-experience': { type: 'string' },
+  'ycombinator-skip-us-only': { type: 'boolean' },
+  'no-ycombinator-skip-us-only': { type: 'boolean' },
 } as const;
 
 function toggle(on: boolean | undefined, off: boolean | undefined): boolean | undefined {
@@ -76,6 +80,15 @@ export async function searchCommand(base: CliBase, argv: string[]): Promise<void
     sources: csv(values.source) as JobSource[] | undefined,
     unstopOpportunity: values['unstop-opportunity'] as SearchLayer['unstopOpportunity'],
     unstopRoles: csv(values['unstop-roles']),
+    ycombinatorRoles: csv(values['ycombinator-roles']),
+    ycombinatorMaxExperience: num(
+      values['ycombinator-max-experience'],
+      '--ycombinator-max-experience',
+    ),
+    ycombinatorSkipUsOnly: toggle(
+      values['ycombinator-skip-us-only'],
+      values['no-ycombinator-skip-us-only'],
+    ),
   };
 
   const profile = values.profile ?? ctx.env.IS_DL_PROFILE;
