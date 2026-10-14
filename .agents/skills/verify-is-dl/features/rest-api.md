@@ -44,7 +44,7 @@ The bounded SSE capture starts before the POST; curl exit 28 is its expected tim
 - `POST /api/scrape` returns before the search finishes. Observe SSE or poll results.
 - A second active scrape returns HTTP 400.
 - Abort with no active scrape returns HTTP 409.
-- List fields take a JSON array or a comma-separated string. The search keys are `SEARCH_FIELDS` camelCased except `outDir`, plus `debug`, `excludeSeen`, `excludeApplied` and `excludeUnpaid`. API results always enter the run store. An unknown key or source is HTTP 400 with the reason.
+- List fields take a JSON array or a comma-separated string. The search keys are `SEARCH_FIELDS` camelCased except `outDir`, plus `debug`, `excludeSeen`, `excludeApplied` and `excludeUnpaid`. API results always enter the run store. An unknown key or source is HTTP 400 with the reason. A body with no `sources` runs all three boards, so name them.
 - The body resolves over the server's config and `IS_DL_*` env, the way `search` flags do.
 - A failed search logs `SCRAPE FAILED: <reason>` on the SSE stream.
 - API state is process-global, so one verification session owns its API.

@@ -1,13 +1,15 @@
 # Search and triage
 
-Search LinkedIn, Unstop, or both, normalize the listings, classify pay and location conflicts, apply local filters, merge source results, and save one run.
+Search LinkedIn, Unstop, Y Combinator, or any mix of them, normalize the listings, classify pay and location conflicts, apply local filters, merge source results, and save one run.
 
 ## Sub-features
 
-- Source selection with `--source linkedin`, `--source unstop`, or both.
+- Source selection with `--source linkedin`, `--source unstop`, `--source ycombinator`, or a comma-separated mix. All three are on by default.
 - Unstop opportunity and role selection.
 - LinkedIn filters for experience level, job type, posting age, location, and remote. Posting age is the `f_TPR` URL parameter. The rest are appended to the keywords as text, for example `software engineer intern, internship, remote, in India`, and LinkedIn interprets that text itself.
 - Local Unstop keyword, location, and remote filtering.
+- Y Combinator role pages with `--ycombinator-roles`, filtered on fields each listing publishes: `--job-type` against its type, `--remote-only` and `--location` against its location, `--ycombinator-max-experience` against its minimum experience, and `--ycombinator-skip-us-only` against its visa field. Keywords are not matched there.
+- `applyUrl` on each Y Combinator job.
 - Unpaid, applied, and seen filtering across sources.
 - A company blocklist from the `blocked-companies` config key or `--blocked-companies`, which every source applies while it pages.
 - Partial source failure with per-source status in `meta.sources[]`.
@@ -15,7 +17,7 @@ Search LinkedIn, Unstop, or both, normalize the listings, classify pay and locat
 
 ## How to get to it (user POV)
 
-Run `is-dl search` with keywords. Unstop works without authentication. LinkedIn requires one interactive login, which the harness stores outside the run directory so it is reused by every later run.
+Run `is-dl search` with keywords. Unstop and Y Combinator work without authentication. LinkedIn requires one interactive login, which the harness stores outside the run directory so it is reused by every later run.
 
 ## Driving it with the CLI harness
 
@@ -29,6 +31,18 @@ mkdir -p "$EV"
 $D search -k software --source unstop --unstop-roles software-development --limit 1 --json \
   >"$EV/search.json" 2>"$EV/search.stderr"
 printf '%s\n' "$?" >"$EV/search.exit"
+```
+
+Y Combinator needs no account. One search costs one request per role page plus one per returned job, so keep `--limit` at 1 to 3 and run the filters in one search:
+
+```bash
+$D search -k software --source ycombinator --remote-only --ycombinator-skip-us-only \
+  --ycombinator-max-experience 3 --limit 2 --json --verbose \
+  >"$EV/ycombinator.json" 2>"$EV/ycombinator.stderr"
+printf '%s\n' "$?" >"$EV/ycombinator.exit"
+
+node -e 'const v=JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf8")); for (const j of v.jobs) console.log([j.jobId, j.companyName, j.jobType, j.locationText, j.pay.kind, j.pay.evidence, j.applyUrl, (j.descriptionText ?? "").length].join(" | "), "\n" + j.requirementsText)' \
+  "$EV/ycombinator.json" >"$EV/ycombinator.txt"
 ```
 
 LinkedIn needs the stored login and Chromium. Keep `--limit` at 1 to 3, because each job takes about 10 seconds:
@@ -91,6 +105,8 @@ node -e 'const v=JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf
 
 Every `jobType` is pills joined by `·`, such as `Remote · Internship` or `$18.75/hr - $22.25/hr · Remote · Internship`, and none holds a button label such as `I’m interested` or `Show all`. Most listings have a workplace or employment type pill, so a run where every `jobType` is null means the pill row has moved. A job whose `jobType` starts with an amount per period has `pay.kind: "paid"` and that pill as `pay.evidence`. If the run has no pay pill, search again with that kind of company in the keywords, or say that the pay half went unproven.
 
+For Y Combinator, `meta.sources[]` has `ycombinator` with `status: "ok"` and a count at most the limit. Every job has `source: "ycombinator"`, a `jobUrl` under `https://www.ycombinator.com/companies/`, an `applyUrl` on `account.ycombinator.com`, a nonempty `descriptionText`, and a `locationText` containing `Remote`. Its `requirementsText` carries the filtered fields: no `Visa:` line says `US citizen/visa only`, and no `Experience:` line asks for more than 3 years. A listing with a salary range has `pay.kind: "paid"`, the range as `pay.evidence`, and the figures in `pay.amount`. Stderr has `software-engineer: <n> listings.` and `Kept <n> of <n> listings.`
+
 For the blocklist, no job in `blocked.json` or `blocked-config.json` has the blocked `companyName`, and each stderr has `Skipped <n> from blocked companies: <names>.` naming it. The source count in `meta.sources[]` still reaches the limit when the corpus has enough other listings. `blocked-cleared.stderr` has no such line, and the company may be back in `blocked-cleared.json`. On LinkedIn, also count the `Processing job` lines in stderr: there is one per returned job, which shows that a blocked card was never opened.
 
 For multi-source behavior, prove each entry in `meta.sources[]`. Exit 0 alone is insufficient because partial failure is normal.
@@ -98,6 +114,11 @@ For multi-source behavior, prove each entry in `meta.sources[]`. Exit 0 alone is
 ## Gotchas
 
 - `--limit` applies to each source and counts listings that passed `known` and the company blocklist.
+- Y Combinator ignores the keywords. A role page is the category, about 35 listings with no further pages, and `--remote-only` reads the role's own `/remote` page, which is a different set. A search for a role with few matches returns fewer than the limit.
+- Y Combinator writes countries as codes, such as `Bengaluru, KA, IN / Remote (IN)`. `--location India` matches because the source spells out the code that closes each place. A US state code closes a place with no country, so `San Francisco, CA` also matches `--location Canada`.
+- `--job-type` also reaches LinkedIn as query text, so `--job-type Internship` narrows both boards.
+- A Y Combinator listing page that fails logs `WARNING: no description for listing <id>` and keeps the job with a null `descriptionText`. Three in a row stop the description requests. A role page that fails, or has no `data-page` or `jobPostings`, fails the source with `Y Combinator may have changed its page format.` Both need Y Combinator to fail, so neither has a live recipe.
+- Y Combinator `postedAtIso` is approximate. The board publishes an age such as `about 7 hours`, not a date.
 - A blocklist entry matches a company whose name contains it as whole words, ignoring case and punctuation. `UM IT` blocks `UM IT Solutions` and leaves `Premium IT` alone.
 - `--blocked-companies` and `config set blocked-companies` split on commas. A name with a comma in it becomes two entries, so write it into the TOML array by hand. An empty value clears the list.
 - The blocklist line is a log line. With `--json` it appears on stderr only when `--verbose` is also passed, and the saved run does not record the list.
@@ -109,5 +130,5 @@ For multi-source behavior, prove each entry in `meta.sources[]`. Exit 0 alone is
 - A LinkedIn job list that never appears fails the source with `LinkedIn's job list did not appear within 15s ... LinkedIn may have changed its page layout.` A missing job description logs a warning to stderr and keeps the job with a null `descriptionText`.
 - A LinkedIn detail pane that never shows its title leaves the job out of the run, with `Error processing job <n>: The detail pane for job <id> did not load` on stderr. The job is not marked seen, so a later search opens it again. Five in a row end the source. This needs LinkedIn to fail a load, so it has no live recipe.
 - `--exclude-unpaid` runs after the source limits, so the final count can be lower. Source counts in `meta.sources[]` precede this final filter.
-- Unstop is live data. Assert schema, source status, filters, and bounded counts rather than a particular job title or id.
+- Unstop and Y Combinator are live data. Assert schema, source status, filters, and bounded counts rather than a particular job title or id.
 - Search never applies for a job.
