@@ -1,7 +1,7 @@
 import { errors, type Page } from 'playwright';
 import { CliError } from '../errors.ts';
 import { type ScrapeContext, debugShot } from './context.ts';
-import { descriptionSelector, linkedinJobId } from './job.ts';
+import { DESCRIPTION_SELECTOR, linkedinJobId } from './job.ts';
 
 /** LinkedIn keys every card with the job id, which is also how `cardJobId` reads it. */
 const CARD_KEY_PREFIX = 'job-card-component-ref-';
@@ -135,11 +135,12 @@ async function waitForJobDetails(
   }
 
   // The description loads last, so it is the sign the pane is complete.
-  const description = descriptionSelector(linkedinJobId(page.url()) ?? '');
-  await page.waitForSelector(description, { timeout: READY_TIMEOUT_MS }).catch((error: unknown) => {
-    if (!(error instanceof errors.TimeoutError)) throw error;
-    ctx.onLog(layoutChanged('job description', description));
-  });
+  await page
+    .waitForSelector(DESCRIPTION_SELECTOR, { timeout: READY_TIMEOUT_MS })
+    .catch((error: unknown) => {
+      if (!(error instanceof errors.TimeoutError)) throw error;
+      ctx.onLog(layoutChanged('job description', DESCRIPTION_SELECTOR));
+    });
 }
 
 export async function clickJobCard(

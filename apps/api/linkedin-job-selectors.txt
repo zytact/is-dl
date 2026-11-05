@@ -15,7 +15,7 @@ a[href*="/jobs/view/<id>/"]
 
 Top card (detail pane)
 the title's nearest ancestor that contains a <figure>, the company logo, and does
-not contain #JobDetails_AboutTheJob_<id>
+not contain a [data-testid="expandable-text-box"]
 
 Company name
 figure + p in the top card. A company with a LinkedIn page also gets an
@@ -34,7 +34,9 @@ Other links back to the job, such as "I'm interested" under "About the company",
 sit outside that row.
 
 Job description
-#JobDetails_AboutTheJob_<id> [data-testid="expandable-text-box"]
+the [data-testid="expandable-text-box"] in the nearest block around the
+<h2>About the job</h2> heading. "About the company" has a text box too.
+A search where no listing has a description fails, naming this hook.
 
 Search filters
 Location, remote, experience level and job type are read from the query text.
