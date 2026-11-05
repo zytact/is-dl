@@ -38,6 +38,8 @@ the [data-testid="expandable-text-box"] in the nearest block around the
 <h2>About the job</h2> heading. "About the company" has a text box too.
 The heading text is English, so an account using another language breaks it.
 A search where no listing has a description fails, naming this hook.
+The box ends with its own [data-testid="expandable-text-button"], the "… more"
+button, whose label is cut from the description.
 
 Search filters
 Location, remote, experience level and job type are read from the query text.

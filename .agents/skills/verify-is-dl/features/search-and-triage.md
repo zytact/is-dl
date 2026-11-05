@@ -79,7 +79,7 @@ For LinkedIn, run the LinkedIn recipe once with `--limit 5`, take `BLOCK` from t
 
 Exit code is 0. `search.json` has `ok: true`, one saved `path`, and at least one job when the live corpus contains a match. The Unstop entry in `meta.sources[]` has `status: "ok"`, and every returned job has `source: "unstop"`. The file at `path` exists and contains the same run data.
 
-For the LinkedIn recipe, the exit code is 0 and `meta.sources[]` has a `linkedin` entry with `status: "ok"`. Each job has a non-null `jobId`, `title`, `companyName`, `locationText` and `descriptionText`. Assert the shape and a bounded count, not particular jobs.
+For the LinkedIn recipe, the exit code is 0 and `meta.sources[]` has a `linkedin` entry with `status: "ok"`. Each job has a non-null `jobId`, `title`, `companyName`, `locationText` and `descriptionText`. No `descriptionText` ends with `… more`, the label of LinkedIn's expand button. Assert the shape and a bounded count, not particular jobs.
 
 A company without a LinkedIn page has a different top card, so prove that layout as well when a change touches the detail pane. Put such a company's name in the keywords. A saved run names one wherever `companyName` is set and `companyUrl` is null. Runs saved before the fix for issue #38 have both null for these listings, so there the company has to come from the listing's description:
 
