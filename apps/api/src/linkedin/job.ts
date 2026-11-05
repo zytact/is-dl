@@ -20,7 +20,6 @@ const TEXT_BOX_XPATH = '*[@data-testid="expandable-text-box"]';
 /** "About the company" has a text box too, so the heading picks the right one. */
 export const DESCRIPTION_SELECTOR = `xpath=//h2[normalize-space()="About the job"]/ancestor::*[.//${TEXT_BOX_XPATH}][1]//${TEXT_BOX_XPATH}`;
 
-/** The "… more" button sits inside the description box, after the text. */
 const EXPAND_BUTTON_SELECTOR = '[data-testid="expandable-text-button"]';
 
 const TOP_CARD_XPATH = `xpath=ancestor::*[.//figure][1][not(.//${TEXT_BOX_XPATH})]`;
@@ -51,7 +50,7 @@ export function linkedinJobUrl(currentUrl: string): string {
   return jobId ? `https://www.linkedin.com/jobs/view/${jobId}/` : currentUrl;
 }
 
-/** The description box's text ends with its button's label, which is not part of the description. */
+/** Cuts the "… more" button's label off the end of the description, when it is there. */
 export function withoutExpandLabel(text: string | null, label: string | null): string | null {
   if (!text || !label || !text.endsWith(label)) return text;
   return text.slice(0, -label.length).trim() || null;
@@ -121,7 +120,7 @@ export async function extractJobDetailsFromView(
   const descriptionBox = page.locator(DESCRIPTION_SELECTOR).first();
   const descriptionText = withoutExpandLabel(
     await readText(descriptionBox, ctx),
-    await readText(descriptionBox.locator(EXPAND_BUTTON_SELECTOR), ctx),
+    await readText(descriptionBox.locator(EXPAND_BUTTON_SELECTOR).last(), ctx),
   );
   const requirementsText = extractRequirements(descriptionText, ctx);
 
