@@ -141,7 +141,7 @@ async function scrape(
 
     // Every listing has a description, so none at all means the hook broke.
     // Failing lets the caller retry or stop instead of saving half-empty listings.
-    if (jobs.length && jobs.every((job) => job.descriptionText === null)) {
+    if (jobs.length && jobs.every((job) => !job.descriptionText)) {
       throw new CliError(
         'ERROR',
         `None of the ${jobs.length} LinkedIn listings had a description (selector: ${DESCRIPTION_SELECTOR}). LinkedIn may have changed its page layout.`,

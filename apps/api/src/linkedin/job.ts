@@ -15,12 +15,12 @@ import type { JobListing } from '../types.ts';
  */
 const titleSelector = (jobId: string) => `a[href*="/jobs/view/${jobId}/"]`;
 
-const TEXT_BOX = '*[@data-testid="expandable-text-box"]';
+const TEXT_BOX_XPATH = '*[@data-testid="expandable-text-box"]';
 
 /** "About the company" has a text box too, so the heading picks the right one. */
-export const DESCRIPTION_SELECTOR = `xpath=//h2[normalize-space()="About the job"]/ancestor::*[.//${TEXT_BOX}][1]//${TEXT_BOX}`;
+export const DESCRIPTION_SELECTOR = `xpath=//h2[normalize-space()="About the job"]/ancestor::*[.//${TEXT_BOX_XPATH}][1]//${TEXT_BOX_XPATH}`;
 
-const TOP_CARD_XPATH = `xpath=ancestor::*[.//figure][1][not(.//${TEXT_BOX})]`;
+const TOP_CARD_XPATH = `xpath=ancestor::*[.//figure][1][not(.//${TEXT_BOX_XPATH})]`;
 
 /**
  * The pay, workplace and employment type pills are links back to the job, each

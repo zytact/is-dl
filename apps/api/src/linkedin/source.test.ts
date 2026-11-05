@@ -20,7 +20,10 @@ vi.mock('./search.ts', () => ({
   getPaginationInfo: mocks.getPaginationInfo,
 }));
 
-vi.mock('./job.ts', () => ({ extractJobDetailsFromView: mocks.extractJobDetailsFromView }));
+vi.mock('./job.ts', () => ({
+  DESCRIPTION_SELECTOR: 'description-hook',
+  extractJobDetailsFromView: mocks.extractJobDetailsFromView,
+}));
 
 vi.mock('./browser.ts', () => ({
   launchBrowser: mocks.launchBrowser,
@@ -45,6 +48,8 @@ async function run(
     { ...query, ...overrides },
     { onLog: (msg) => logs.push(msg) },
   );
+  // A run that fails rejects while the timers advance, before anything awaits it.
+  pending.catch(() => {});
   await vi.advanceTimersByTimeAsync(60000);
   return { jobs: await pending, logs };
 }
@@ -73,6 +78,7 @@ function detailsFromCards(cards: JobCardFacts[], paneCompany?: string): void {
       source: 'linkedin',
       jobId: cards[index]?.id ?? 'from-url',
       companyName: paneCompany ?? cards[index]?.company,
+      descriptionText: 'About the job',
     } as JobListing),
   );
 }
@@ -164,6 +170,28 @@ describe('linkedin card processing', () => {
 
     expect(jobs.map((job) => job.jobId)).toEqual(['2', '3']);
     expect(logs).toContain('Error processing job 1: did not load');
+  });
+
+  test('fails naming the hook when no listing has a description', async () => {
+    detailsFrom(['1', '2']);
+    mocks.extractJobDetailsFromView.mockImplementation(() =>
+      Promise.resolve({ source: 'linkedin', jobId: '1', descriptionText: null } as JobListing),
+    );
+
+    await expect(run()).rejects.toThrow(/description-hook/);
+  });
+
+  test('keeps a run where only some listings lack a description', async () => {
+    detailsFrom(['1', '2']);
+    mocks.extractJobDetailsFromView.mockResolvedValueOnce({
+      source: 'linkedin',
+      jobId: '1',
+      descriptionText: null,
+    } as JobListing);
+
+    const { jobs } = await run();
+
+    expect(jobs.map((job) => job.jobId)).toEqual(['1', '2']);
   });
 
   test('stops rather than walking every page when nothing can be extracted', async () => {

@@ -36,6 +36,7 @@ sit outside that row.
 Job description
 the [data-testid="expandable-text-box"] in the nearest block around the
 <h2>About the job</h2> heading. "About the company" has a text box too.
+The heading text is English, so an account using another language breaks it.
 A search where no listing has a description fails, naming this hook.
 
 Search filters
