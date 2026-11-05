@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test';
-import { linkedinJobUrl, parseTopCardMeta } from './job.ts';
+import { linkedinJobUrl, parseTopCardMeta, withoutExpandLabel } from './job.ts';
 
 describe('linkedinJobUrl', () => {
   test('builds a stable permalink when the search URL has a job id', () => {
@@ -24,5 +24,17 @@ describe('parseTopCardMeta', () => {
       locationText: 'Shillong, Meghalaya, India',
       postedAtText: 'Reposted 3 months ago',
     });
+  });
+});
+
+describe('withoutExpandLabel', () => {
+  test("drops the button's label from the end of the description", () => {
+    expect(withoutExpandLabel('Email: hiring@heizen.work\n… more', '… more')).toBe(
+      'Email: hiring@heizen.work',
+    );
+  });
+
+  test('keeps a description that does not end with the label', () => {
+    expect(withoutExpandLabel('Read more', '… more')).toBe('Read more');
   });
 });
