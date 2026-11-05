@@ -9,19 +9,18 @@ import type { JobListing } from '../types.ts';
 /**
  * The detail pane has no stable class names, so every hook hangs off the job
  * id or the pane's shape: the title links to `/jobs/view/<id>/`, the
- * description sits in an id-keyed section, and the top card is the title's
- * nearest ancestor that holds the company logo and stops short of the
- * description. `apps/api/linkedin-job-selectors.txt` lists every hook.
+ * description is the text box under the "About the job" heading, and the top
+ * card is the title's nearest ancestor that holds the company logo and no text
+ * box. `apps/api/linkedin-job-selectors.txt` lists every hook.
  */
 const titleSelector = (jobId: string) => `a[href*="/jobs/view/${jobId}/"]`;
 
-const descriptionSectionId = (jobId: string) => `JobDetails_AboutTheJob_${jobId}`;
+const TEXT_BOX_XPATH = '*[@data-testid="expandable-text-box"]';
 
-export const descriptionSelector = (jobId: string) =>
-  `#${descriptionSectionId(jobId)} [data-testid="expandable-text-box"]`;
+/** "About the company" has a text box too, so the heading picks the right one. */
+export const DESCRIPTION_SELECTOR = `xpath=//h2[normalize-space()="About the job"]/ancestor::*[.//${TEXT_BOX_XPATH}][1]//${TEXT_BOX_XPATH}`;
 
-const topCardXPath = (jobId: string) =>
-  `xpath=ancestor::*[.//figure][1][not(.//*[@id="${descriptionSectionId(jobId)}"])]`;
+const TOP_CARD_XPATH = `xpath=ancestor::*[.//figure][1][not(.//${TEXT_BOX_XPATH})]`;
 
 /**
  * The pay, workplace and employment type pills are links back to the job, each
@@ -78,7 +77,7 @@ export async function extractJobDetailsFromView(
   if (!jobId) throw new Error('The detail pane has no job id in its URL');
 
   const title = page.locator(titleSelector(jobId)).first();
-  const topCard = title.locator(topCardXPath(jobId));
+  const topCard = title.locator(TOP_CARD_XPATH);
 
   // A pane with no title never loaded. Returning it would save an empty
   // listing as seen, where failing leaves the job for the next search.
@@ -110,7 +109,7 @@ export async function extractJobDetailsFromView(
     .filter(Boolean);
   const jobType = pills.join(' · ') || null;
 
-  const descriptionText = await readText(page.locator(descriptionSelector(jobId)).first(), ctx);
+  const descriptionText = await readText(page.locator(DESCRIPTION_SELECTOR).first(), ctx);
   const requirementsText = extractRequirements(descriptionText, ctx);
 
   return {

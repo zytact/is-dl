@@ -1,11 +1,12 @@
 import { join } from 'node:path';
 import { blockedSummary } from '../blocklist.ts';
 import { ensureDir } from '../fs.ts';
+import { CliError } from '../errors.ts';
 import { checkAbort, type SourceContext, type SourceRunner, waitOrAbort } from '../sources.ts';
 import type { JobListing, LinkedInOptions, SearchQuery } from '../types.ts';
 import { closeBrowser, launchBrowser } from './browser.ts';
 import type { ScrapeContext } from './context.ts';
-import { extractJobDetailsFromView } from './job.ts';
+import { DESCRIPTION_SELECTOR, extractJobDetailsFromView } from './job.ts';
 import { clickJobCard, getJobCards, goToNextPage } from './search.ts';
 import { buildSearchUrl } from './search-url.ts';
 
@@ -136,6 +137,15 @@ async function scrape(
       // Deliberate pacing, not a wait for the page: `goToNextPage` already
       // returned once the new results were on screen.
       await waitOrAbort(signal, 2000);
+    }
+
+    // Every listing has a description, so none at all means the hook broke.
+    // Failing lets the caller retry or stop instead of saving half-empty listings.
+    if (jobs.length && jobs.every((job) => !job.descriptionText)) {
+      throw new CliError(
+        'ERROR',
+        `None of the ${jobs.length} LinkedIn listings had a description (selector: ${DESCRIPTION_SELECTOR}). LinkedIn may have changed its page layout.`,
+      );
     }
 
     onLog(`Successfully extracted ${jobs.length} jobs.`);
