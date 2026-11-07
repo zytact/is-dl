@@ -15,6 +15,7 @@ import {
 import { buildCtx, type CliBase, type Ctx } from '../cli-context.ts';
 import { CliError } from '../errors.ts';
 import {
+  hasDescription,
   isUsableListing,
   listingFile,
   parseListing,
@@ -138,8 +139,9 @@ export async function appsCommand(base: CliBase, argv: string[]): Promise<void> 
       };
 
       await appendApplication(file, record);
-      if (!listing.descriptionText)
+      if (!hasDescription(listing)) {
         ctx.log(`Warning: the listing for ${first} has no description.`);
+      }
       const listingPath = listingFile(ctx.paths, ref);
       const kept = saved
         ? `Saved its listing to ${listingPath}.`

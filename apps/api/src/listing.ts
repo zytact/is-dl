@@ -19,9 +19,13 @@ export function isUsableListing(job: JobListing): boolean {
   return Boolean(job.title?.trim() && job.companyName?.trim());
 }
 
+export function hasDescription(job: JobListing): boolean {
+  return Boolean(job.descriptionText?.trim());
+}
+
 /** How much of a listing survived its scrape. A usable copy beats any other, then a described one. */
 export function listingRank(job: JobListing): number {
-  return (isUsableListing(job) ? 2 : 0) + (job.descriptionText?.trim() ? 1 : 0);
+  return (isUsableListing(job) ? 2 : 0) + (hasDescription(job) ? 1 : 0);
 }
 
 /** Writes the snapshot unless one exists, so the first application's copy is the one kept. */

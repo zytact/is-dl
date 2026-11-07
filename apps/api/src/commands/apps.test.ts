@@ -134,4 +134,12 @@ describe('apps add', () => {
       appsCommand(ctx, ['add', 't17-ai', '--source', 'linkedin', '--listing', file]),
     ).rejects.toThrow(/has no companyName, jobUrl/);
   });
+
+  test('refuses --listing together with --from-run', async () => {
+    const ctx = await base({ '2026-08-01': [listing()] });
+
+    await expect(
+      appsCommand(ctx, ['add', '4055', '--listing', 'job.json', '--from-run', 'latest']),
+    ).rejects.toMatchObject({ code: 'USAGE' });
+  });
 });

@@ -30,7 +30,7 @@ $D apps show "$JOB_ID" --source unstop --json >"$EV/apps-show.json"
 $D apps list --status interview --json >"$EV/apps-list.json"
 ```
 
-To prove the listing outlives its run, remove the run and show the application again. Then drive a job no run holds, first bare, then with a hand-written listing:
+To prove the listing outlives its run, remove the run and show the application again. Then, in fresh state, drive a job no run holds, first bare, then with a hand-written listing:
 
 ```bash
 RUN_ID="$(node -e 'const v=JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf8")); process.stdout.write(v.record.source)' "$EV/apps-add.json")"
@@ -44,12 +44,12 @@ $D apps add 4477254540 --source linkedin --listing "$EV/manual-listing.json" --j
 
 ### Proof
 
-`apps-show.json` contains two history records in order, first `applied`, then `interview`, and a `listing` equal to the job in `search.json`. The current list has one matching application. `$XDG_DATA_HOME/is-dl/applications.jsonl` has two valid JSON lines for the same `unstop:jobId`, and the second line retains the metadata from the first. `$XDG_DATA_HOME/is-dl/notes/unstop/$JOB_ID/listing.json` holds the same listing, and `apps-show-after-rm.json` still has it. The bare `apps add 4477254540` exits 2 with `No run holds 4477254540` and appends nothing. `apps-add-manual.json` has `company: "Time Seventeen"` and `source: "manual"`, and `notes/linkedin/4477254540/listing.json` exists.
+`apps-show.json` contains two history records in order, first `applied`, then `interview`, and a `listing` equal to the job in `search.json`. The current list has one matching application. `$XDG_DATA_HOME/is-dl/applications.jsonl` has two valid JSON lines for the same `unstop:jobId`, and the second line retains the metadata from the first. `$XDG_DATA_HOME/is-dl/notes/unstop/$JOB_ID/listing.json` holds the same listing, and `apps-show-after-rm.json` still has it. The bare `apps add 4477254540` exits 2 with `No run holds 4477254540` and appends nothing. `apps-add-manual.json` has `record.company: "Time Seventeen"` and `record.source: "manual"`, and `notes/linkedin/4477254540/listing.json` exists.
 
 ## Gotchas
 
 - `apps add` changes only local state, the log and the listing snapshot. It does not contact an employer.
-- Job metadata comes from the saved run whose copy kept the most: a title and company first, then a description, then the newest. A job no run holds needs `--listing`, which requires `title`, `companyName` and `jobUrl`, takes the board from `--source` or its `source` field, and cannot be combined with `--from-run`. Pay and AI signals are derived from its text.
+- Job metadata comes from the saved run whose copy kept the most: a title and company first, then a description, then the newest. A job no run holds needs `--listing`, which requires `title`, `companyName` and `jobUrl`, takes the board from `--source`, or else its `source` field, and cannot be combined with `--from-run`. Pay and AI signals are derived from its text.
 - A later `apps add` for the same job keeps the first snapshot. `apps show` prints `listing: none` for applications logged before snapshots existed.
 - Current state is the last JSONL record for one `source:jobId`.
 - Use a status accepted by the current CLI. Invalid values exit 2.
