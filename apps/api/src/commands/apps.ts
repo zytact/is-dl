@@ -85,7 +85,7 @@ async function findListing(
 
 function block(label: string, text: string | null): string[] {
   if (!text) return [`  ${label}: -`];
-  return [`  ${label}:`, ...text.split('\n').map((row) => `    ${row}`)];
+  return [`  ${label}:`, ...text.split('\n').map((row) => (row ? `    ${row}` : ''))];
 }
 
 function describeListing(listing: JobListing | null): string[] {
