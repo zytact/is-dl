@@ -146,6 +146,7 @@ apps flags:
       --variant <name>              Which resume variant was sent
   -s, --source <name>               Disambiguate a job id shared by two boards
       --from-run <runId>            Look the job up in one run instead of all
+      --listing <file>              The job as JSON, for one no search found
       --status <status>             Filter apps list
       --older-than <10d>            Filter apps list by age
 

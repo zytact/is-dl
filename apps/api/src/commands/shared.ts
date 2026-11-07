@@ -33,6 +33,7 @@ export function readSourceFlag(value: string | undefined): JobSource | undefined
   return value;
 }
 
+/** The newest run's copy of a job, unless an older run kept a description it lost. */
 export async function findJob(
   ctx: Ctx,
   jobId: string,
@@ -52,7 +53,7 @@ export async function findJob(
       if (job.jobId !== jobId) continue;
       if (source && job.source !== source) continue;
       boards.add(job.source);
-      match ??= { job, runId };
+      if (!match || (!match.job.descriptionText && job.descriptionText)) match = { job, runId };
     }
   }
 

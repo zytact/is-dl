@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { parseArgs } from 'node:util';
 import {
   APPLICATION_STATUSES,
@@ -10,14 +12,23 @@ import {
   readApplications,
   recordSource,
 } from '../applications.ts';
-import { buildCtx, type CliBase } from '../cli-context.ts';
+import { buildCtx, type CliBase, type Ctx } from '../cli-context.ts';
 import { CliError } from '../errors.ts';
+import {
+  isUsableListing,
+  listingFile,
+  parseListing,
+  readListing,
+  saveListing,
+} from '../listing.ts';
 import { listAttachments, listNotes, noteMeta } from '../notes.ts';
+import type { JobListing, JobSource } from '../types.ts';
 import { findJob, GLOBAL_OPTIONS, readSourceFlag, usage } from './shared.ts';
 
 const APPS_OPTIONS = {
   variant: { type: 'string' },
   'from-run': { type: 'string' },
+  listing: { type: 'string' },
   status: { type: 'string' },
   'older-than': { type: 'string' },
   source: { type: 'string', short: 's' },
@@ -47,6 +58,48 @@ function line(record: ApplicationRecord): string {
   return `${id.padEnd(21)} ${record.status.padEnd(10)} ${when}  ${record.company ?? '?'} - ${record.title ?? '?'}`;
 }
 
+/** The listing an application records, and where it came from: a runId, or "manual". */
+async function findListing(
+  ctx: Ctx,
+  jobId: string,
+  values: { listing?: string; 'from-run'?: string },
+  source: JobSource | undefined,
+): Promise<{ listing: JobListing; from: string }> {
+  if (values.listing) {
+    if (!existsSync(values.listing)) throw new CliError('ERROR', `No file at ${values.listing}.`);
+    const json = await readFile(values.listing, 'utf-8');
+    return { listing: parseListing(json, values.listing, jobId, source), from: 'manual' };
+  }
+  const found = await findJob(ctx, jobId, values['from-run'], source);
+  if (found && isUsableListing(found.job)) return { listing: found.job, from: found.runId };
+  throw new CliError(
+    'USAGE',
+    found
+      ? `Run ${found.runId} holds ${jobId} without its title or company. Pass --listing <file> with the job as JSON.`
+      : `No run holds ${jobId}. Pass --listing <file> with the job as JSON.`,
+  );
+}
+
+function block(label: string, text: string | null): string[] {
+  if (!text) return [`  ${label}: -`];
+  return [`  ${label}:`, ...text.split('\n').map((row) => `    ${row}`)];
+}
+
+function describeListing(listing: JobListing | null): string[] {
+  if (!listing) return ['listing: none'];
+  const { pay } = listing;
+  return [
+    'listing:',
+    `  location: ${listing.locationText ?? '-'}`,
+    `  work type: ${listing.jobType ?? '-'}`,
+    `  pay: ${pay.evidence ? `${pay.kind} (${pay.evidence})` : pay.kind}`,
+    `  company url: ${listing.companyUrl ?? '-'}`,
+    `  posted: ${listing.postedAtIso ?? listing.postedAtText ?? '-'}`,
+    ...block('description', listing.descriptionText),
+    ...block('requirements', listing.requirementsText),
+  ];
+}
+
 export async function appsCommand(base: CliBase, argv: string[]): Promise<void> {
   const { values, positionals } = usage(() =>
     parseArgs({
@@ -63,24 +116,34 @@ export async function appsCommand(base: CliBase, argv: string[]): Promise<void> 
   switch (sub) {
     case 'add': {
       if (!first) throw new CliError('USAGE', 'Usage: is-dl apps add <jobId> [--variant x]');
-      const found = await findJob(ctx, first, values['from-run'], source);
+      const { listing, from } = await findListing(ctx, first, values, source);
+      const ref = { source: listing.source, jobId: first };
+      const saved = await saveListing(ctx.paths, ref, listing);
       const now = new Date().toISOString();
 
       const record: ApplicationRecord = {
         jobId: first,
-        jobSource: found?.job.source ?? source ?? 'linkedin',
-        company: found?.job.companyName ?? null,
-        title: found?.job.title ?? null,
-        url: found?.job.jobUrl ?? null,
+        jobSource: listing.source,
+        company: listing.companyName,
+        title: listing.title,
+        url: listing.jobUrl,
         variant: values.variant ?? null,
         appliedAt: now,
         recordedAt: now,
-        source: found?.runId ?? 'manual',
+        source: from,
         status: 'applied',
       };
 
       await appendApplication(file, record);
-      ctx.emit(`Logged ${record.jobId} as applied.`, () => ({ ok: true, record }));
+      const listingPath = listingFile(ctx.paths, ref);
+      const kept = saved
+        ? `Saved its listing to ${listingPath}.`
+        : `Kept the listing at ${listingPath}.`;
+      ctx.emit(`Logged ${record.jobId} as applied. ${kept}`, () => ({
+        ok: true,
+        record,
+        listingFile: listingPath,
+      }));
       return;
     }
     case 'status': {
@@ -140,6 +203,7 @@ export async function appsCommand(base: CliBase, argv: string[]): Promise<void> 
       const ref = { source: recordSource(last), jobId: first };
       const notes = await listNotes(ctx.paths, ref);
       const files = await listAttachments(ctx.paths, ref);
+      const listing = await readListing(ctx.paths, ref);
       const human = [
         `${first}  ${last.company ?? '?'} - ${last.title ?? '?'}`,
         `url: ${last.url ?? '-'}`,
@@ -149,11 +213,13 @@ export async function appsCommand(base: CliBase, argv: string[]): Promise<void> 
         `notes:${notes.length ? '' : ' none'}`,
         ...notes.map((note) => `  ${note.noteId}  ${note.title}`),
         ...(files.length ? [`files: ${files.map((f) => f.name).join(', ')}`] : []),
+        ...describeListing(listing),
       ].join('\n');
       ctx.emit(human, () => ({
         ok: true,
         jobId: first,
         history,
+        listing,
         notes: notes.map(noteMeta),
         files,
       }));
