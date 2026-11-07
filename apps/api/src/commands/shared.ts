@@ -1,5 +1,6 @@
 import type { Ctx } from '../cli-context.ts';
 import { CliError } from '../errors.ts';
+import { listingRank } from '../listing.ts';
 import { listRuns, readRun, resolveRunId } from '../runs.ts';
 import { isJobSource, JOB_SOURCES, type JobListing, type JobSource } from '../types.ts';
 
@@ -33,6 +34,7 @@ export function readSourceFlag(value: string | undefined): JobSource | undefined
   return value;
 }
 
+/** The newest run's copy of a job, unless an older run kept more of it. See `listingRank`. */
 export async function findJob(
   ctx: Ctx,
   jobId: string,
@@ -52,7 +54,7 @@ export async function findJob(
       if (job.jobId !== jobId) continue;
       if (source && job.source !== source) continue;
       boards.add(job.source);
-      match ??= { job, runId };
+      if (!match || listingRank(job) > listingRank(match.job)) match = { job, runId };
     }
   }
 
