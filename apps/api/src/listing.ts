@@ -19,6 +19,11 @@ export function isUsableListing(job: JobListing): boolean {
   return Boolean(job.title?.trim() && job.companyName?.trim());
 }
 
+/** How much of a listing survived its scrape. A usable copy beats any other, then a described one. */
+export function listingRank(job: JobListing): number {
+  return (isUsableListing(job) ? 2 : 0) + (job.descriptionText?.trim() ? 1 : 0);
+}
+
 /** Writes the snapshot unless one exists, so the first application's copy is the one kept. */
 export async function saveListing(
   paths: AppPaths,
@@ -35,8 +40,9 @@ export async function saveListing(
 export async function readListing(paths: AppPaths, ref: JobRef): Promise<JobListing | null> {
   const file = listingFile(paths, ref);
   if (!existsSync(file)) return null;
+  const json = await readFile(file, 'utf-8');
   try {
-    return JSON.parse(await readFile(file, 'utf-8')) as JobListing;
+    return JSON.parse(json) as JobListing;
   } catch {
     throw new CliError('ERROR', `Corrupt listing at ${file}.`);
   }

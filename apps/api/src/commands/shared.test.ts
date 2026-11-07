@@ -68,6 +68,21 @@ describe('finding the job behind an id', () => {
     expect((await findJob(ctx, '42', undefined, undefined))?.job.title).toBe('Full card');
   });
 
+  test('takes an older run that kept the title and company over a newer one that only kept the text', async () => {
+    const ctx = await ctxWithRuns({
+      '2026-08-01': [job('unstop', '42', 'Full card')],
+      '2026-08-02': [
+        {
+          ...job('unstop', '42', 'Half card'),
+          companyName: null,
+          descriptionText: 'Build things.',
+        },
+      ],
+    });
+
+    expect((await findJob(ctx, '42', undefined, undefined))?.job.title).toBe('Full card');
+  });
+
   test('is null when no run holds the id', async () => {
     const ctx = await ctxWithRuns({ '2026-08-01': [job('unstop', '1', 'Something')] });
     expect(await findJob(ctx, '42', undefined, undefined)).toBeNull();

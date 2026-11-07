@@ -66,6 +66,9 @@ async function findListing(
   source: JobSource | undefined,
 ): Promise<{ listing: JobListing; from: string }> {
   if (values.listing) {
+    if (values['from-run']) {
+      throw new CliError('USAGE', 'Pass --listing or --from-run, not both.');
+    }
     if (!existsSync(values.listing)) throw new CliError('ERROR', `No file at ${values.listing}.`);
     const json = await readFile(values.listing, 'utf-8');
     return { listing: parseListing(json, values.listing, jobId, source), from: 'manual' };
@@ -135,6 +138,8 @@ export async function appsCommand(base: CliBase, argv: string[]): Promise<void> 
       };
 
       await appendApplication(file, record);
+      if (!listing.descriptionText)
+        ctx.log(`Warning: the listing for ${first} has no description.`);
       const listingPath = listingFile(ctx.paths, ref);
       const kept = saved
         ? `Saved its listing to ${listingPath}.`

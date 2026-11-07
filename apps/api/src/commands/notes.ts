@@ -130,7 +130,7 @@ async function resolveSource(
   const noted = notedSources(ctx.paths, jobId);
   if (noted.length === 1) return noted[0]!;
   if (noted.length > 1) {
-    throw new CliError('USAGE', `${jobId} has notes on ${noted.join(' and ')}. Pass --source.`);
+    throw new CliError('USAGE', `${jobId} has a folder on ${noted.join(' and ')}. Pass --source.`);
   }
   const found = await findJob(ctx, jobId, fromRun, undefined);
   if (found) return found.job.source;
