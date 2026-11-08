@@ -1,16 +1,17 @@
 import { blockedSummary } from '../blocklist.ts';
-import { checkAbort, type SourceContext, type SourceRunner, waitOrAbort } from '../sources.ts';
+import {
+  checkAbort,
+  sameJobType,
+  type SourceContext,
+  type SourceRunner,
+  waitOrAbort,
+} from '../sources.ts';
 import type { JobListing, SearchQuery, YcombinatorOptions } from '../types.ts';
 import { fetchDescription, fetchRolePage, type YcPosting } from './api.ts';
 import { locationSearchText, minExperienceYears, toJobListing } from './map.ts';
 
 /** After this many listing pages fail in a row, the rest keep a null description. */
 const MAX_DESCRIPTION_FAILURES = 3;
-
-function sameType(a: string, b: string): boolean {
-  const plain = (value: string) => value.toLowerCase().replace(/[^a-z]/g, '');
-  return plain(a) === plain(b);
-}
 
 /**
  * Every check reads a field the listing publishes. Keywords are not matched:
@@ -23,7 +24,7 @@ function matches(posting: YcPosting, query: SearchQuery, options: YcombinatorOpt
   if (!locationSearchText(location).includes(query.location.trim().toLowerCase())) return false;
 
   const type = posting.type ?? '';
-  if (options.jobType?.length && !options.jobType.some((wanted) => sameType(wanted, type))) {
+  if (options.jobType?.length && !options.jobType.some((wanted) => sameJobType(wanted, type))) {
     return false;
   }
   if (options.skipUsOnly && /\bonly\b/i.test(posting.visa ?? '')) return false;

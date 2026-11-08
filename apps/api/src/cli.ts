@@ -51,7 +51,7 @@ const COMMANDS: Record<string, () => Promise<Command>> = {
   resume: async () => (await import('./commands/resume.ts')).resumeCommand,
 };
 
-const HELP = `is-dl ${version} - job search CLI for LinkedIn, Unstop and Y Combinator
+const HELP = `is-dl ${version} - job search CLI for LinkedIn, Unstop, Y Combinator and Wellfound
 
 Usage:
   is-dl <command> [flags]
@@ -81,7 +81,8 @@ Global flags:
 
 search flags:
   -k, --keywords <query>            Search keywords (required unless --profile)
-  -s, --source <csv>                linkedin, unstop, ycombinator (default all)
+  -s, --source <csv>                linkedin, unstop, ycombinator, wellfound
+                                    (default all)
       --unstop-opportunity <name>   jobs, internships, hackathons, competitions
       --unstop-roles <csv>          Unstop work functions, for example
                                     "software-development,backend-development"
@@ -92,6 +93,10 @@ search flags:
       --ycombinator-skip-us-only / --no-ycombinator-skip-us-only
                                     Drop Y Combinator listings open to US
                                     citizens and visa holders only
+      --wellfound-roles <csv>       Wellfound role pages (default
+                                    "software-engineer")
+      --wellfound-max-experience <years>
+                                    Drop Wellfound listings asking for more
   -p, --profile <name>              Use a saved profile from config
   -l, --location <location>         Location, for example "Remote" or "India"
       --limit <n>                   Maximum jobs to scrape (default 50)
@@ -125,9 +130,9 @@ Blocked companies:
   commas, so write a name with a comma in it into the config file by hand.
 
 Sources:
-  search queries LinkedIn, Unstop and Y Combinator together and merges the
-  results, newest first. LinkedIn needs "is-dl login"; the other two need
-  nothing. A source that fails is reported and skipped, and the command only
+  search queries LinkedIn, Unstop, Y Combinator and Wellfound together and
+  merges the results, newest first. LinkedIn needs "is-dl login"; the others
+  need nothing. A source that fails is reported and skipped, and the command only
   fails when every source failed. --limit applies per source. meta.sources in
   the output records what each source returned.
 
@@ -141,6 +146,18 @@ Y Combinator:
   against its location, --ycombinator-max-experience against its minimum
   experience, --ycombinator-skip-us-only against its visa field. Each job
   carries applyUrl, which needs a signed-in Y Combinator account.
+
+Wellfound:
+  Each role in --wellfound-roles is a Wellfound role page: software-engineer,
+  full-stack-engineer, frontend-engineer, backend-engineer, mobile-engineer,
+  devops-engineer, machine-learning-engineer, data-scientist, and so on.
+  --location picks Wellfound's page for that place, written as its slug, such
+  as "india" or "bangalore". An unknown role or place fails instead of
+  searching a broader page. "Remote", or --remote-only with no location, reads
+  the remote page. A search reads at most 3 pages of about 35 listings per
+  role. Keywords are not matched. The filters read fields the listing
+  publishes: --job-type against its type, --remote-only against its remote
+  flag, --wellfound-max-experience against its minimum years.
 
 apps flags:
       --variant <name>              Which resume variant was sent
@@ -205,6 +222,7 @@ Examples:
   is-dl search -k "frontend intern" -l Remote --limit 20 --json
   is-dl search -k developer --source unstop --unstop-roles software-development
   is-dl search -k intern --source ycombinator --job-type Internship --remote-only
+  is-dl search -k engineer --source wellfound -l India --wellfound-max-experience 1
   is-dl runs show latest --json
   is-dl search -k "intern" --exclude-unpaid --exclude-applied
   is-dl search -k "intern" --exclude-seen   # only what I have not been shown

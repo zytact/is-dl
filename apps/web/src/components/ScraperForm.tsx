@@ -8,6 +8,7 @@ import {
   UNSTOP_OPPORTUNITIES,
   UNSTOP_ROLES,
   type UnstopOpportunity,
+  WELLFOUND_ROLES,
   YCOMBINATOR_ROLES,
 } from '../types';
 
@@ -30,6 +31,9 @@ export interface ScraperFormData {
   /** Left out when any experience is fine. */
   ycombinatorMaxExperience?: number;
   ycombinatorSkipUsOnly: boolean;
+  wellfoundRoles: string[];
+  /** Left out when any experience is fine. */
+  wellfoundMaxExperience?: number;
 }
 
 type FlagName =
@@ -93,14 +97,18 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
     unstopOpportunity: 'jobs' as UnstopOpportunity,
     ycombinatorMaxExperience: '',
     ycombinatorSkipUsOnly: false,
+    wellfoundMaxExperience: '',
   });
   const [sources, setSources] = useState<JobSource[]>([...JOB_SOURCES]);
   const [unstopRoles, setUnstopRoles] = useState<string[]>(['software-development']);
   const [ycombinatorRoles, setYcombinatorRoles] = useState<string[]>(['software-engineer']);
+  const [wellfoundRoles, setWellfoundRoles] = useState<string[]>(['software-engineer']);
 
   const unstopSelected = sources.includes('unstop');
   const ycombinatorSelected = sources.includes('ycombinator');
-  const missingRole = ycombinatorSelected && ycombinatorRoles.length === 0;
+  const wellfoundSelected = sources.includes('wellfound');
+  const missingYcombinatorRole = ycombinatorSelected && ycombinatorRoles.length === 0;
+  const missingWellfoundRole = wellfoundSelected && wellfoundRoles.length === 0;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -123,17 +131,22 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
   };
   const toggleRole = toggleIn(setUnstopRoles);
   const toggleYcombinatorRole = toggleIn(setYcombinatorRoles);
+  const toggleWellfoundRole = toggleIn(setWellfoundRoles);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const { ycombinatorMaxExperience, ...rest } = formData;
+    const { ycombinatorMaxExperience, wellfoundMaxExperience, ...rest } = formData;
     onStart({
       ...rest,
       sources,
       unstopRoles: unstopSelected ? unstopRoles : [],
       ycombinatorRoles,
+      wellfoundRoles,
       ...(ycombinatorMaxExperience !== '' && {
         ycombinatorMaxExperience: Number(ycombinatorMaxExperience),
+      }),
+      ...(wellfoundMaxExperience !== '' && {
+        wellfoundMaxExperience: Number(wellfoundMaxExperience),
       }),
     });
   };
@@ -148,7 +161,7 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
         <div className="absolute top-0 right-0 bg-brand-cyan text-brand-dark text-xs px-2 font-bold uppercase">
           BOARDS
         </div>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {JOB_SOURCES.map((source) => (
             <button
               key={source}
@@ -256,34 +269,58 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
               ))}
             </div>
             <span className="text-[10px] text-brand-muted uppercase tracking-widest">
-              {missingRole
+              {missingYcombinatorRole
                 ? 'PICK AT LEAST ONE ROLE'
                 : 'THE ROLE PICKS THE LISTINGS. KEYWORDS ARE NOT MATCHED HERE.'}
             </span>
           </div>
 
-          <div className="flex flex-col gap-1 relative group">
-            <label
-              htmlFor="ycombinatorMaxExperience"
-              className="text-xs uppercase text-brand-muted tracking-widest bg-brand-panel px-1 absolute -top-2 left-2 group-focus-within:text-brand-cyan transition-colors z-10"
-            >
-              MAX_EXPERIENCE
-            </label>
-            <select
-              id="ycombinatorMaxExperience"
-              name="ycombinatorMaxExperience"
-              className="brutal-input py-3 mt-1 appearance-none bg-brand-dark"
-              value={formData.ycombinatorMaxExperience}
-              onChange={handleChange}
-              disabled={isScraping}
-            >
-              <option value="">ANY</option>
-              <option value="0">NEW GRADS OK</option>
-              <option value="1">1 YEAR</option>
-              <option value="3">3 YEARS</option>
-              <option value="5">5 YEARS</option>
-            </select>
+          <MaxExperienceSelect
+            name="ycombinatorMaxExperience"
+            value={formData.ycombinatorMaxExperience}
+            onChange={handleChange}
+            disabled={isScraping}
+          />
+        </div>
+      )}
+
+      {wellfoundSelected && (
+        <div className="p-4 border border-brand-border bg-brand-panel relative flex flex-col gap-4">
+          <div className="absolute top-0 right-0 bg-brand-border text-brand-dark text-xs px-2 font-bold uppercase">
+            WELLFOUND
           </div>
+
+          <div className="flex flex-col gap-2">
+            <span className="text-xs uppercase text-brand-muted tracking-widest">ROLE</span>
+            <div className="grid grid-cols-2 gap-2">
+              {WELLFOUND_ROLES.map((role) => (
+                <button
+                  key={role}
+                  type="button"
+                  onClick={() => toggleWellfoundRole(role)}
+                  disabled={isScraping}
+                  aria-pressed={wellfoundRoles.includes(role)}
+                  className={`border px-1 py-2 text-[10px] font-mono uppercase tracking-wider transition-colors disabled:opacity-50 ${
+                    wellfoundRoles.includes(role) ? TOGGLE_ON : TOGGLE_OFF
+                  }`}
+                >
+                  {roleLabel(role)}
+                </button>
+              ))}
+            </div>
+            <span className="text-[10px] text-brand-muted uppercase tracking-widest">
+              {missingWellfoundRole
+                ? 'PICK AT LEAST ONE ROLE'
+                : 'LOCATION PICKS THE PAGE, AS IN INDIA OR BANGALORE. KEYWORDS ARE NOT MATCHED.'}
+            </span>
+          </div>
+
+          <MaxExperienceSelect
+            name="wellfoundMaxExperience"
+            value={formData.wellfoundMaxExperience}
+            onChange={handleChange}
+            disabled={isScraping}
+          />
         </div>
       )}
 
@@ -441,12 +478,44 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
 
       <button
         type="submit"
-        disabled={isScraping || sources.length === 0 || missingRole}
+        disabled={
+          isScraping || sources.length === 0 || missingYcombinatorRole || missingWellfoundRole
+        }
         className="brutal-btn primary w-full mt-4 flex justify-center items-center gap-3 text-lg py-4 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-brand-accent disabled:active:translate-x-0 disabled:active:translate-y-0 disabled:shadow-none"
       >
         <Play fill="currentColor" />
         {isScraping ? 'EXECUTING...' : 'INITIATE_SEQUENCE'}
       </button>
     </form>
+  );
+}
+
+/** A board's ceiling on the years a listing asks for. The value is empty for any. */
+function MaxExperienceSelect(props: {
+  name: 'ycombinatorMaxExperience' | 'wellfoundMaxExperience';
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  disabled: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-1 relative group">
+      <label
+        htmlFor={props.name}
+        className="text-xs uppercase text-brand-muted tracking-widest bg-brand-panel px-1 absolute -top-2 left-2 group-focus-within:text-brand-cyan transition-colors z-10"
+      >
+        MAX_EXPERIENCE
+      </label>
+      <select
+        id={props.name}
+        className="brutal-input py-3 mt-1 appearance-none bg-brand-dark"
+        {...props}
+      >
+        <option value="">ANY</option>
+        <option value="0">NEW GRADS OK</option>
+        <option value="1">1 YEAR</option>
+        <option value="3">3 YEARS</option>
+        <option value="5">5 YEARS</option>
+      </select>
+    </div>
   );
 }

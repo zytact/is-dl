@@ -180,6 +180,11 @@ export async function search(
         maxExperience: settings.ycombinatorMaxExperience,
         skipUsOnly: settings.ycombinatorSkipUsOnly,
       },
+      wellfound: {
+        roles: settings.wellfoundRoles,
+        jobType: settings.jobType,
+        maxExperience: settings.wellfoundMaxExperience,
+      },
     },
     log,
     signal,

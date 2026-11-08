@@ -7,9 +7,11 @@ import type {
   SearchMeta,
   SearchQuery,
   UnstopOptions,
+  WellfoundOptions,
   YcombinatorOptions,
 } from './types.ts';
 import { unstopSource } from './unstop/source.ts';
+import { wellfoundSource } from './wellfound/source.ts';
 import { ycombinatorSource } from './ycombinator/source.ts';
 
 export interface ScrapeRequest {
@@ -18,12 +20,14 @@ export interface ScrapeRequest {
   linkedin: LinkedInOptions;
   unstop: UnstopOptions;
   ycombinator: YcombinatorOptions;
+  wellfound: WellfoundOptions;
 }
 
 const RUNNERS: Record<JobSource, (request: ScrapeRequest) => SourceRunner> = {
   linkedin: (request) => linkedinSource(request.linkedin),
   unstop: (request) => unstopSource(request.unstop),
   ycombinator: (request) => ycombinatorSource(request.ycombinator),
+  wellfound: (request) => wellfoundSource(request.wellfound),
 };
 
 /** The run file records what was asked for, wherever the request kept it. */

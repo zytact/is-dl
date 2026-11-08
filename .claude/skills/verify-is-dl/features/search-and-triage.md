@@ -1,15 +1,16 @@
 # Search and triage
 
-Search LinkedIn, Unstop, Y Combinator, or any mix of them, normalize the listings, classify pay and location conflicts, apply local filters, merge source results, and save one run.
+Search LinkedIn, Unstop, Y Combinator, Wellfound, or any mix of them, normalize the listings, classify pay and location conflicts, apply local filters, merge source results, and save one run.
 
 ## Sub-features
 
-- Source selection with `--source linkedin`, `--source unstop`, `--source ycombinator`, or a comma-separated mix. All three are on by default.
+- Source selection with `--source linkedin`, `--source unstop`, `--source ycombinator`, `--source wellfound`, or a comma-separated mix. All four are on by default.
 - Unstop opportunity and role selection.
 - LinkedIn filters for experience level, job type, posting age, location, and remote. Posting age is the `f_TPR` URL parameter. The rest are appended to the keywords as text, for example `software engineer intern, internship, remote, in India`, and LinkedIn interprets that text itself.
 - Local Unstop keyword, location, and remote filtering.
 - Y Combinator role pages with `--ycombinator-roles`, filtered on fields each listing publishes: `--job-type` against its type, `--remote-only` and `--location` against its location, `--ycombinator-max-experience` against its minimum experience, and `--ycombinator-skip-us-only` against its visa field. Keywords are not matched there.
 - `applyUrl` on each Y Combinator job.
+- Wellfound role pages with `--wellfound-roles`, read for the place `--location` names as Wellfound's slug, such as `india`, or the remote page for `Remote` or `--remote-only` with no location. Up to 3 pages per role, filtered on fields each listing publishes: `--job-type` against its type, `--remote-only` against its remote flag, and `--wellfound-max-experience` against its minimum years. Keywords are not matched there.
 - Unpaid, applied, and seen filtering across sources.
 - A company blocklist from the `blocked-companies` config key or `--blocked-companies`, which every source applies while it pages.
 - Partial source failure with per-source status in `meta.sources[]`.
@@ -17,7 +18,7 @@ Search LinkedIn, Unstop, Y Combinator, or any mix of them, normalize the listing
 
 ## How to get to it (user POV)
 
-Run `is-dl search` with keywords. Unstop and Y Combinator work without authentication. LinkedIn requires one interactive login, which the harness stores outside the run directory so it is reused by every later run.
+Run `is-dl search` with keywords. Unstop, Y Combinator and Wellfound work without authentication. LinkedIn requires one interactive login, which the harness stores outside the run directory so it is reused by every later run.
 
 ## Driving it with the CLI harness
 
@@ -43,6 +44,23 @@ printf '%s\n' "$?" >"$EV/ycombinator.exit"
 
 node -e 'const v=JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf8")); for (const j of v.jobs) console.log([j.jobId, j.companyName, j.jobType, j.locationText, j.pay.kind, j.pay.evidence, j.applyUrl, (j.descriptionText ?? "").length].join(" | "), "\n" + j.requirementsText)' \
   "$EV/ycombinator.json" >"$EV/ycombinator.txt"
+```
+
+Wellfound needs no account. One search costs one request per page, and a page holds about 35 listings, so a limit of 40 reads 2 to 3 pages. Run the paging, filter and blocklist proof in one search, taking a company to block from a first small one:
+
+```bash
+$D search -k software --source wellfound -l India --wellfound-max-experience 1 --limit 5 \
+  --json --verbose >"$EV/wellfound.json" 2>"$EV/wellfound.stderr"
+printf '%s\n' "$?" >"$EV/wellfound.exit"
+WF_BLOCK="$(node -e 'const v=JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf8")); process.stdout.write(v.jobs[0].companyName)' "$EV/wellfound.json")"
+
+$D search -k software --source wellfound -l India --wellfound-max-experience 1 --limit 40 \
+  --blocked-companies "$WF_BLOCK" --json --verbose \
+  >"$EV/wellfound-paged.json" 2>"$EV/wellfound-paged.stderr"
+
+$D search -k software --source wellfound -l "Bangalore, India" --limit 2 --json \
+  >"$EV/wellfound-bad-place.json"
+printf '%s\n' "$?" >"$EV/wellfound-bad-place.exit"
 ```
 
 LinkedIn needs the stored login and Chromium. Keep `--limit` at 1 to 3, because each job takes about 10 seconds:
@@ -107,6 +125,8 @@ Every `jobType` is pills joined by `·`, such as `Remote · Internship` or `$18.
 
 For Y Combinator, `meta.sources[]` has `ycombinator` with `status: "ok"` and a count at most the limit. Every job has `source: "ycombinator"`, a `jobUrl` under `https://www.ycombinator.com/companies/`, an `applyUrl` on `account.ycombinator.com`, a nonempty `descriptionText`, and a `locationText` containing `Remote`. Its `requirementsText` carries the filtered fields: no `Visa:` line says `US citizen/visa only`, and no `Experience:` line asks for more than 3 years. A listing with a salary range has `pay.kind: "paid"`, the range as `pay.evidence`, and the figures in `pay.amount`. Stderr has `software-engineer: <n> listings.` and `Kept <n> of <n> listings.`
 
+For Wellfound, `meta.sources[]` has `wellfound` with `status: "ok"` and a count at most the limit. Every job has `source: "wellfound"`, a `jobUrl` under `https://wellfound.com/jobs/`, a `companyUrl` under `https://wellfound.com/company/`, a nonempty `descriptionText`, a `postedAtText` such as `5 days ago`, and a `jobType` such as `Full-time`. No `Experience:` line in `requirementsText` asks for more than 1 year. A listing whose `compensation` has a salary has `pay.kind: "paid"`, the full compensation as `pay.evidence`, and yearly figures in `pay.amount`, with lakhs expanded, so `₹9.6L – ₹12L` is INR 960000 to 1200000. `wellfound.stderr` has `Place: india` and `software-engineer page 1 of <n>: <n> listings.` `wellfound-paged.stderr` has page lines for pages 1 to 3 at most, `Kept <n> of <n> listings read.` and `Skipped <n> from blocked companies:` naming `$WF_BLOCK`, and no job in it has that company. `wellfound-bad-place.exit` is 2, and the error says `Wellfound has no page at .../role/l/software-engineer/bangalore-india, it redirects to https://wellfound.com/role/software-engineer`.
+
 For the blocklist, no job in `blocked.json` or `blocked-config.json` has the blocked `companyName`, and each stderr has `Skipped <n> from blocked companies: <names>.` naming it. The source count in `meta.sources[]` still reaches the limit when the corpus has enough other listings. `blocked-cleared.stderr` has no such line, and the company may be back in `blocked-cleared.json`. On LinkedIn, also count the `Processing job` lines in stderr: there is one per returned job, which shows that a blocked card was never opened.
 
 For multi-source behavior, prove each entry in `meta.sources[]`. Exit 0 alone is insufficient because partial failure is normal.
@@ -118,6 +138,10 @@ For multi-source behavior, prove each entry in `meta.sources[]`. Exit 0 alone is
 - Y Combinator writes countries as codes, such as `Bengaluru, KA, IN / Remote (IN)`. `--location India` matches because the source spells out the code that closes each place. A US state code closes a place with no country, so `San Francisco, CA` also matches `--location Canada`.
 - `--job-type` also reaches LinkedIn as query text, so `--job-type Internship` narrows both boards.
 - A Y Combinator listing page that fails logs `WARNING: no description for listing <id>` and keeps the job with a null `descriptionText`. Three in a row stop the description requests. A role page that fails, or has no `data-page` or `jobPostings`, fails the source with `Y Combinator may have changed its page format.` Both need Y Combinator to fail, so neither has a live recipe.
+- Wellfound ignores the keywords, and `--location` is a page slug rather than a filter. `India` reads `/role/l/<role>/india`. A name Wellfound has no page for, such as `Bangalore, India`, fails the source with exit 2 instead of reading the broader page Wellfound redirects to. In a mixed search that marks only `wellfound` failed.
+- A Wellfound listing with no minimum experience counts as 0 years, so it passes `--wellfound-max-experience`. Senior roles with the field empty do get through.
+- Wellfound blocking shows as `Wellfound blocked the request for <url> (HTTP 403)`, or `(a Cloudflare challenge page)`. A page with no `__NEXT_DATA__` or no search results fails with `Wellfound may have changed its page format.` Both need Wellfound to change, so neither has a live recipe.
+- A job skipped as seen or applied is not counted again as blocked, so prove the blocklist without `--exclude-seen`.
 - Y Combinator `postedAtIso` is approximate. The board publishes an age such as `about 7 hours`, not a date.
 - A blocklist entry matches a company whose name contains it as whole words, ignoring case and punctuation. `UM IT` blocks `UM IT Solutions` and leaves `Premium IT` alone.
 - `--blocked-companies` and `config set blocked-companies` split on commas. A name with a comma in it becomes two entries, so write it into the TOML array by hand. An empty value clears the list.
@@ -130,5 +154,5 @@ For multi-source behavior, prove each entry in `meta.sources[]`. Exit 0 alone is
 - A LinkedIn job list that never appears fails the source with `LinkedIn's job list did not appear within 15s ... LinkedIn may have changed its page layout.` A missing job description logs a warning to stderr and keeps the job with a null `descriptionText`. When no job in the run has one, the source fails with `None of the <n> LinkedIn listings had a description (selector: ...)`, so a LinkedIn-only search exits 1 and a mixed search marks `linkedin` failed in `meta.sources[]`. The description hook reads the English "About the job" heading, so an account set to another language hits that failure. Both need LinkedIn to change, so neither has a live recipe.
 - A LinkedIn detail pane that never shows its title leaves the job out of the run, with `Error processing job <n>: The detail pane for job <id> did not load` on stderr. The job is not marked seen, so a later search opens it again. Five in a row end the source. This needs LinkedIn to fail a load, so it has no live recipe.
 - `--exclude-unpaid` runs after the source limits, so the final count can be lower. Source counts in `meta.sources[]` precede this final filter.
-- Unstop and Y Combinator are live data. Assert schema, source status, filters, and bounded counts rather than a particular job title or id.
+- Unstop, Y Combinator and Wellfound are live data. Assert schema, source status, filters, and bounded counts rather than a particular job title or id.
 - Search never applies for a job.

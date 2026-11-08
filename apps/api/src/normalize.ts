@@ -42,3 +42,11 @@ export function parsePostedTime(postedText: string): string | null {
     return null;
   }
 }
+
+/** A board's posted label, to the day. */
+export function relativeDay(iso: string | null, now: Date = new Date()): string | null {
+  if (!iso) return null;
+  const days = Math.floor((now.getTime() - new Date(iso).getTime()) / 86_400_000);
+  if (days <= 0) return 'today';
+  return days === 1 ? '1 day ago' : `${days} days ago`;
+}
