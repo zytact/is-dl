@@ -1,6 +1,7 @@
 import { detectAiAgentSignals } from '../ai-agent-detector.ts';
 import { decodeEntities } from '../html.ts';
 import { detectLocationConflict } from '../location-conflict.ts';
+import { relativeDay } from '../normalize.ts';
 import { classifyPay, emptyPay, TOKEN_CEILING_INR } from '../pay.ts';
 import type { JobListing, PayAmount, PayInfo, PayPeriod, WorkplaceClaim } from '../types.ts';
 import type { UnstopItem, UnstopJobDetail } from './api.ts';
@@ -34,13 +35,6 @@ export function parseApprovedDate(value: string | null | undefined): string | nu
   const iso = match ? `${match[1]}T${match[2]}${match[3]}${match[4]}:${match[5]}` : value.trim();
   const date = new Date(iso);
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
-}
-
-export function relativeDay(iso: string | null, now: Date = new Date()): string | null {
-  if (!iso) return null;
-  const days = Math.floor((now.getTime() - new Date(iso).getTime()) / 86_400_000);
-  if (days <= 0) return 'today';
-  return days === 1 ? '1 day ago' : `${days} days ago`;
 }
 
 const WORKPLACE: Record<string, WorkplaceClaim> = {

@@ -115,7 +115,7 @@ describe('fetching', () => {
     respond(303, { location: 'https://wellfound.com/role/software-engineer' });
     await expect(
       fetchSearchPage('software-engineer', { kind: 'location', slug: 'atlantis' }, 1),
-    ).rejects.toThrow('Wellfound has no page at');
+    ).rejects.toThrow('it redirects to https://wellfound.com/role/software-engineer');
     expect(fetch).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({ redirect: 'manual' }),

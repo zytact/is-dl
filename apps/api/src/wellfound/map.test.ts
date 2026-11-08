@@ -28,6 +28,7 @@ describe('compensation', () => {
     ['₹9.6L – ₹12L', { min: 960_000, max: 1_200_000, currency: 'INR' }],
     ['$40k – $100k', { min: 40_000, max: 100_000, currency: 'USD' }],
     ['₹1Cr – ₹1.5Cr', { min: 10_000_000, max: 15_000_000, currency: 'INR' }],
+    ['₹6,00,000 – ₹8,00,000', { min: 600_000, max: 800_000, currency: 'INR' }],
     ['CA$90k – CA$120k', { min: 90_000, max: 120_000, currency: 'unknown' }],
   ])('reads %s as a yearly range', (text, expected) => {
     expect(parseSalary(text)).toEqual({ ...expected, period: 'annually' });

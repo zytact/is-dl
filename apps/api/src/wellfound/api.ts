@@ -171,12 +171,13 @@ async function fetchHtml(url: string, signal?: AbortSignal): Promise<string> {
     signal,
   });
   if (response.status >= 300 && response.status < 400) {
+    const target = response.headers.get('location') ?? 'nowhere';
     throw new CliError(
       'USAGE',
-      `Wellfound has no page at ${url}. Check the role and location slugs, such as software-engineer and india.`,
+      `Wellfound has no page at ${url}, it redirects to ${target}. Check the role and location slugs, such as software-engineer and india.`,
     );
   }
-  if (response.headers.get('cf-mitigated') || [403, 429, 503].includes(response.status)) {
+  if (response.headers.get('cf-mitigated') || [403, 429].includes(response.status)) {
     throw blockedError(url, `HTTP ${response.status}`);
   }
   if (!response.ok) {

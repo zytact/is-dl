@@ -492,7 +492,7 @@ export function ScraperForm({ onStart, isScraping }: ScraperFormProps) {
 
 /** A board's ceiling on the years a listing asks for. The value is empty for any. */
 function MaxExperienceSelect(props: {
-  name: string;
+  name: 'ycombinatorMaxExperience' | 'wellfoundMaxExperience';
   value: string;
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   disabled: boolean;

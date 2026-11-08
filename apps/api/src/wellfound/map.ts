@@ -1,5 +1,6 @@
 import { detectAiAgentSignals } from '../ai-agent-detector.ts';
 import { detectLocationConflict } from '../location-conflict.ts';
+import { relativeDay } from '../normalize.ts';
 import { classifyPay, TOKEN_CEILING_INR } from '../pay.ts';
 import type { JobListing, PayAmount, PayInfo } from '../types.ts';
 import { WF_ORIGIN, type WfListing } from './api.ts';
@@ -20,7 +21,9 @@ export function salaryText(compensation: string | null): string | null {
  * letters before it, as in "CA$", names a currency this does not map.
  */
 export function parseSalary(salary: string): PayAmount | null {
-  const figures = [...salary.matchAll(/([A-Z]*)([$£€₹])\s*(\d+(?:\.\d+)?)\s*(k|m|l|cr)?\b/gi)];
+  const figures = [
+    ...salary.replaceAll(',', '').matchAll(/([A-Z]*)([$£€₹])\s*(\d+(?:\.\d+)?)\s*(k|m|l|cr)?\b/gi),
+  ];
   const [first, second = first] = figures;
   if (first === undefined || second === undefined || figures.length > 2) return null;
 
@@ -44,13 +47,6 @@ function classifyWellfoundPay(listing: WfListing): PayInfo {
   const amount = parseSalary(salary);
   const token = amount?.currency === 'INR' && (amount.max ?? 0) / 12 < TOKEN_CEILING_INR;
   return { kind: token ? 'token' : 'paid', evidence: listing.compensation, amount };
-}
-
-/** Days are as fine as a job board's "posted" label needs to be. */
-export function postedAtText(posted: Date, now: Date): string {
-  const days = Math.floor((now.getTime() - posted.getTime()) / 86_400_000);
-  if (days < 1) return 'today';
-  return days === 1 ? '1 day ago' : `${days} days ago`;
 }
 
 /** "Bengaluru, Pune / Remote (India; Europe)", the shape the Y Combinator board uses. */
@@ -89,7 +85,8 @@ export function toJobListing(listing: WfListing, now: Date = new Date()): JobLis
   const descriptionText = listing.description;
   const location = locationText(listing);
   const jobType = listing.jobType ? capitalize(listing.jobType) : null;
-  const posted = listing.liveStartAt === null ? null : new Date(listing.liveStartAt * 1000);
+  const postedAtIso =
+    listing.liveStartAt === null ? null : new Date(listing.liveStartAt * 1000).toISOString();
 
   return {
     source: 'wellfound',
@@ -99,8 +96,8 @@ export function toJobListing(listing: WfListing, now: Date = new Date()): JobLis
     companyName: listing.companyName,
     companyUrl: listing.companySlug ? `${WF_ORIGIN}/company/${listing.companySlug}` : null,
     locationText: location,
-    postedAtText: posted ? postedAtText(posted, now) : null,
-    postedAtIso: posted?.toISOString() ?? null,
+    postedAtText: relativeDay(postedAtIso, now),
+    postedAtIso,
     jobType,
     alumniCount: null,
     descriptionText,
