@@ -43,7 +43,7 @@ export async function getJobCards(page: Page, ctx: ScrapeContext): Promise<JobCa
       .waitFor({ timeout: ctx.timeout })
       .catch((error: unknown) => {
         if (!(error instanceof errors.TimeoutError)) throw error;
-        throw new CliError('ERROR', notShown('job list', JOB_CARD_SELECTOR, ctx));
+        throw new CliError('ERROR', notShown('job list', JOB_CARD_SELECTOR, ctx.timeout));
       });
 
     const jobCards = await page.$$(JOB_CARD_SELECTOR);
@@ -86,8 +86,8 @@ async function cardCompany(card: JobCard): Promise<string | null> {
 }
 
 /** A slow page is the usual cause and a retry often fixes it, so the hint leads with that. */
-function notShown(name: string, selector: string, ctx: ScrapeContext): string {
-  return `LinkedIn's ${name} did not appear within ${ctx.timeout / 1000}s (selector: ${selector}). LinkedIn is often just slow, so retry, or raise --timeout. If it keeps failing, LinkedIn may have changed its page layout.`;
+function notShown(name: string, selector: string, timeoutMs: number): string {
+  return `LinkedIn's ${name} did not appear within ${timeoutMs / 1000}s (selector: ${selector}). LinkedIn is often just slow, so retry, or raise --timeout. If it keeps failing, LinkedIn may have changed its page layout.`;
 }
 
 /**
@@ -98,9 +98,9 @@ function notShown(name: string, selector: string, ctx: ScrapeContext): string {
 async function pollUntil(
   ready: () => Promise<boolean>,
   page: Page,
-  ctx: ScrapeContext,
+  timeoutMs: number,
 ): Promise<boolean> {
-  const deadline = Date.now() + ctx.timeout;
+  const deadline = Date.now() + timeoutMs;
   for (;;) {
     if (await ready()) return true;
     if (Date.now() >= deadline) return false;
@@ -129,7 +129,7 @@ async function waitForJobDetails(
       );
     },
     page,
-    ctx,
+    ctx.timeout,
   );
 
   if (!settled) {
@@ -144,7 +144,7 @@ async function waitForJobDetails(
     .waitForSelector(DESCRIPTION_SELECTOR, { timeout: ctx.timeout })
     .catch((error: unknown) => {
       if (!(error instanceof errors.TimeoutError)) throw error;
-      ctx.onLog(notShown('job description', DESCRIPTION_SELECTOR, ctx));
+      ctx.onLog(notShown('job description', DESCRIPTION_SELECTOR, ctx.timeout));
     });
 }
 
@@ -205,7 +205,7 @@ async function waitForNewResults(
       return previous === null ? id !== null : id !== previous;
     },
     page,
-    ctx,
+    ctx.timeout,
   );
 
   // A page that never turns over shows up as a repeat of the cards we just

@@ -430,8 +430,10 @@ export function resolveSearch(input: ResolveSearchInput): SearchSettings {
   if (merged.outDir && merged.outDir !== '-') {
     merged.outDir = expandHome(merged.outDir, input.home);
   }
-  if (!Number.isFinite(merged.limit) || merged.limit <= 0) {
-    throw new CliError('USAGE', `--limit must be a positive number, got "${merged.limit}".`);
+  for (const key of ['limit', 'timeout'] as const) {
+    if (!Number.isFinite(merged[key]) || merged[key] <= 0) {
+      throw new CliError('USAGE', `--${key} must be a positive number, got "${merged[key]}".`);
+    }
   }
   merged.sources = readSources(merged.sources);
 

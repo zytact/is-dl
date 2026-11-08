@@ -10,7 +10,7 @@ export interface ScrapeContext {
   debug: boolean;
   onLog: (msg: string) => void;
   debugDir: string;
-  /** How long a page, a click or a page turn has to show its result, in ms. */
+  /** How long a click, a page turn or the job list has to show up, in ms. Same as `--timeout`. */
   timeout: number;
 }
 

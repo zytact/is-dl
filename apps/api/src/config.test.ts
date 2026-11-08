@@ -166,6 +166,12 @@ describe('config validation', () => {
     expect(() => parseConfigLayer('limit = "many"\n', 'test')).toThrow(/must be a number/);
   });
 
+  test('rejects a timeout that is not positive', () => {
+    expect(() => resolveSearch({ config: empty, env: {}, flags: { timeout: 0 } })).toThrow(
+      '--timeout must be a positive number, got "0".',
+    );
+  });
+
   test('an unknown profile name is a config error', async () => {
     await writeUser('[profiles.fe]\nkeywords = "x"\n');
     const config = await loadConfig({ cwd: root, userConfigFile });
