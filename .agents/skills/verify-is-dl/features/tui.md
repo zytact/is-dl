@@ -5,7 +5,7 @@ The Go terminal interface for search configuration, live logs, saved runs, job i
 ## Sub-features
 
 - Navigate SCRAPE, LOGS, and RESULTS with Tab, Shift+Tab, or keys 1 through 3.
-- Edit search inputs, source checkboxes, Unstop opportunity and roles, Y Combinator roles and experience ceiling, and toggles.
+- Edit search inputs, source checkboxes, Unstop opportunity and roles, Y Combinator roles and experience ceiling, Wellfound roles and experience ceiling, and toggles.
 - Start and abort a scrape.
 - Follow the SSE status and log stream.
 - Refresh, inspect, filter, export, and delete saved results.
@@ -33,7 +33,7 @@ $T key b
 $T stop
 ```
 
-For a TUI-originated Unstop search, start on SCRAPE, send the keywords, use Down through the fields to Sources, toggle LinkedIn off with Space, move Down twice to `ycombinator` and toggle it off too, continue with Down to `[ START SCAN ]`, and press Enter. For a Y Combinator search, toggle `linkedin` and `unstop` off instead, and set Limit to 4 first: focus it, send `BSpace` twice, then send `4`. Tab changes screens rather than moving between form fields. Capture the form before submission, active LOGS, completed LOGS, and RESULTS.
+For a TUI-originated Unstop search, start on SCRAPE, send the keywords, use Down through the fields to Sources, toggle LinkedIn off with Space, move Down twice to `ycombinator` and once more to `wellfound`, toggling each off, continue with Down to `[ START SCAN ]`, and press Enter. For a Y Combinator search, toggle `linkedin` and `unstop` off instead, and set Limit to 4 first: focus it, send `BSpace` twice, then send `4`. For a Wellfound search, send `India` in Location, toggle `linkedin`, `unstop` and `ycombinator` off, then Down into `Wellfound Roles`, ten more Downs to `Wellfound Max Experience`, and Right twice for `1`. Tab changes screens rather than moving between form fields. Capture the form before submission, active LOGS, completed LOGS, and RESULTS.
 
 ### Proof
 
@@ -45,7 +45,7 @@ The first capture shows the SCRAPE form. RESULTS displays a run also returned by
 - The TUI talks to `--api`, else `IS_DL_API_URL`, else `http://localhost:3000`. `tui.sh` passes the session's API.
 - Keys `1`, `2` and `3` switch screens and `q` quits even while a text field has focus, so none of them can be typed. A limit can only use the digits 0 and 4 to 9, and an emptied Limit field means 50.
 - Starting a search moves to LOGS automatically.
-- All three sources start selected. `YC Roles`, `YC Max Experience` and the `YC Skip US-only` toggle exist only while `ycombinator` is checked, and a search with no YC role checked shows `select at least one Y Combinator role`.
+- All four sources start selected. `Wellfound Roles` and `Wellfound Max Experience` exist only while `wellfound` is checked, and a search with no Wellfound role checked shows `select at least one Wellfound role`. `YC Roles`, `YC Max Experience` and the `YC Skip US-only` toggle exist only while `ycombinator` is checked, and a search with no YC role checked shows `select at least one Y Combinator role`.
 - The form is taller than the 40-row pane and scrolls with the focused field, so capture after moving focus to the field you want in the proof.
 - Export writes `results-export.zip` to `$IS_DL_VERIFY_DIR/tui-work/` because that is the TUI working directory.
 - Key `q` exits the whole app from any screen. Use `b` or `Escape` to leave detail views.

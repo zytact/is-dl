@@ -4,7 +4,7 @@ The React interface for configuring a search, watching logs, aborting work, and 
 
 ## Sub-features
 
-- Select LinkedIn, Unstop, and Y Combinator, the Unstop opportunity type and roles, and the Y Combinator roles, experience ceiling, and US-only visa filter.
+- Select LinkedIn, Unstop, Y Combinator and Wellfound, the Unstop opportunity type and roles, the Y Combinator roles, experience ceiling, and US-only visa filter, and the Wellfound roles and experience ceiling.
 - Enter search filters and start a scrape.
 - Watch SSE status and logs, then abort an active scrape.
 - Navigate between Terminal and Payloads.
@@ -21,7 +21,7 @@ Launch the verification session and open `$IS_DL_VERIFY_WEB_URL`. `Terminal` con
 Use `scripts/browser.mjs` against the dedicated Chromium that launch started:
 
 1. Capture the empty Terminal page.
-2. Run `click-text` against the pressed source buttons and `LinkedIn`, then again with `Y Combinator`, and confirm both `aria-pressed` values are false. Leave `Unstop` selected.
+2. Run `click-text` against the pressed source buttons and `LinkedIn`, then again with `Y Combinator` and with `Wellfound`, and confirm all three `aria-pressed` values are false. Leave `Unstop` selected.
 3. Fill `#keywords` with `software` and `#limit` with `1`.
 4. Click `INITIATE_SEQUENCE` and capture the started state. `EXECUTING...` can be brief for a small search.
 5. Wait for visible `SCRAPE FINISHED` and `SYS: ONLINE`.
@@ -30,14 +30,17 @@ Use `scripts/browser.mjs` against the dedicated Chromium that launch started:
 
 For a Y Combinator search, deselect `LinkedIn` and `Unstop` instead. The `Y COMBINATOR` panel then holds the role buttons, `#ycombinatorMaxExperience`, and the `YC_SKIP_US_ONLY` flag joins the FLAGS panel. Set the limit to 2, run it, open the run in the inspector, and capture the job detail with its `APPLY_LINK` button.
 
+For a Wellfound search, deselect `LinkedIn`, `Unstop` and `Y Combinator`. The `WELLFOUND` panel then holds the role buttons and `#wellfoundMaxExperience`. Fill `#location` with `India`, `#limit` with 2 and `#wellfoundMaxExperience` with 1, run it, and capture the inspector's job detail. A job with a rupee salary shows `INR 960,000 - 1,200,000 / ANNUALLY` style figures above its compensation text.
+
 ### Proof
 
 The before-and-after screenshots show the real clicks and resulting screens. The page text reaches `SCRAPE FINISHED`, then the results screen and inspector show the saved run. `/api/results` contains the displayed run, and its saved file exists in the isolated run store.
 
 ## Gotchas
 
-- All three sources start selected. Deselect LinkedIn for an account-free proof.
+- All four sources start selected. Deselect LinkedIn for an account-free proof.
 - The Y Combinator panel and the `YC_SKIP_US_ONLY` flag exist only while `Y Combinator` is pressed. With no role pressed the panel says `PICK AT LEAST ONE ROLE` and `INITIATE_SEQUENCE` is disabled.
+- The Wellfound panel exists only while `Wellfound` is pressed, and with no role pressed it says `PICK AT LEAST ONE ROLE` and `INITIATE_SEQUENCE` is disabled.
 - `APPLY_LINK` opens Y Combinator's sign-in. Capture it, never follow it.
 - The website calls `/api` on its own origin. Vite dev and preview forward it to `IS_DL_API_URL`, else `http://localhost:3000`.
 - Search completion is asynchronous. Waiting only for the POST response proves nothing about the result.
