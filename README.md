@@ -248,6 +248,7 @@ Going through LinkedIn is a mess. It is filled with trash posts and wastes time.
 - Location can be flexible: "Remote", "United States", "San Francisco, CA", etc.
 - LinkedIn reads location, remote, experience level and job type from the query text, so is-dl appends them to your keywords, for example `software engineer, internship, remote, in India`. LinkedIn interprets that text itself, and a search with no location uses the account's last searched location.
 - `--source ycombinator` reads the Y Combinator job board over plain HTTP with no login. `--ycombinator-roles` picks the role pages, each about 35 listings, and keywords are not matched there. The filters read fields the listing publishes: `--job-type`, `--remote-only`, `--location`, `--ycombinator-max-experience` and `--ycombinator-skip-us-only`. Each job carries `applyUrl`, which needs a signed-in Y Combinator account.
+- `--source wellfound` reads Wellfound role pages over plain HTTP with no login. `--wellfound-roles` picks the role pages and `--location` picks the place, written as Wellfound's slug such as `india` or `bangalore`. An unknown role or place fails rather than searching a broader page. A search reads at most 3 pages of about 35 listings per role, and keywords are not matched. The filters read fields the listing publishes: `--job-type`, `--remote-only` and `--wellfound-max-experience`.
 - CORS is enabled for all API endpoints
 
 Built with [Vite+](https://viteplus.dev/) and [pnpm](https://pnpm.io/).

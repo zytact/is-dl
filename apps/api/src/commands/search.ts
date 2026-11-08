@@ -36,6 +36,8 @@ const SEARCH_OPTIONS = {
   'ycombinator-max-experience': { type: 'string' },
   'ycombinator-skip-us-only': { type: 'boolean' },
   'no-ycombinator-skip-us-only': { type: 'boolean' },
+  'wellfound-roles': { type: 'string' },
+  'wellfound-max-experience': { type: 'string' },
 } as const;
 
 function toggle(on: boolean | undefined, off: boolean | undefined): boolean | undefined {
@@ -89,6 +91,8 @@ export async function searchCommand(base: CliBase, argv: string[]): Promise<void
       values['ycombinator-skip-us-only'],
       values['no-ycombinator-skip-us-only'],
     ),
+    wellfoundRoles: csv(values['wellfound-roles']),
+    wellfoundMaxExperience: num(values['wellfound-max-experience'], '--wellfound-max-experience'),
   };
 
   const profile = values.profile ?? ctx.env.IS_DL_PROFILE;

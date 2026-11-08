@@ -101,7 +101,7 @@ func TestStartScrapeCmd_DefaultsToEverySource(t *testing.T) {
 
 	s.startCmd()()
 
-	if mc.startScrapeOpts.Sources != "linkedin,unstop,ycombinator" {
+	if mc.startScrapeOpts.Sources != "linkedin,unstop,ycombinator,wellfound" {
 		t.Errorf("unexpected sources: %q", mc.startScrapeOpts.Sources)
 	}
 	if mc.startScrapeOpts.UnstopOpportunity != "jobs" {
@@ -124,6 +124,7 @@ func TestStartScrapeCmd_LinkedInOnly_DropsUnstopFields(t *testing.T) {
 	s.inputs[scrapeKeywords].SetValue("Go Engineer")
 	s.sourceSelected[1] = false
 	s.sourceSelected[2] = false
+	s.sourceSelected[3] = false
 
 	s.startCmd()()
 
@@ -133,8 +134,8 @@ func TestStartScrapeCmd_LinkedInOnly_DropsUnstopFields(t *testing.T) {
 	if mc.startScrapeOpts.UnstopOpportunity != "" || mc.startScrapeOpts.UnstopRoles != "" {
 		t.Errorf("expected no unstop fields, got %+v", mc.startScrapeOpts)
 	}
-	if mc.startScrapeOpts.YcombinatorRoles != "" {
-		t.Errorf("expected no ycombinator fields, got %+v", mc.startScrapeOpts)
+	if mc.startScrapeOpts.YcombinatorRoles != "" || mc.startScrapeOpts.WellfoundRoles != "" {
+		t.Errorf("expected no ycombinator or wellfound fields, got %+v", mc.startScrapeOpts)
 	}
 }
 
@@ -160,6 +161,27 @@ func TestStartScrapeCmd_SendsYcombinatorFilters(t *testing.T) {
 	}
 }
 
+func TestStartScrapeCmd_SendsWellfoundFilters(t *testing.T) {
+	mc := &mockClient{}
+	s := newTestScrape(mc)
+	s.inputs[scrapeKeywords].SetValue("Go Engineer")
+	s.wellfoundRoleSelected[1] = true
+	s.wellfoundExperienceIndex = 2
+
+	s.startCmd()()
+
+	opts := mc.startScrapeOpts
+	if opts.WellfoundRoles != "software-engineer,full-stack-engineer" {
+		t.Errorf("unexpected roles: %q", opts.WellfoundRoles)
+	}
+	if opts.WellfoundMaxExperience == nil || *opts.WellfoundMaxExperience != 1 {
+		t.Errorf("expected a 1 year ceiling, got %v", opts.WellfoundMaxExperience)
+	}
+	if opts.YcombinatorMaxExperience != nil {
+		t.Errorf("expected the Y Combinator ceiling to stay any, got %d", *opts.YcombinatorMaxExperience)
+	}
+}
+
 func TestStartScrapeCmd_YcombinatorWithoutRole_ReturnsNil(t *testing.T) {
 	mc := &mockClient{}
 	s := newTestScrape(mc)
@@ -181,6 +203,7 @@ func TestStartScrapeCmd_NoSource_ReturnsNil(t *testing.T) {
 	s.sourceSelected[0] = false
 	s.sourceSelected[1] = false
 	s.sourceSelected[2] = false
+	s.sourceSelected[3] = false
 
 	if cmd := s.startCmd(); cmd != nil {
 		t.Error("expected nil cmd when no source is selected")
@@ -211,6 +234,7 @@ func TestMoveFocus_SkipsHiddenUnstopFields(t *testing.T) {
 	s := newTestScrape(&mockClient{})
 	s.sourceSelected[1] = false
 	s.sourceSelected[2] = false
+	s.sourceSelected[3] = false
 	s.focusIndex = scrapeSources
 
 	s.moveFocus(1, false)

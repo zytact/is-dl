@@ -61,7 +61,7 @@ export interface LocationConflict {
   claimed: { kind: WorkplaceClaim; evidence: string };
 }
 
-export const JOB_SOURCES = ['linkedin', 'unstop', 'ycombinator'] as const;
+export const JOB_SOURCES = ['linkedin', 'unstop', 'ycombinator', 'wellfound'] as const;
 
 export type JobSource = (typeof JOB_SOURCES)[number];
 
@@ -213,4 +213,14 @@ export interface YcombinatorOptions {
   maxExperience?: number;
   /** Drops listings whose visa field is "US citizen/visa only". */
   skipUsOnly?: boolean;
+}
+
+/** Plain HTTP against the public role pages. No browser, no session. */
+export interface WellfoundOptions {
+  /** Role page slugs, for example "software-engineer". Each page is one request. */
+  roles: string[];
+  /** Keeps listings whose `jobType` is one of these, for example "Internship". */
+  jobType?: string[];
+  /** Drops listings whose minimum experience is more years than this. */
+  maxExperience?: number;
 }

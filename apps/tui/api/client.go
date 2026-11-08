@@ -40,8 +40,11 @@ type ScrapeOptions struct {
 	UnstopRoles       string `json:"unstopRoles"`
 	YcombinatorRoles  string `json:"ycombinatorRoles,omitempty"`
 	// Nil means any experience.
-	YcombinatorMaxExperience *int `json:"ycombinatorMaxExperience,omitempty"`
-	YcombinatorSkipUsOnly    bool `json:"ycombinatorSkipUsOnly"`
+	YcombinatorMaxExperience *int   `json:"ycombinatorMaxExperience,omitempty"`
+	YcombinatorSkipUsOnly    bool   `json:"ycombinatorSkipUsOnly"`
+	WellfoundRoles           string `json:"wellfoundRoles,omitempty"`
+	// Nil means any experience.
+	WellfoundMaxExperience *int `json:"wellfoundMaxExperience,omitempty"`
 }
 
 type SSEEvent struct {

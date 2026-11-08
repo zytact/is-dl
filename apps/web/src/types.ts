@@ -37,10 +37,25 @@ export const YCOMBINATOR_ROLES = [
   'recruiting-hr',
 ] as const;
 
+/** Wellfound role pages checked to exist. An unknown slug fails the search. */
+export const WELLFOUND_ROLES = [
+  'software-engineer',
+  'full-stack-engineer',
+  'frontend-engineer',
+  'backend-engineer',
+  'mobile-engineer',
+  'devops-engineer',
+  'machine-learning-engineer',
+  'data-scientist',
+  'product-designer',
+  'product-manager',
+] as const;
+
 export const SOURCE_LABELS: Record<JobSource, string> = {
   linkedin: 'LinkedIn',
   unstop: 'Unstop',
   ycombinator: 'Y Combinator',
+  wellfound: 'Wellfound',
 };
 
 export function roleLabel(slug: string): string {

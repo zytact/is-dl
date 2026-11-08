@@ -25,6 +25,12 @@ export interface SourceRunner {
   run(query: SearchQuery, ctx: SourceContext): Promise<JobListing[]>;
 }
 
+/** Job types compared by their letters, so "Full-time" matches "full-time" and "Full Time". */
+export function sameJobType(a: string, b: string): boolean {
+  const plain = (value: string) => value.toLowerCase().replace(/[^a-z]/g, '');
+  return plain(a) === plain(b);
+}
+
 export function checkAbort(signal?: AbortSignal): void {
   if (signal?.aborted) throw new Error('Scrape aborted');
 }
