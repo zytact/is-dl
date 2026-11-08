@@ -72,6 +72,13 @@ $D search -k "software engineer intern" --source linkedin -l India --remote-only
 printf '%s\n' "$?" >"$EV/linkedin.exit"
 ```
 
+`--timeout <ms>` bounds the LinkedIn navigation and every wait after it: the job list, the detail pane, the description and the page turn. To prove a change to it, run the LinkedIn recipe once with `--limit 1 --timeout 60000 --debug --verbose`. A value that is not positive needs no network, so prove the rejection on Unstop:
+
+```bash
+$D search -k software --source unstop --timeout 0 --json >"$EV/timeout-zero.json"
+printf '%s\n' "$?" >"$EV/timeout-zero.exit"
+```
+
 The blocklist needs a company the live corpus is showing right now, so take one from a first search and block it in a second. `--verbose` keeps the log on stderr next to `--json`:
 
 ```bash
@@ -96,6 +103,8 @@ For LinkedIn, run the LinkedIn recipe once with `--limit 5`, take `BLOCK` from t
 ### Proof
 
 Exit code is 0. `search.json` has `ok: true`, one saved `path`, and at least one job when the live corpus contains a match. The Unstop entry in `meta.sources[]` has `status: "ok"`, and every returned job has `source: "unstop"`. The file at `path` exists and contains the same run data.
+
+For the timeout run, stderr has `Waiting up to 60s for job list to load...`. Without `--timeout` it says `30s`. `timeout-zero.exit` is 2, and the JSON error says `--timeout must be a positive number, got "0".`
 
 For the LinkedIn recipe, the exit code is 0 and `meta.sources[]` has a `linkedin` entry with `status: "ok"`. Each job has a non-null `jobId`, `title`, `companyName`, `locationText` and `descriptionText`. No `descriptionText` ends with `… more`, the label of LinkedIn's expand button. Assert the shape and a bounded count, not particular jobs.
 
@@ -151,7 +160,7 @@ For multi-source behavior, prove each entry in `meta.sources[]`. Exit 0 alone is
 - A LinkedIn pay pill is an amount per period in any currency, such as `30K GBP/yr`. It classifies the listing as `paid` ahead of anything the description says, and the rupee token ceiling does not apply to it.
 - LinkedIn exit 3 means a session is required. Existing but expired cookies can instead cause a timeout. Replace them with `scripts/login.sh logout`, then `scripts/login.sh` in a TTY.
 - LinkedIn ignores the `location`, `f_WT`, `f_E`, `f_JT` and `sortBy` URL parameters since its redesign. A search with no `-l` uses the LinkedIn account's last searched location, so results may not match the location you expect. A location such as "Worldwide" can resolve to a specific country.
-- A LinkedIn job list that never appears fails the source with `LinkedIn's job list did not appear within 15s ... LinkedIn may have changed its page layout.` A missing job description logs a warning to stderr and keeps the job with a null `descriptionText`. When no job in the run has one, the source fails with `None of the <n> LinkedIn listings had a description (selector: ...)`, so a LinkedIn-only search exits 1 and a mixed search marks `linkedin` failed in `meta.sources[]`. The description hook reads the English "About the job" heading, so an account set to another language hits that failure. Both need LinkedIn to change, so neither has a live recipe.
+- A LinkedIn job list that never appears within `--timeout` fails the source with `LinkedIn's job list did not appear within 30s (selector: ...). LinkedIn is often just slow, so retry, or raise --timeout. If it keeps failing, LinkedIn may have changed its page layout.` A slow page is the usual cause, and `-l Europe` hits it most. Forcing one would mean looping live searches, so it has no live recipe. A missing job description logs a warning to stderr and keeps the job with a null `descriptionText`. When no job in the run has one, the source fails with `None of the <n> LinkedIn listings had a description (selector: ...)`, so a LinkedIn-only search exits 1 and a mixed search marks `linkedin` failed in `meta.sources[]`. The description hook reads the English "About the job" heading, so an account set to another language hits that failure. The description failures need LinkedIn to change, so they have no live recipe.
 - A LinkedIn detail pane that never shows its title leaves the job out of the run, with `Error processing job <n>: The detail pane for job <id> did not load` on stderr. The job is not marked seen, so a later search opens it again. Five in a row end the source. This needs LinkedIn to fail a load, so it has no live recipe.
 - `--exclude-unpaid` runs after the source limits, so the final count can be lower. Source counts in `meta.sources[]` precede this final filter.
 - Unstop, Y Combinator and Wellfound are live data. Assert schema, source status, filters, and bounded counts rather than a particular job title or id.
