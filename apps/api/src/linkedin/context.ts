@@ -10,10 +10,8 @@ export interface ScrapeContext {
   debug: boolean;
   onLog: (msg: string) => void;
   debugDir: string;
-}
-
-export function silentContext(): ScrapeContext {
-  return { debug: false, onLog: () => {}, debugDir: '' };
+  /** How long a page, a click or a page turn has to show its result, in ms. */
+  timeout: number;
 }
 
 /** Screenshots go under the resolved debug directory, never the working directory. */

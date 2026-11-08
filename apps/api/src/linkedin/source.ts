@@ -22,6 +22,7 @@ async function scrape(
     debug: options.debug ?? false,
     onLog,
     debugDir: options.debugDir,
+    timeout: options.timeout,
   };
 
   checkAbort(signal);

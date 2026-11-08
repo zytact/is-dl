@@ -10,9 +10,6 @@ const JOB_CARD_SELECTOR = `div[role="button"][componentkey^="${CARD_KEY_PREFIX}"
 
 const NEXT_PAGE_SELECTOR = '[data-testid="pagination-controls-next-button-visible"]';
 
-/** How long a click or a page turn has to show its result before we give up on it. */
-const READY_TIMEOUT_MS = 15000;
-
 const POLL_INTERVAL_MS = 100;
 
 /** What a card says about its job before it is opened. */
@@ -34,7 +31,7 @@ export async function getJobCards(page: Page, ctx: ScrapeContext): Promise<JobCa
 
   try {
     if (ctx.debug) {
-      ctx.onLog('Waiting for job list to load...');
+      ctx.onLog(`Waiting up to ${ctx.timeout / 1000}s for job list to load...`);
       await debugShot(ctx, page, 'debug-search-page.png');
     }
 
@@ -43,10 +40,10 @@ export async function getJobCards(page: Page, ctx: ScrapeContext): Promise<JobCa
       .locator(JOB_CARD_SELECTOR)
       .or(page.getByText('No results found'))
       .first()
-      .waitFor({ timeout: READY_TIMEOUT_MS })
+      .waitFor({ timeout: ctx.timeout })
       .catch((error: unknown) => {
         if (!(error instanceof errors.TimeoutError)) throw error;
-        throw new CliError('ERROR', layoutChanged('job list', JOB_CARD_SELECTOR));
+        throw new CliError('ERROR', notShown('job list', JOB_CARD_SELECTOR, ctx));
       });
 
     const jobCards = await page.$$(JOB_CARD_SELECTOR);
@@ -88,9 +85,9 @@ async function cardCompany(card: JobCard): Promise<string | null> {
   }
 }
 
-/** A hook that never appears means LinkedIn moved its markup, not that the search failed. */
-function layoutChanged(name: string, selector: string): string {
-  return `LinkedIn's ${name} did not appear within ${READY_TIMEOUT_MS / 1000}s (selector: ${selector}). LinkedIn may have changed its page layout.`;
+/** A slow page is the usual cause and a retry often fixes it, so the hint leads with that. */
+function notShown(name: string, selector: string, ctx: ScrapeContext): string {
+  return `LinkedIn's ${name} did not appear within ${ctx.timeout / 1000}s (selector: ${selector}). LinkedIn is often just slow, so retry, or raise --timeout. If it keeps failing, LinkedIn may have changed its page layout.`;
 }
 
 /**
@@ -98,8 +95,12 @@ function layoutChanged(name: string, selector: string): string {
  * this project free of DOM types. Returns false on timeout rather than
  * throwing, so what a slow page costs is each caller's decision.
  */
-async function pollUntil(ready: () => Promise<boolean>, page: Page): Promise<boolean> {
-  const deadline = Date.now() + READY_TIMEOUT_MS;
+async function pollUntil(
+  ready: () => Promise<boolean>,
+  page: Page,
+  ctx: ScrapeContext,
+): Promise<boolean> {
+  const deadline = Date.now() + ctx.timeout;
   for (;;) {
     if (await ready()) return true;
     if (Date.now() >= deadline) return false;
@@ -120,12 +121,16 @@ async function waitForJobDetails(
   before: string | null,
   ctx: ScrapeContext,
 ): Promise<void> {
-  const settled = await pollUntil(() => {
-    const shown = linkedinJobId(page.url());
-    return Promise.resolve(
-      expected === null ? shown !== null && shown !== before : shown === expected,
-    );
-  }, page);
+  const settled = await pollUntil(
+    () => {
+      const shown = linkedinJobId(page.url());
+      return Promise.resolve(
+        expected === null ? shown !== null && shown !== before : shown === expected,
+      );
+    },
+    page,
+    ctx,
+  );
 
   if (!settled) {
     // The extractor decides: it reads whatever job the URL names and rejects
@@ -136,10 +141,10 @@ async function waitForJobDetails(
 
   // The description loads last, so it is the sign the pane is complete.
   await page
-    .waitForSelector(DESCRIPTION_SELECTOR, { timeout: READY_TIMEOUT_MS })
+    .waitForSelector(DESCRIPTION_SELECTOR, { timeout: ctx.timeout })
     .catch((error: unknown) => {
       if (!(error instanceof errors.TimeoutError)) throw error;
-      ctx.onLog(layoutChanged('job description', DESCRIPTION_SELECTOR));
+      ctx.onLog(notShown('job description', DESCRIPTION_SELECTOR, ctx));
     });
 }
 
@@ -194,10 +199,14 @@ async function waitForNewResults(
   previous: string | null,
   ctx: ScrapeContext,
 ): Promise<void> {
-  const turned = await pollUntil(async () => {
-    const id = await firstCardId(page);
-    return previous === null ? id !== null : id !== previous;
-  }, page);
+  const turned = await pollUntil(
+    async () => {
+      const id = await firstCardId(page);
+      return previous === null ? id !== null : id !== previous;
+    },
+    page,
+    ctx,
+  );
 
   // A page that never turns over shows up as a repeat of the cards we just
   // read, and those are skipped on their ids, so carrying on is safe.
