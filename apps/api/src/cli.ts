@@ -108,7 +108,7 @@ search flags:
   -o, --out <dir|->                 Output directory, or "-" for stdout
       --headless / --no-headless
       --debug / --no-debug
-      --timeout <ms>                Navigation timeout (default 30000)
+      --timeout <ms>                How long LinkedIn gets to load a page or a job (default 30000)
       --exclude-unpaid              Drop unpaid and token-stipend listings
       --exclude-applied             Drop listings already in the application log
       --exclude-seen                Drop listings an earlier run already showed

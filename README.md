@@ -122,7 +122,7 @@ Every other command refuses to prompt. Without a session they exit `3` immediate
 --blocked-companies <names>      Comma-separated companies to skip, replaces the config list
 -p, --profile <name>             Use a saved profile from config
 -o, --out <dir|->                Output directory, or "-" for stdout
---timeout <ms>                   Navigation timeout (default: 30000)
+--timeout <ms>                   How long LinkedIn gets to load a page or a job (default: 30000)
 --json                           JSON on stdout, logs on stderr
 --debug                          Enable debug mode
 --no-headless                    Show browser window
