@@ -34,13 +34,14 @@
     "lint": "vp lint",
     "format": "vp fmt",
     "typecheck": "tsc --noEmit -p apps/api/tsconfig.json && vp run -r typecheck",
-    "prepare": "vp config"
+    "prepare": "vp config",
+    "prepack": "vp pack"
   },
   "dependencies": {
-    "archiver": "^6.0.2",
-    "playwright": "^1.58.0",
-    "smol-toml": "^1.8.0",
-    "yaml": "^2.9.0"
+    "archiver": "6.0.2",
+    "playwright": "1.61.1",
+    "smol-toml": "1.8.0",
+    "yaml": "2.9.0"
   },
   "devDependencies": {
     "@types/archiver": "^6.0.3",

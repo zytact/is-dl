@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import type { CliBase } from './cli-context.ts';
 import { CliError, ExitCode } from './errors.ts';
 import { resolvePaths } from './paths.ts';
+import { updateNotice } from './update.ts';
 
 /** Nearest package.json: `<root>/dist/` when packed, `<root>/apps/api/src/` under tsx. */
 function readVersion(): string {
@@ -49,6 +50,7 @@ const COMMANDS: Record<string, () => Promise<Command>> = {
   apps: async () => (await import('./commands/apps.ts')).appsCommand,
   notes: async () => (await import('./commands/notes.ts')).notesCommand,
   resume: async () => (await import('./commands/resume.ts')).resumeCommand,
+  update: async () => (await import('./commands/update.ts')).updateCommand,
 };
 
 const HELP = `is-dl ${version} - job search CLI for LinkedIn, Unstop, Y Combinator and Wellfound
@@ -69,6 +71,7 @@ Commands:
                             Build resume variants with tectonic
   serve                     Run the REST API used by the web UI and TUI
   doctor                    Check node, playwright, browser, session, paths
+  update                    Install the latest release
 
 Global flags:
   --json                    Machine-readable JSON on stdout, logs on stderr
@@ -217,6 +220,12 @@ serve flags:       --port <n>   --host <addr>
 Exit codes:
   0 ok   1 error   2 usage   3 auth required   4 dependency   5 aborted   6 config
 
+Updating:
+  is-dl update installs the latest release on Linux and macOS, the same way
+  the install script does. Once per UTC day, other commands check for a newer
+  release and mention it on stderr. --json, --quiet and a stderr that is not a
+  terminal never check.
+
 Examples:
   is-dl login
   is-dl search -k "frontend intern" -l Remote --limit 20 --json
@@ -318,7 +327,16 @@ function report(error: unknown, json: boolean): number {
   return cliError.exit;
 }
 
+/** Checks quietly beside the command, and only when a person reads stderr. */
+function wantsUpdateNotice(argv: string[]): boolean {
+  const quiet = wantsJson(argv) || argv.includes('--quiet') || argv.includes('-q');
+  return process.stderr.isTTY && !quiet && findCommand(argv)?.name !== 'update';
+}
+
 const argv = process.argv.slice(2);
+const notice = wantsUpdateNotice(argv)
+  ? updateNotice({ current: version, cacheDirectory: resolvePaths().cache }).catch(() => undefined)
+  : undefined;
 try {
   process.exitCode = await main(argv);
 } catch (error) {
@@ -327,3 +345,5 @@ try {
     ? report(new CliError('ABORTED', 'Aborted.'), wantsJson(argv))
     : report(error, wantsJson(argv));
 }
+const noticeText = await notice;
+if (noticeText) process.stderr.write(noticeText);
