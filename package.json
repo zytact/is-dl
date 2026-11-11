@@ -34,7 +34,8 @@
     "lint": "vp lint",
     "format": "vp fmt",
     "typecheck": "tsc --noEmit -p apps/api/tsconfig.json && vp run -r typecheck",
-    "prepare": "vp config"
+    "prepare": "vp config",
+    "prepack": "vp pack"
   },
   "dependencies": {
     "archiver": "^6.0.2",

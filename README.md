@@ -10,23 +10,32 @@ This is a monorepo built with [Vite+](https://viteplus.dev/). The root package i
 
 ## Installation
 
-Install dependencies from the root:
+Needs Node.js 24+ on Linux or macOS.
+
+```bash
+curl -fsSL https://github.com/zytact/is-dl/releases/latest/download/install.sh | sh
+```
+
+This installs the latest release into `~/.local/bin/is-dl`, along with the Chromium build it uses. Run it again, or run `is-dl update`, to move to a newer release. Once a day, is-dl tells you when one is out.
+
+### From a checkout
+
+For working on is-dl itself, install dependencies and Chromium from the root:
 
 ```bash
 vp install
-```
-
-Install Playwright browsers:
-
-```bash
 vp exec playwright install chromium
 ```
 
-Install the `is-dl` command globally from the checkout:
+Then install the `is-dl` command globally from the checkout:
 
 ```bash
 vp pack && vp install -g .
 ```
+
+## Releases
+
+Merging to `main` keeps a release PR open that bumps the version and writes `CHANGELOG.md` from the `feat`, `fix` and `perf` PR titles merged since the last release. Merging that PR tags the release and attaches the package, `install.sh` and `SHA256SUMS` to it.
 
 ## Development
 
