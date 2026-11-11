@@ -105,14 +105,16 @@ describe.skipIf(process.platform === 'win32')('install.sh', { timeout: 60_000 },
     expect((await run(join(root, 'home/.local/bin/is-dl'), [])).output).toBe('1.2.0\n');
   });
 
-  it('stops early when the release is already installed', async () => {
+  it('stops early when the release is already installed, relinking a removed CLI', async () => {
     await publish('1.0.0');
     await install();
+    await rm(join(root, 'home/.local/bin/is-dl'));
 
     const result = await install();
 
     expect(result.code).toBe(0);
     expect(result.output).toContain('is-dl 1.0.0 is already up to date.');
+    expect((await run(join(root, 'home/.local/bin/is-dl'), [])).output).toBe('1.0.0\n');
   });
 
   it('refuses a tarball that does not match the release checksum', async () => {

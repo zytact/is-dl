@@ -23,8 +23,10 @@ else
   sha256='shasum -a 256'
 fi
 
-tmp="$(mktemp -d)"
+mkdir -p "$data_dir/versions" "$bin_dir"
+tmp="$(mktemp -d "$data_dir/.install.XXXXXX")"
 trap 'rm -rf "$tmp"' EXIT
+trap 'exit 130' INT TERM
 
 curl -fsSL "$release_url/is-dl.tgz" -o "$tmp/is-dl.tgz"
 curl -fsSL "$release_url/SHA256SUMS" -o "$tmp/SHA256SUMS"
@@ -35,24 +37,22 @@ version="$(tar -xzOf "$tmp/is-dl.tgz" package/package.json |
   node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync(0, "utf8")).version)')"
 previous="$(readlink "$data_dir/current" 2>/dev/null || true)"
 if [ "$previous" = "versions/$version" ]; then
+  ln -sfn "$data_dir/current/node_modules/.bin/is-dl" "$bin_dir/is-dl"
   echo "is-dl $version is already up to date."
   exit 0
 fi
 
-# Install beside the current version, so a failed step leaves it in place.
 staged="$tmp/$version"
 echo "Installing is-dl $version..."
 npm install --prefix "$staged" --omit=dev --no-fund --no-audit --loglevel=error "$tmp/is-dl.tgz" >/dev/null
 "$staged/node_modules/.bin/playwright" install chromium ||
   fail 'could not install the Chromium build is-dl uses'
 
-mkdir -p "$data_dir/versions" "$bin_dir"
 rm -rf "$data_dir/versions/$version"
 mv "$staged" "$data_dir/versions/$version"
 ln -sfn "versions/$version" "$data_dir/current"
 ln -sfn "$data_dir/current/node_modules/.bin/is-dl" "$bin_dir/is-dl"
 
-# Keep the new version and the one it replaced.
 for dir in "$data_dir"/versions/*; do
   name="versions/$(basename "$dir")"
   [ "$name" = "versions/$version" ] || [ "$name" = "$previous" ] || rm -rf "$dir"
@@ -63,5 +63,5 @@ found="$(command -v is-dl || true)"
 if [ -z "$found" ]; then
   echo "Add $bin_dir to PATH to run is-dl."
 elif [ "$found" != "$bin_dir/is-dl" ]; then
-  echo "Another is-dl at $found comes first on PATH. Remove it, for example with 'npm rm -g is-dl'."
+  echo "Another is-dl at $found comes first on PATH. Remove it with 'vp remove -g is-dl' or 'npm rm -g is-dl', whichever installed it."
 fi

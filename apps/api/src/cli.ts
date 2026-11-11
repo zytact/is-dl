@@ -329,7 +329,7 @@ function report(error: unknown, json: boolean): number {
 
 /** Checks quietly beside the command, and only when a person reads stderr. */
 function wantsUpdateNotice(argv: string[]): boolean {
-  const quiet = ['--json', '--quiet', '-q'].some((flag) => argv.includes(flag));
+  const quiet = wantsJson(argv) || argv.includes('--quiet') || argv.includes('-q');
   return process.stderr.isTTY && !quiet && findCommand(argv)?.name !== 'update';
 }
 
