@@ -44,7 +44,7 @@ fi
 
 staged="$tmp/$version"
 echo "Installing is-dl $version..."
-npm install --prefix "$staged" --omit=dev --no-fund --no-audit --loglevel=error "$tmp/is-dl.tgz" >/dev/null
+npm install --prefix "$staged" --omit=dev --no-fund --no-audit --no-update-notifier --loglevel=error "$tmp/is-dl.tgz" >/dev/null
 "$staged/node_modules/.bin/playwright" install chromium ||
   fail 'could not install the Chromium build is-dl uses'
 
