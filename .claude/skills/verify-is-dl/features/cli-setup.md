@@ -45,12 +45,13 @@ W=$PWD/.local/verify-is-dl-release; mkdir -p "$W/r1" "$W/home"
 vp pm pack --pack-destination "$W" && mv "$W"/is-dl-*.tgz "$W/r1/is-dl.tgz"
 cp install.sh "$W/r1/" && (cd "$W/r1" && sha256sum -- * >SHA256SUMS)
 (cd "$W" && python3 -u -m http.server 0 --bind 127.0.0.1 >server.log 2>&1 & echo $! >server.pid)
+until grep -q 'port [0-9]' "$W/server.log" 2>/dev/null; do sleep 0.2; done
 U=http://127.0.0.1:$(grep -o 'port [0-9]*' "$W/server.log" | cut -d' ' -f2)
 export PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/ms-playwright
 HOME=$W/home IS_DL_RELEASE_URL=$U/r1 sh -c "curl -fsSL $U/r1/install.sh | sh"
 ```
 
-For an update, make `r2` from the same tarball with `package/package.json`'s version raised, then run `HOME=$W/home IS_DL_RELEASE_URL=$U/r2 $W/home/.local/bin/is-dl update`. For the notice, write `{"latest":"<newer>"}` to `$W/home/.cache/is-dl/update-check.json` with an empty `update-claim-<days since epoch>` beside it, so no request reaches GitHub, and run `is-dl --version` under a pseudo-terminal. Stop the server with `kill "$(cat "$W/server.pid")"` and delete `$W` afterwards.
+For an update, extract `r1/is-dl.tgz`, raise the version in `package/package.json`, re-tar it as `r2/is-dl.tgz` with the `package/` prefix, and copy `install.sh` and regenerate `SHA256SUMS` beside it. Then run `HOME=$W/home IS_DL_RELEASE_URL=$U/r2 $W/home/.local/bin/is-dl update`. For the notice, write `{"latest":"<newer>"}` to `$W/home/.cache/is-dl/update-check.json` with an empty `update-claim-<days since epoch>` beside it, so no request reaches GitHub, and run `HOME=$W/home $W/home/.local/bin/is-dl --version` under a pseudo-terminal. Stop the server with `kill "$(cat "$W/server.pid")"` and delete `$W` afterwards.
 
 ### Proof
 

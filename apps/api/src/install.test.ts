@@ -117,6 +117,15 @@ describe.skipIf(process.platform === 'win32')('install.sh', { timeout: 60_000 },
     expect((await run(join(root, 'home/.local/bin/is-dl'), [])).output).toBe('1.0.0\n');
   });
 
+  it('reinstalls when the current version is missing on disk', async () => {
+    await publish('1.0.0');
+    await install();
+    await rm(join(dataDir(), 'versions/1.0.0'), { recursive: true });
+
+    expect((await install()).output).toContain('is-dl 1.0.0 installed.');
+    expect((await run(join(root, 'home/.local/bin/is-dl'), [])).output).toBe('1.0.0\n');
+  });
+
   it('refuses a tarball that does not match the release checksum', async () => {
     await publish('1.0.0');
     await install();

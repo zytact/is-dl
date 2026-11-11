@@ -3,11 +3,12 @@ import { parseArgs } from 'node:util';
 import type { CliBase } from '../cli-context.ts';
 import { CliError } from '../errors.ts';
 import { releaseDownloadUrl } from '../update.ts';
-import { usage } from './shared.ts';
+import { GLOBAL_OPTIONS, usage } from './shared.ts';
 
 /** Runs the latest release's install.sh, which installs that release beside the current one. */
 export async function updateCommand(base: CliBase, argv: string[]): Promise<void> {
-  usage(() => parseArgs({ args: argv, options: {} }));
+  const { values } = usage(() => parseArgs({ args: argv, options: GLOBAL_OPTIONS }));
+  if (values.json) throw new CliError('USAGE', 'is-dl update has no JSON output.');
   if (process.platform === 'win32') {
     throw new CliError(
       'ERROR',

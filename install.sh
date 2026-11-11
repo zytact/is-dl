@@ -26,7 +26,8 @@ fi
 mkdir -p "$data_dir/versions" "$bin_dir"
 tmp="$(mktemp -d "$data_dir/.install.XXXXXX")"
 trap 'rm -rf "$tmp"' EXIT
-trap 'exit 130' INT TERM
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 curl -fsSL "$release_url/is-dl.tgz" -o "$tmp/is-dl.tgz"
 curl -fsSL "$release_url/SHA256SUMS" -o "$tmp/SHA256SUMS"
@@ -36,7 +37,7 @@ curl -fsSL "$release_url/SHA256SUMS" -o "$tmp/SHA256SUMS"
 version="$(tar -xzOf "$tmp/is-dl.tgz" package/package.json |
   node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync(0, "utf8")).version)')"
 previous="$(readlink "$data_dir/current" 2>/dev/null || true)"
-if [ "$previous" = "versions/$version" ]; then
+if [ "$previous" = "versions/$version" ] && [ -x "$data_dir/current/node_modules/.bin/is-dl" ]; then
   ln -sfn "$data_dir/current/node_modules/.bin/is-dl" "$bin_dir/is-dl"
   echo "is-dl $version is already up to date."
   exit 0
