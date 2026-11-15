@@ -95,6 +95,7 @@ export default defineConfig({
       '.turbo/**',
       'apps/api/out/**',
       'apps/tui/bin/**',
+      'CHANGELOG.md',
     ],
   },
   lint: {
