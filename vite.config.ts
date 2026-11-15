@@ -84,7 +84,10 @@ export default defineConfig({
     },
   },
   staged: {
-    '*': 'vp check --fix',
+    '*': [
+      'vp fmt --threads=4 --no-error-on-unmatched-pattern',
+      'vp lint --fix --threads=4 --no-error-on-unmatched-pattern',
+    ],
     'apps/tui/**/*.go': 'gofmt -w',
   },
   fmt: {

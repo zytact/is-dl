@@ -52,6 +52,7 @@ vp test run apps/api/src/notes.test.ts
 ```
 
 - `vp fmt --check` and `vp lint` together do what `vp check` does, and lint also type checks. Use them instead of `vp check`, which has no thread cap.
+- Lint reports type errors only in the paths you pass. When you change an export, also run `vp run typecheck` to catch callers that break.
 - `vp test run <paths>` runs the Vitest files that cover your change, at most 4 at a time.
 - Run the Go tests only when `apps/tui` changed.
 
