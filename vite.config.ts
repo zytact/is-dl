@@ -16,7 +16,7 @@ export default defineConfig({
     tasks: {
       // CI/repeatable workflows only. Dev/start/scraper scripts stay uncached.
       check: {
-        command: 'vp check',
+        command: ['vp fmt --check --threads=4', 'vp lint --threads=4'],
         input: [
           { auto: true },
           '!dist',
@@ -34,7 +34,7 @@ export default defineConfig({
         ],
       },
       test: {
-        command: ['vp test run', 'cd apps/tui && go test ./...'],
+        command: ['vp test run', 'cd apps/tui && go test -p 4 ./...'],
         input: [
           { auto: true },
           '!dist',
@@ -112,5 +112,6 @@ export default defineConfig({
   },
   test: {
     include: ['apps/**/*.test.ts'],
+    maxWorkers: 4,
   },
 });
