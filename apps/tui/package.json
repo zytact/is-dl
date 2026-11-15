@@ -6,6 +6,6 @@
     "start": "./bin/is-dl-tui",
     "lint": "golangci-lint run ./...",
     "format": "gofmt -w .",
-    "test": "go test ./..."
+    "test": "go test -p 4 ./..."
   }
 }

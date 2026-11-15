@@ -45,15 +45,16 @@ release. Add a tool name to select part of the graph. For example, run
 Run `vp install` after pulling remote changes. After a change, run only the checks and tests that cover it:
 
 ```sh
-vp check apps/api/src/notes.ts apps/api/src/notes.test.ts
+vp fmt --check --threads=4 apps/api/src/notes.ts apps/api/src/notes.test.ts
+vp lint --threads=4 apps/api/src/notes.ts apps/api/src/notes.test.ts
 vp test run apps/api/src/notes.test.ts
-cd apps/tui && go test -p 4 ./...
+(cd apps/tui && go test -p 4 ./...)
 ```
 
-- `vp check <paths>` formats, lints and type checks the files you changed.
-- `vp test run <paths>` runs the Vitest files that cover them.
+- `vp fmt --check` and `vp lint` together do what `vp check` does, and lint also type checks. Use them instead of `vp check`, which has no thread cap.
+- `vp test run <paths>` runs the Vitest files that cover your change, at most 4 at a time.
 - Run the Go tests only when `apps/tui` changed.
 
-`vp run check` and `vp run test` run the whole repo, as CI does, capped at 4 workers. Save them for changes that reach every app, such as `vite.config.ts`, dependencies or `apps/api/src/types.ts`.
+`vp run check` and `vp run test` run the whole repo, as CI does, with the same cap. Run them when you change `vite.config.ts`, dependencies or `apps/api/src/types.ts`.
 
 Check `package.json` and `vite.config.ts` for scripts or tasks a change touches, and run them with `vp run <name>`. If setup, runtime, or package-manager behavior looks wrong, run `vp env doctor` and include its output when asking for help.
