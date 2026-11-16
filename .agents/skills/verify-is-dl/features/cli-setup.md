@@ -7,7 +7,7 @@ Inspect the packed CLI, resolve configuration, check dependencies, and manage th
 - Read help and the package version.
 - Locate, read, and write user TOML configuration.
 - Resolve flags over environment, project config, user config, and defaults; select saved search profiles.
-- Check Node, Chromium, session-file presence, paths, Tectonic, and pdftotext with `doctor`.
+- Check Node, Chromium, whether the session still holds LinkedIn's `li_at` login cookie, paths, Tectonic, and pdftotext with `doctor`. With `--cdp`, `IS_DL_CDP` or the `cdp` config key, doctor checks that browser and its cookie instead of Chromium and the session file.
 - Store a LinkedIn session through an interactive login, reuse an existing session, and remove it with logout.
 - Install a release with `install.sh`, move to a newer one with `update`, and see the once-a-day "Update available" notice on stderr.
 
@@ -61,7 +61,8 @@ For an update, extract `r1/is-dl.tgz`, raise the version in `package/package.jso
 
 - `config set` writes the user file even when a project or explicit config file supplies the current read values.
 - `--no-config` skips files, but environment overrides still apply.
-- Login and doctor check session-file presence, not whether LinkedIn accepts the cookies. Existing login returns `status: "existing"` without opening a browser.
-- A missing session in a noninteractive login returns exit 3. Replacing expired cookies requires `scripts/login.sh logout`, then `scripts/login.sh` in a real TTY. Use the persistent harness login, not the developer's ordinary session.
+- Login and doctor check the `li_at` cookie, not whether LinkedIn still accepts it. A revoked cookie passes until a search meets LinkedIn's signed-out page, which deletes it. A login with the cookie returns `status: "existing"` without opening a browser. Without it, login opens the browser even when the file exists.
+- With `cdp` set, `login` exits 2 and says to sign in in that browser. Doctor exits 4 when no browser answers at the endpoint and 3 when it is not signed in to LinkedIn.
+- A missing or revoked session in a noninteractive login returns exit 3. Replacing it takes `scripts/login.sh` in a real TTY. Use the persistent harness login, not the developer's ordinary session.
 - Pointing `PLAYWRIGHT_BROWSERS_PATH` at the host registry keeps the installer from downloading Chromium into the scratch `HOME`. Playwright then removes host browsers that no installed Playwright uses.
 - To verify logout without losing the persistent login, use a disposable `XDG_STATE_HOME` with the packed binary directly. Do not print or attach cookie contents.

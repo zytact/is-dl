@@ -24,8 +24,10 @@ fi
 # bundle `vp run build` replayed from its cache.
 (cd "$repo" && vp pack >/dev/null)
 
-# Same reason as launch.sh: Playwright finds its browsers through the cache root.
-export PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-${XDG_CACHE_HOME:-$HOME/.cache}/ms-playwright}"
+# Only Linux reads the registry from the cache root. Elsewhere the native default is right.
+if [[ "$(uname -s)" == Linux ]]; then
+  export PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-${XDG_CACHE_HOME:-$HOME/.cache}/ms-playwright}"
+fi
 
 mkdir -p "$run/config" "$run/data" "$run/cache" "$login/state"
 export XDG_CONFIG_HOME="$run/config"

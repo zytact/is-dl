@@ -15,7 +15,7 @@ function searchParams(
 ): URLSearchParams {
   const url = buildSearchUrl(
     { ...query, ...overrides },
-    { sessionFile: 'session.json', debugDir: 'cache', timeout: 30_000, ...options },
+    { browser: { kind: 'cdp', endpoint: '9222' }, debugDir: 'cache', timeout: 30_000, ...options },
   );
   return new URL(url).searchParams;
 }

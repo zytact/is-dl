@@ -41,6 +41,12 @@ export interface SearchSettings {
   blockedCompanies?: string[];
   remoteOnly: boolean;
   headless: boolean;
+  /**
+   * A running browser's DevTools endpoint, as a URL or a local port. When set,
+   * LinkedIn searches run in that browser's signed-in profile instead of a
+   * launched Chromium, and the stored session is not used.
+   */
+  cdp?: string;
   outDir?: string;
   timeout: number;
   debug: boolean;
@@ -109,6 +115,7 @@ export const SEARCH_FIELDS = {
   'blocked-companies': 'string[]',
   'remote-only': 'boolean',
   headless: 'boolean',
+  cdp: 'string',
   'out-dir': 'string',
   timeout: 'number',
   sources: 'string[]',
@@ -350,6 +357,7 @@ export function envSearchLayer(env: NodeJS.ProcessEnv): SearchLayer {
     blockedCompanies: envList(env, 'BLOCKED_COMPANIES'),
     remoteOnly: envBool(env, 'REMOTE_ONLY'),
     headless: envBool(env, 'HEADLESS'),
+    cdp: envString(env, 'CDP'),
     outDir: envString(env, 'OUT_DIR'),
     timeout: envNumber(env, 'TIMEOUT'),
     sources: envList(env, 'SOURCES') as JobSource[] | undefined,
@@ -368,6 +376,15 @@ export function envServeLayer(env: NodeJS.ProcessEnv): Partial<ServeSettings> {
     port: envNumber(env, 'SERVE_PORT'),
     host: envString(env, 'SERVE_HOST'),
   });
+}
+
+/** `cdp` for a command that runs no search, such as doctor: flag over env over config. */
+export function resolveCdp(
+  config: LoadedConfig,
+  env: NodeJS.ProcessEnv,
+  flag?: string,
+): string | undefined {
+  return flag ?? envString(env, 'CDP') ?? config.base.cdp;
 }
 
 export function resolveResumeDir(input: ResolveResumeDirInput): string {

@@ -34,6 +34,7 @@ test.each([
   [{ keywords: 'x', limit: '5' }, '"limit" must be a number.'],
   [{ keywords: 'x', excludeSeen: 'yes' }, '"excludeSeen" must be a boolean.'],
   [{ keywords: 'x', outDir: '/tmp' }, 'Unknown field "outDir"'],
+  [{ keywords: 'x', cdp: '9222' }, 'Unknown field "cdp"'],
   [[], 'The request body must be a JSON object.'],
 ])('rejects %j', (body, message) => {
   expect(() => readSearchBody(body)).toThrow(CliError);

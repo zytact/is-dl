@@ -116,7 +116,11 @@ vp run cli search --keywords "software engineer intern" --location "United State
 
 Run `is-dl login` once, at a terminal. It opens a browser window; log in to LinkedIn and press Enter. The session is stored outside the repo (`~/.local/state/is-dl/storageState.json` on Linux, `~/Library/Application Support/is-dl` on macOS, `%LOCALAPPDATA%\\is-dl\\State` on Windows) with `0600` permissions where the OS supports them.
 
-Every other command refuses to prompt. Without a session they exit `3` immediately instead of blocking on stdin.
+Every other command refuses to prompt. Without a session they exit `3` immediately instead of blocking on stdin. So does a search that lands on LinkedIn's signed-out page, and `is-dl doctor` once LinkedIn's login cookie is gone. LinkedIn deletes that cookie when it revokes a session, so run `is-dl login` again then.
+
+### Using a browser you already run
+
+`--cdp <url|port>`, `IS_DL_CDP` or `cdp = "..."` in the config attaches LinkedIn searches to a browser that is already running with a DevTools port, such as `chrome --remote-debugging-port=9222`. The search opens a tab in that browser's signed-in profile and closes only that tab. No session file is read or written, so `is-dl login` is not needed. Pass a port for a browser on this machine, or the full `http://` or `ws://` endpoint.
 
 ### Command-Line Options
 
@@ -135,6 +139,7 @@ Every other command refuses to prompt. Without a session they exit `3` immediate
 --json                           JSON on stdout, logs on stderr
 --debug                          Enable debug mode
 --no-headless                    Show browser window
+--cdp <url|port>                 Run LinkedIn in this already running browser
 -h, --help                       Show help message
 ```
 

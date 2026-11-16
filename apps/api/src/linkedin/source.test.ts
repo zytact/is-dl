@@ -1,19 +1,21 @@
 import { afterEach, describe, expect, test, vi } from 'vite-plus/test';
+import { CliError } from '../errors.ts';
 import type { JobListing, LinkedInOptions, SearchQuery } from '../types.ts';
 import type { JobCardFacts } from './search.ts';
 import { linkedinSource } from './source.ts';
 
 const mocks = vi.hoisted(() => ({
+  assertSignedIn: vi.fn(),
   getJobCards: vi.fn(),
   clickJobCard: vi.fn(),
   extractJobDetailsFromView: vi.fn(),
   goToNextPage: vi.fn(),
   getPaginationInfo: vi.fn(),
-  launchBrowser: vi.fn(),
-  closeBrowser: vi.fn(),
+  openBrowser: vi.fn(),
 }));
 
 vi.mock('./search.ts', () => ({
+  assertSignedIn: mocks.assertSignedIn,
   getJobCards: mocks.getJobCards,
   clickJobCard: mocks.clickJobCard,
   goToNextPage: mocks.goToNextPage,
@@ -26,13 +28,12 @@ vi.mock('./job.ts', () => ({
 }));
 
 vi.mock('./browser.ts', () => ({
-  launchBrowser: mocks.launchBrowser,
-  closeBrowser: mocks.closeBrowser,
+  openBrowser: mocks.openBrowser,
 }));
 
 const options: LinkedInOptions = {
   timeout: 1000,
-  sessionFile: '/tmp/session.json',
+  browser: { kind: 'launch', sessionFile: '/tmp/session.json', headless: true },
   debugDir: '/tmp/debug',
 };
 
@@ -69,7 +70,10 @@ function detailsFrom(cardIds: (string | null)[]): void {
 
 /** `paneCompany` is for a card whose company read differs from the detail pane's. */
 function detailsFromCards(cards: JobCardFacts[], paneCompany?: string): void {
-  mocks.launchBrowser.mockResolvedValue({ page: { goto: vi.fn(), screenshot: vi.fn() } });
+  mocks.openBrowser.mockResolvedValue({
+    page: { goto: vi.fn(), screenshot: vi.fn() },
+    close: vi.fn(),
+  });
   mocks.getPaginationInfo.mockResolvedValue(null);
   mocks.goToNextPage.mockResolvedValue(false);
   mocks.getJobCards.mockResolvedValue(cards);
@@ -205,5 +209,14 @@ describe('linkedin card processing', () => {
     expect(jobs).toEqual([]);
     expect(mocks.clickJobCard).toHaveBeenCalledTimes(5);
     expect(logs).toContain('Giving up after 5 jobs in a row failed to open.');
+  });
+
+  test('a session revoked mid-run ends it with AUTH_REQUIRED, not a run of failed jobs', async () => {
+    detailsFrom(['1', '2', '3']);
+    mocks.clickJobCard.mockRejectedValue(new Error('detail pane never loaded'));
+    mocks.assertSignedIn.mockRejectedValue(new CliError('AUTH_REQUIRED', 'signed out'));
+
+    await expect(run()).rejects.toMatchObject({ code: 'AUTH_REQUIRED' });
+    expect(mocks.clickJobCard).toHaveBeenCalledTimes(1);
   });
 });

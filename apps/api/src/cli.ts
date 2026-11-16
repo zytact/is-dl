@@ -110,6 +110,7 @@ search flags:
       --remote-only / --no-remote-only
   -o, --out <dir|->                 Output directory, or "-" for stdout
       --headless / --no-headless
+      --cdp <url|port>              Run LinkedIn in this already running browser
       --debug / --no-debug
       --timeout <ms>                How long LinkedIn gets to load a page or a job (default 30000)
       --exclude-unpaid              Drop unpaid and token-stipend listings
@@ -134,10 +135,19 @@ Blocked companies:
 
 Sources:
   search queries LinkedIn, Unstop, Y Combinator and Wellfound together and
-  merges the results, newest first. LinkedIn needs "is-dl login"; the others
-  need nothing. A source that fails is reported and skipped, and the command only
+  merges the results, newest first. LinkedIn needs "is-dl login" or --cdp; the
+  others need nothing. A source that fails is reported and skipped, and the command only
   fails when every source failed. --limit applies per source. meta.sources in
   the output records what each source returned.
+
+LinkedIn browser:
+  By default a search launches Playwright's Chromium on the session "is-dl
+  login" stored. With --cdp, IS_DL_CDP or the cdp config key set to a DevTools
+  URL or a local port, it attaches to that running browser instead, searches
+  in a new tab of its signed-in profile, and closes only that tab. Then no
+  session file is read or written, and "is-dl login" is not used. A search
+  that lands on LinkedIn's signed-out page exits 3, and so does "is-dl doctor"
+  when LinkedIn's login cookie is gone.
 
 Y Combinator:
   Each role in --ycombinator-roles is one page of the Y Combinator job board,
@@ -215,6 +225,7 @@ Resume storage:
           both resolved locations.
 
 runs list flags:   --limit <n>  --since <date>
+doctor flags:      --cdp <url|port>
 serve flags:       --port <n>   --host <addr>
 
 Exit codes:

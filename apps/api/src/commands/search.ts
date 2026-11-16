@@ -23,6 +23,7 @@ const SEARCH_OPTIONS = {
   out: { type: 'string', short: 'o' },
   headless: { type: 'boolean' },
   'no-headless': { type: 'boolean' },
+  cdp: { type: 'string' },
   debug: { type: 'boolean' },
   'no-debug': { type: 'boolean' },
   timeout: { type: 'string' },
@@ -76,6 +77,7 @@ export async function searchCommand(base: CliBase, argv: string[]): Promise<void
     blockedCompanies: csv(values['blocked-companies']),
     remoteOnly: toggle(values['remote-only'], values['no-remote-only']),
     headless: toggle(values.headless, values['no-headless']),
+    cdp: values.cdp,
     outDir: values.out,
     debug: toggle(values.debug, values['no-debug']),
     timeout: num(values.timeout, '--timeout'),
@@ -105,7 +107,7 @@ export async function searchCommand(base: CliBase, argv: string[]): Promise<void
     throw new CliError('USAGE', '--no-headless needs an interactive terminal.');
   }
 
-  if (settings.sources.includes('linkedin')) {
+  if (settings.sources.includes('linkedin') && !settings.cdp) {
     await migrateLegacySession(ctx.paths.sessionFile, ctx.cwd, ctx.log);
   }
 

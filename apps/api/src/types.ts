@@ -172,15 +172,23 @@ export interface SearchQuery {
 }
 
 /**
- * Playwright, a stored session and the search filters, all needed by LinkedIn
- * and nothing else. `postedWithin` becomes `f_TPR`. `experienceLevel` and
- * `jobType` become phrases in the query text.
+ * Where LinkedIn's browser comes from. `launch` starts Playwright's Chromium on
+ * the session `is-dl login` stored. `cdp` attaches to a running browser over
+ * the DevTools protocol, and that browser's own profile is the session.
+ */
+export type LinkedInBrowser =
+  | { kind: 'launch'; sessionFile: string; headless: boolean }
+  | { kind: 'cdp'; endpoint: string };
+
+/**
+ * A browser and the search filters, all needed by LinkedIn and nothing else.
+ * `postedWithin` becomes `f_TPR`. `experienceLevel` and `jobType` become
+ * phrases in the query text.
  */
 export interface LinkedInOptions {
   debug?: boolean;
-  headless?: boolean;
   timeout: number;
-  sessionFile: string;
+  browser: LinkedInBrowser;
   /** Where debug screenshots land. Never the current working directory. */
   debugDir: string;
   experienceLevel?: string[];
