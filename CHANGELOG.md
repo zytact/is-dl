@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.1](https://github.com/zytact/is-dl/compare/v0.2.0...v0.2.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* **ci:** stop formatting release-please's CHANGELOG.md ([#83](https://github.com/zytact/is-dl/issues/83)) ([671d22d](https://github.com/zytact/is-dl/commit/671d22defd7b27f86b0e4e0589035e9f69811013))
+* **linkedin:** close browsers on failed setup and end a run when LinkedIn signs out mid-way ([fd4cb8e](https://github.com/zytact/is-dl/commit/fd4cb8e6f2fcffc0ec45685415cccdfedec0152c))
+* **linkedin:** keep one browser identity, attach over CDP and detect signed-out pages ([d25396f](https://github.com/zytact/is-dl/commit/d25396fa2d0d19006732a9377dd42e81a9f97d1f))
+* **linkedin:** stop LinkedIn revoking the session after one search, and exit 3 when it is gone ([b4f9129](https://github.com/zytact/is-dl/commit/b4f9129426541a436a5e8a5a7f789af62c7a7a0e))
+
 ## [0.2.0](https://github.com/zytact/is-dl/compare/v0.1.1...v0.2.0) (2026-11-11)
 
 
