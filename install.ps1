@@ -11,7 +11,6 @@ function Install-IsDl {
   $versionsDir = Join-Path $dataDir 'versions'
   $current = Join-Path $dataDir 'current'
   $binDir = Join-Path $env:USERPROFILE '.local\bin'
-  $shim = Join-Path $binDir 'is-dl.cmd'
   # Git's tar reads C:\ as a remote host, so use the one Windows ships.
   $tar = Join-Path $env:SystemRoot 'System32\tar.exe'
 
@@ -46,7 +45,7 @@ function Install-IsDl {
     $currentItem = Get-Item -Force $current -ErrorAction SilentlyContinue
     $previous = if ($currentItem) { Split-Path -Leaf @($currentItem.Target)[0] }
     if ($previous -eq $version -and (Test-Path (Join-Path $current 'node_modules\.bin\is-dl.cmd'))) {
-      Write-Shim $shim $current
+      Write-Shims $binDir $current
       Write-Output "is-dl $version is already up to date."
       return
     }
@@ -65,7 +64,7 @@ function Install-IsDl {
     # Deleting the directory entry removes only the junction, never the version it points to.
     if ($currentItem) { [IO.Directory]::Delete($current) }
     New-Item -ItemType Junction -Path $current -Target $target | Out-Null
-    Write-Shim $shim $current
+    Write-Shims $binDir $current
 
     # A version still in use, such as a running `is-dl serve`, stays until a later install.
     Get-ChildItem $versionsDir | Where-Object { $_.Name -ne $version -and $_.Name -ne $previous } |
@@ -75,23 +74,44 @@ function Install-IsDl {
   }
 
   Write-Output "is-dl $version installed."
-  $found = (Get-Command is-dl -ErrorAction SilentlyContinue | Select-Object -First 1).Source
-  if (-not $found) {
+  # PowerShell and cmd run the first is-dl.cmd, .ps1 or .exe on PATH, and Git Bash the first
+  # is-dl or is-dl.exe, so any of them in a directory before $binDir can shadow these shims.
+  $onPath = $false
+  $ahead = foreach ($dir in $env:Path -split ';') {
+    $dir = $dir.Trim().Trim('"').TrimEnd('\')
+    if ($dir -eq $binDir) { $onPath = $true; break }
+    if (-not $dir) { continue }
+    # File.Exists returns false on a malformed PATH entry, where Test-Path in PowerShell 5.1 throws.
+    foreach ($name in 'is-dl', 'is-dl.cmd', 'is-dl.ps1', 'is-dl.exe') {
+      if ([IO.File]::Exists("$dir\$name")) { "$dir\$name" }
+    }
+  }
+  if (-not $onPath) {
     Write-Output "Add $binDir to PATH to run is-dl. In PowerShell:"
     Write-Output "  [Environment]::SetEnvironmentVariable('Path', `"$binDir;`" + [Environment]::GetEnvironmentVariable('Path', 'User'), 'User')"
-  } elseif ($found -ne $shim) {
-    Write-Output "Another is-dl at $found comes first on PATH. Remove it with 'vp remove -g is-dl' or 'npm rm -g is-dl', whichever installed it."
+  } else {
+    foreach ($other in $ahead) {
+      Write-Output "Another is-dl at $other comes before $binDir on PATH, so a shell may run it instead. Remove it with 'vp remove -g is-dl' or 'npm rm -g is-dl' if one of them installed it, or take its directory off PATH."
+    }
   }
 }
 
-# cmd.exe rereads a running batch file, and `is-dl update` runs through this shim, so its content
-# stays the same across versions and it is written only when it changes.
-function Write-Shim([string]$shim, [string]$current) {
+# Writes is-dl.cmd for PowerShell and cmd, and an extensionless is-dl for Git Bash, which never runs
+# a .cmd. cmd.exe rereads a running batch file, and `is-dl update` can run through is-dl.cmd, so the
+# shims stay the same across versions and each is written only when it changes.
+function Write-Shims([string]$binDir, [string]$current) {
   $package = Get-Content -Raw (Join-Path $current 'node_modules\is-dl\package.json') | ConvertFrom-Json
-  $bin = $package.bin.'is-dl' -replace '^\./', '' -replace '/', '\'
-  $content = "@node `"%LOCALAPPDATA%\is-dl\current\node_modules\is-dl\$bin`" %*`r`n"
-  if ((Test-Path $shim) -and (Get-Content -Raw $shim) -eq $content) { return }
-  [IO.File]::WriteAllText($shim, $content)
+  $bin = $package.bin.'is-dl' -replace '^\./', ''
+  $shims = @{
+    'is-dl.cmd' = "@node `"%LOCALAPPDATA%\is-dl\current\node_modules\is-dl\$($bin -replace '/', '\')`" %*`r`n"
+    'is-dl' = "#!/bin/sh`nexec node `"`$LOCALAPPDATA/is-dl/current/node_modules/is-dl/$bin`" `"`$@`"`n"
+  }
+  foreach ($name in $shims.Keys) {
+    $shim = Join-Path $binDir $name
+    if ((Test-Path $shim) -and (Get-Content -Raw $shim) -eq $shims[$name]) { continue }
+    # WriteAllText writes UTF-8 without a BOM, which sh would read as part of the #! line.
+    [IO.File]::WriteAllText($shim, $shims[$name])
+  }
 }
 
 Install-IsDl
