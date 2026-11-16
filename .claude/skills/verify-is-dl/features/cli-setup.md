@@ -55,18 +55,19 @@ For an update, extract `r1/is-dl.tgz`, raise the version in `package/package.jso
 
 ### Windows
 
-`install.ps1` writes `%LOCALAPPDATA%\is-dl\versions`, a `current` junction beside it, and the shim `%USERPROFILE%\.local\bin\is-dl.cmd`. Drive it from a PowerShell child whose `USERPROFILE` and `LOCALAPPDATA` point at scratch directories, with `PLAYWRIGHT_BROWSERS_PATH` set to the real `%LOCALAPPDATA%\ms-playwright` before the override. Build `r1`, `r2` and the server as above, with `tar.exe` from `System32`, since Git's tar reads `C:` as a remote host. Write `SHA256SUMS` lines as `<lowercase hash>  <name>`. Then:
+`install.ps1` writes `%LOCALAPPDATA%\is-dl\versions`, a `current` junction beside it, and two shims in `%USERPROFILE%\.local\bin`: `is-dl.cmd` for PowerShell and cmd, and an extensionless `is-dl` for Git Bash, which never runs a `.cmd`. Drive it from a PowerShell child whose `USERPROFILE` and `LOCALAPPDATA` point at scratch directories, with `PLAYWRIGHT_BROWSERS_PATH` set to the real `%LOCALAPPDATA%\ms-playwright` before the override. Build `r1`, `r2` and the server as above, with `tar.exe` from `System32`, since Git's tar reads `C:` as a remote host. Write `SHA256SUMS` lines as `<lowercase hash>  <name>`. Then:
 
 ```powershell
 $env:IS_DL_RELEASE_URL = "$U/r1"; pwsh -NoProfile -Command "irm $U/r1/install.ps1 | iex"
 $env:IS_DL_RELEASE_URL = "$U/r2"; cmd /d /c "$W\home\.local\bin\is-dl.cmd" update
+& 'C:\Program Files\Git\bin\bash.exe' -c 'is-dl --version'
 ```
 
-Run the first install from both `pwsh` and `powershell -ExecutionPolicy Restricted`. Run `update` from `pwsh`, because then Windows PowerShell inherits PowerShell 7's `PSModulePath`, which the update must drop.
+Run the first install from both `pwsh` and `powershell -ExecutionPolicy Restricted`. Run `update` from `pwsh`, because then Windows PowerShell inherits PowerShell 7's `PSModulePath`, which the update must drop. Before the Git Bash and PowerShell `is-dl --version` checks, set `$env:Path` to the scratch bin, node's directory and the Windows system directories only, so neither your real is-dl nor a stale copy can answer. For the PATH warning, put a directory holding an `is-dl` before the scratch bin on `$env:Path` and rerun the install.
 
 ### Proof
 
-`~/.local/bin/is-dl` resolves through `current` to `versions/<v>/node_modules/is-dl/dist/cli.mjs`, and its Playwright is the version `package.json` pins. A rerun says "already up to date". After an update, `versions/` holds the new version and the one it replaced. A changed `SHA256SUMS` fails with "does not match the release checksum" and leaves `current` alone. The notice prints on a terminal and never with `--json` or a piped stderr. On Windows, `is-dl.cmd` holds `@node "%LOCALAPPDATA%\is-dl\current\node_modules\is-dl\dist\cli.mjs" %*` and stays the same across updates, and `current` is a junction to `versions\<v>`. A `.install.*` folder left by a killed install is gone after the next one.
+`~/.local/bin/is-dl` resolves through `current` to `versions/<v>/node_modules/is-dl/dist/cli.mjs`, and its Playwright is the version `package.json` pins. A rerun says "already up to date". After an update, `versions/` holds the new version and the one it replaced. A changed `SHA256SUMS` fails with "does not match the release checksum" and leaves `current` alone. The notice prints on a terminal and never with `--json` or a piped stderr. On Windows, `is-dl.cmd` holds `@node "%LOCALAPPDATA%\is-dl\current\node_modules\is-dl\dist\cli.mjs" %*`, and `is-dl` holds `#!/bin/sh` and `exec node "$LOCALAPPDATA/is-dl/current/node_modules/is-dl/dist/cli.mjs" "$@"` with LF endings and no BOM. Both stay the same across updates, and `current` is a junction to `versions\<v>`. `is-dl --version` prints the installed version from both Git Bash and PowerShell, and Git Bash keeps working after `is-dl update`. A rerun or install with another is-dl in a directory ahead of `.local\bin` on PATH prints one `Another is-dl in <dir> may run instead` line per directory and deletes nothing. A `.install.*` folder left by a killed install is gone after the next one.
 
 ## Gotchas
 

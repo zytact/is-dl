@@ -50,14 +50,24 @@ async function publish(
 
 const windows = process.platform === 'win32';
 
-function run(command: string, args: string[]): Promise<{ code: number | null; output: string }> {
+/** Runs a command against the scratch install, with `path` put first on the Windows PATH. */
+function run(
+  command: string,
+  args: string[],
+  path: string[] = [],
+): Promise<{ code: number | null; output: string }> {
   const home = join(root, 'home');
+  // Windows names it Path or PATH, and a copy holding both leaves which one wins undefined.
+  const inherited = Object.fromEntries(
+    Object.entries(installerEnv(process.env)).filter(([name]) => name.toUpperCase() !== 'PATH'),
+  );
   return new Promise((resolveRun, reject) => {
     const child = spawn(command, args, {
       cwd: root,
       env: windows
         ? {
-            ...installerEnv(process.env),
+            ...inherited,
+            PATH: [...path, process.env.PATH].join(';'),
             USERPROFILE: home,
             LOCALAPPDATA: join(root, 'local'),
             IS_DL_RELEASE_URL: releaseUrl,
@@ -72,10 +82,14 @@ function run(command: string, args: string[]): Promise<{ code: number | null; ou
   });
 }
 
-const cli = () => join(root, 'home/.local/bin', windows ? 'is-dl.cmd' : 'is-dl');
+const binDir = () => join(root, 'home/.local/bin');
+const cli = () => join(binDir(), windows ? 'is-dl.cmd' : 'is-dl');
 const runCli = () => (windows ? run('cmd.exe', ['/d', '/c', cli()]) : run(cli(), []));
+/** Runs is-dl as Git Bash finds it on PATH, where it skips is-dl.cmd. */
+const runGitBash = () => run('sh', ['-c', 'is-dl'], [binDir()]);
 const dataDir = () => join(root, windows ? 'local/is-dl' : 'home/.local/share/is-dl');
-const install = () => run(INSTALLER.command, [...INSTALLER.args, resolve(INSTALLER.name)]);
+const install = (path: string[] = []) =>
+  run(INSTALLER.command, [...INSTALLER.args, resolve(INSTALLER.name)], path);
 const current = async () => realpath(join(dataDir(), 'current'));
 
 beforeEach(async () => {
@@ -163,5 +177,44 @@ describe(INSTALLER.name, { timeout: 60_000 }, () => {
     expect(result.code).toBe(1);
     expect(result.output).toContain('could not install the Chromium build');
     expect(await readdir(join(dataDir(), 'versions'))).toEqual(['1.0.0']);
+  });
+
+  it.runIf(windows)('writes a Git Bash shim that stays the same across updates', async () => {
+    await publish('1.0.0');
+    await install();
+    const shim = join(binDir(), 'is-dl');
+    const content = await readFile(shim, 'utf8');
+    await rm(shim);
+
+    expect((await install()).output).toContain('is-dl 1.0.0 is already up to date.');
+    expect((await runGitBash()).output).toBe('1.0.0\n');
+
+    await publish('1.1.0');
+    await install();
+
+    expect((await runGitBash()).output).toBe('1.1.0\n');
+    expect(await readFile(shim, 'utf8')).toBe(content);
+    expect(content).toBe(
+      '#!/bin/sh\nexec node "$LOCALAPPDATA/is-dl/current/node_modules/is-dl/cli.js" "$@"\n',
+    );
+  });
+
+  it.runIf(windows)('warns about an is-dl that can shadow its own on PATH', async () => {
+    const stale = join(root, 'stale');
+    await mkdir(stale);
+    await writeFile(join(stale, 'is-dl'), '#!/bin/sh\necho 0.2.0\n');
+    await writeFile(join(stale, 'is-dl.cmd'), '@echo 0.2.0\r\n');
+    await publish('1.0.0');
+    const warning = `Another is-dl in ${stale} may run instead`;
+
+    const before = await install([stale, binDir()]);
+    const after = await install([binDir(), stale]);
+    const offPath = await install([stale]);
+
+    expect(before.output.split(warning)).toHaveLength(2);
+    expect(after.output).not.toContain('Another is-dl');
+    expect(after.output).not.toContain('to PATH');
+    expect(offPath.output).toContain(`Add ${binDir()} to PATH`);
+    expect(offPath.output).toContain(warning);
   });
 });
