@@ -55,7 +55,6 @@ function run(command: string, args: string[]): Promise<{ code: number | null; ou
   return new Promise((resolveRun, reject) => {
     const child = spawn(command, args, {
       cwd: root,
-      // Windows tools need far more of the environment than the POSIX ones do.
       env: windows
         ? {
             ...installerEnv(process.env),
@@ -73,7 +72,6 @@ function run(command: string, args: string[]): Promise<{ code: number | null; ou
   });
 }
 
-// Where each platform's installer puts the CLI and the installed versions.
 const cli = () => join(root, 'home/.local/bin', windows ? 'is-dl.cmd' : 'is-dl');
 const runCli = () => (windows ? run('cmd.exe', ['/d', '/c', cli()]) : run(cli(), []));
 const dataDir = () => join(root, windows ? 'local/is-dl' : 'home/.local/share/is-dl');

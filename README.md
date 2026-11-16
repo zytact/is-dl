@@ -41,7 +41,7 @@ vp pack && vp install -g .
 
 ## Releases
 
-Merging to `main` keeps a release PR open that bumps the version and writes `CHANGELOG.md` from the `feat`, `fix` and `perf` PR titles merged since the last release. Merging that PR tags the release and attaches the package, `install.sh` and `SHA256SUMS` to it.
+Merging to `main` keeps a release PR open that bumps the version and writes `CHANGELOG.md` from the `feat`, `fix` and `perf` PR titles merged since the last release. Merging that PR tags the release and attaches the package, `install.sh`, `install.ps1` and `SHA256SUMS` to it.
 
 ## Development
 

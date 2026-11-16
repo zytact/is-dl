@@ -25,6 +25,8 @@ function Install-IsDl {
   }
 
   New-Item -ItemType Directory -Force $versionsDir, $binDir | Out-Null
+  # An install killed mid-way, as `is-dl update` is on Ctrl+C, never reaches its cleanup.
+  Get-ChildItem -Force $dataDir -Filter '.install.*' | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
   $tmp = Join-Path $dataDir ".install.$([guid]::NewGuid().ToString('N').Substring(0, 6))"
   New-Item -ItemType Directory $tmp | Out-Null
   try {
@@ -51,7 +53,8 @@ function Install-IsDl {
 
     $staged = Join-Path $tmp $version
     Write-Output "Installing is-dl $version..."
-    npm install --prefix $staged --omit=dev --no-fund --no-audit --no-update-notifier --loglevel=error $tarball | Out-Null
+    # Through cmd, because PowerShell prefers npm.ps1, which the default execution policy blocks.
+    cmd /d /c npm install --prefix $staged --omit=dev --no-fund --no-audit --no-update-notifier --loglevel=error $tarball | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "is-dl: npm could not install is-dl $version" }
     & (Join-Path $staged 'node_modules\.bin\playwright.cmd') install chromium
     if ($LASTEXITCODE -ne 0) { throw 'is-dl: could not install the Chromium build is-dl uses' }
@@ -74,27 +77,21 @@ function Install-IsDl {
   Write-Output "is-dl $version installed."
   $found = (Get-Command is-dl -ErrorAction SilentlyContinue | Select-Object -First 1).Source
   if (-not $found) {
-    Write-Output "Add $binDir to PATH to run is-dl."
+    Write-Output "Add $binDir to PATH to run is-dl. In PowerShell:"
+    Write-Output "  [Environment]::SetEnvironmentVariable('Path', `"$binDir;`" + [Environment]::GetEnvironmentVariable('Path', 'User'), 'User')"
   } elseif ($found -ne $shim) {
     Write-Output "Another is-dl at $found comes first on PATH. Remove it with 'vp remove -g is-dl' or 'npm rm -g is-dl', whichever installed it."
   }
 }
 
-# The shim runs node itself rather than npm's .cmd under `current`, because cmd.exe rereads a
-# running batch file by path, and an update swaps what that path points to. It writes only on a
-# change, because `is-dl update` runs through this shim.
+# cmd.exe rereads a running batch file, and `is-dl update` runs through this shim, so its content
+# stays the same across versions and it is written only when it changes.
 function Write-Shim([string]$shim, [string]$current) {
   $package = Get-Content -Raw (Join-Path $current 'node_modules\is-dl\package.json') | ConvertFrom-Json
-  $cli = Join-Path $current "node_modules\is-dl\$($package.bin.'is-dl')"
-  $content = "@node `"$cli`" %*`r`n"
+  $bin = $package.bin.'is-dl' -replace '^\./', '' -replace '/', '\'
+  $content = "@node `"%LOCALAPPDATA%\is-dl\current\node_modules\is-dl\$bin`" %*`r`n"
   if ((Test-Path $shim) -and (Get-Content -Raw $shim) -eq $content) { return }
   [IO.File]::WriteAllText($shim, $content)
 }
 
-try {
-  Install-IsDl
-} catch {
-  [Console]::Error.WriteLine($_.Exception.Message)
-  # `exit` under `iex` would close the user's shell, so only a script run from a file exits.
-  if ($MyInvocation.MyCommand.Path) { exit 1 }
-}
+Install-IsDl

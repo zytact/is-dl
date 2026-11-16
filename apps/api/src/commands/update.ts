@@ -19,8 +19,7 @@ export const INSTALLER =
     : { name: 'install.sh', command: 'sh', args: [] };
 
 /**
- * Windows PowerShell cannot load its own modules from PowerShell 7's PSModulePath, which it
- * inherits when is-dl runs from pwsh, so the installer starts without one and uses its defaults.
+ * Drops PowerShell 7's PSModulePath, which stops Windows PowerShell loading its own modules.
  * Windows matches variable names in any case.
  */
 export function installerEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
