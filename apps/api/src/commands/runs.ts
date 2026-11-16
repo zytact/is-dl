@@ -31,7 +31,13 @@ export async function runsCommand(base: CliBase, argv: string[]): Promise<void> 
         }
         runs = runs.filter((run) => new Date(run.scrapedAt) >= since);
       }
-      if (values.limit) runs = runs.slice(0, Number(values.limit));
+      if (values.limit !== undefined) {
+        const limit = Number(values.limit);
+        if (!Number.isInteger(limit) || limit <= 0) {
+          throw new CliError('USAGE', `--limit is not a positive integer: ${values.limit}`);
+        }
+        runs = runs.slice(0, limit);
+      }
 
       const human = runs.length
         ? runs.map((r) => `${r.runId}  ${String(r.count).padStart(4)}  ${r.query}`).join('\n')
