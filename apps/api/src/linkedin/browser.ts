@@ -69,16 +69,36 @@ export function hasLinkedInLogin(
   return cookies.some(
     (cookie) =>
       cookie.name === 'li_at' &&
-      cookie.domain.endsWith('linkedin.com') &&
+      (cookie.domain === 'linkedin.com' || cookie.domain.endsWith('.linkedin.com')) &&
       (cookie.expires === -1 || cookie.expires * 1000 > now),
   );
 }
 
-/** Whether the session file `is-dl login` wrote still holds a LinkedIn login. */
+/**
+ * Whether the session file `is-dl login` wrote still holds a LinkedIn login. A
+ * missing or unreadable file holds none, so `is-dl login` can replace it.
+ */
 export async function storedLogin(sessionFile: string): Promise<boolean> {
-  if (!existsSync(sessionFile)) return false;
-  const state = JSON.parse(await readFile(sessionFile, 'utf8')) as { cookies: Cookie[] };
-  return hasLinkedInLogin(state.cookies);
+  try {
+    const state = JSON.parse(await readFile(sessionFile, 'utf8')) as { cookies: Cookie[] };
+    return hasLinkedInLogin(state.cookies);
+  } catch {
+    return false;
+  }
+}
+
+async function signedIn(context: BrowserContext): Promise<boolean> {
+  return hasLinkedInLogin(await context.cookies(LINKEDIN_URL));
+}
+
+/** Quits or disconnects `browser` when `use` throws, so a failed setup leaves nothing running. */
+async function closeOnError<T>(browser: Browser, use: () => Promise<T>): Promise<T> {
+  try {
+    return await use();
+  } catch (error) {
+    await browser.close();
+    throw error;
+  }
 }
 
 /** A bare port means a browser on this machine. */
@@ -106,7 +126,7 @@ async function connect(endpoint: string): Promise<{ browser: Browser; context: B
 export async function attachedLogin(endpoint: string): Promise<boolean> {
   const { browser, context } = await connect(endpoint);
   try {
-    return hasLinkedInLogin(await context.cookies(LINKEDIN_URL));
+    return await signedIn(context);
   } finally {
     await browser.close();
   }
@@ -127,14 +147,16 @@ async function startChromium(
     headless,
     args: ['--disable-blink-features=AutomationControlled'],
   });
-  const cdp = await browser.newBrowserCDPSession();
-  const { userAgent } = await cdp.send('Browser.getVersion');
-  await cdp.detach();
-  const context = await browser.newContext({
-    storageState,
-    userAgent: userAgent.replace('HeadlessChrome/', 'Chrome/'),
+  return closeOnError(browser, async () => {
+    const cdp = await browser.newBrowserCDPSession();
+    const { userAgent } = await cdp.send('Browser.getVersion');
+    await cdp.detach();
+    const context = await browser.newContext({
+      storageState,
+      userAgent: userAgent.replace('HeadlessChrome/', 'Chrome/'),
+    });
+    return { browser, context };
   });
-  return { browser, context };
 }
 
 /** The browser a search drives. Fails with AUTH_REQUIRED before any page loads if LinkedIn is signed out. */
@@ -145,22 +167,26 @@ export async function openBrowser(
   if (target.kind === 'cdp') {
     onLog(`Attaching to the browser at ${target.endpoint}...`);
     const { browser, context } = await connect(target.endpoint);
-    if (!hasLinkedInLogin(await context.cookies(LINKEDIN_URL))) {
-      await browser.close();
-      throw new CliError(
-        'AUTH_REQUIRED',
-        `The browser at ${target.endpoint} is not signed in to LinkedIn. Sign in there.`,
-      );
-    }
-    const page = await context.newPage();
-    return {
-      page,
-      close: async () => {
-        await page.close();
-        await browser.close();
-        onLog('Closed the tab and left the browser running.');
-      },
-    };
+    return closeOnError(browser, async () => {
+      if (!(await signedIn(context))) {
+        throw new CliError(
+          'AUTH_REQUIRED',
+          `The browser at ${target.endpoint} is not signed in to LinkedIn. Sign in there.`,
+        );
+      }
+      const page = await context.newPage();
+      return {
+        page,
+        close: async () => {
+          try {
+            await page.close();
+          } finally {
+            await browser.close();
+          }
+          onLog('Closed the tab and left the browser running.');
+        },
+      };
+    });
   }
 
   const { sessionFile, headless } = target;
@@ -169,12 +195,15 @@ export async function openBrowser(
   }
   onLog('Launching browser...');
   const { browser, context } = await startChromium(headless, sessionFile);
-  const page = await context.newPage();
+  const page = await closeOnError(browser, () => context.newPage());
   return {
     page,
     close: async () => {
-      await saveSession(context, sessionFile);
-      await browser.close();
+      try {
+        await saveSession(context, sessionFile);
+      } finally {
+        await browser.close();
+      }
       onLog('Browser closed and session saved.');
     },
   };
@@ -194,7 +223,7 @@ export async function login(
     onLog('After logging in, press Enter to continue...');
     await waitForEnter();
 
-    if (!hasLinkedInLogin(await context.cookies(LINKEDIN_URL))) {
+    if (!(await signedIn(context))) {
       throw new CliError('AUTH_REQUIRED', 'LinkedIn is not signed in yet. Run is-dl login again.');
     }
     await saveSession(context, sessionFile);

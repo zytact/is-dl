@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, test, vi } from 'vite-plus/test';
+import { CliError } from '../errors.ts';
 import type { JobListing, LinkedInOptions, SearchQuery } from '../types.ts';
 import type { JobCardFacts } from './search.ts';
 import { linkedinSource } from './source.ts';
 
 const mocks = vi.hoisted(() => ({
+  assertSignedIn: vi.fn(),
   getJobCards: vi.fn(),
   clickJobCard: vi.fn(),
   extractJobDetailsFromView: vi.fn(),
@@ -13,6 +15,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('./search.ts', () => ({
+  assertSignedIn: mocks.assertSignedIn,
   getJobCards: mocks.getJobCards,
   clickJobCard: mocks.clickJobCard,
   goToNextPage: mocks.goToNextPage,
@@ -206,5 +209,14 @@ describe('linkedin card processing', () => {
     expect(jobs).toEqual([]);
     expect(mocks.clickJobCard).toHaveBeenCalledTimes(5);
     expect(logs).toContain('Giving up after 5 jobs in a row failed to open.');
+  });
+
+  test('a session revoked mid-run ends it with AUTH_REQUIRED, not a run of failed jobs', async () => {
+    detailsFrom(['1', '2', '3']);
+    mocks.clickJobCard.mockRejectedValue(new Error('detail pane never loaded'));
+    mocks.assertSignedIn.mockRejectedValue(new CliError('AUTH_REQUIRED', 'signed out'));
+
+    await expect(run()).rejects.toMatchObject({ code: 'AUTH_REQUIRED' });
+    expect(mocks.clickJobCard).toHaveBeenCalledTimes(1);
   });
 });

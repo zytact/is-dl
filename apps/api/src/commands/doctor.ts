@@ -17,11 +17,14 @@ interface Check {
  * only while it holds LinkedIn's login cookie, which LinkedIn deletes when it
  * revokes the session. A file that merely exists proves nothing.
  */
-async function linkedinChecks(cdp: string | undefined, sessionFile: string): Promise<Check[]> {
+async function linkedinChecks(
+  cdp: string | undefined,
+  sessionFile: string,
+): Promise<{ checks: Check[]; browserReady: boolean }> {
   if (!cdp) {
     const chromium = chromiumExecutable();
     const session = await storedLogin(sessionFile);
-    return [
+    const checks = [
       {
         name: 'chromium',
         ok: chromium !== null,
@@ -33,11 +36,12 @@ async function linkedinChecks(cdp: string | undefined, sessionFile: string): Pro
         detail: session ? sessionFile : `no LinkedIn login in ${sessionFile}, run: is-dl login`,
       },
     ];
+    return { checks, browserReady: chromium !== null };
   }
 
   try {
     const session = await attachedLogin(cdp);
-    return [
+    const checks = [
       { name: 'browser', ok: true, detail: cdp },
       {
         name: 'session',
@@ -47,9 +51,10 @@ async function linkedinChecks(cdp: string | undefined, sessionFile: string): Pro
           : `not signed in to LinkedIn, sign in in the browser at ${cdp}`,
       },
     ];
+    return { checks, browserReady: true };
   } catch (error) {
     if (!(error instanceof CliError)) throw error;
-    return [{ name: 'browser', ok: false, detail: error.message }];
+    return { checks: [{ name: 'browser', ok: false, detail: error.message }], browserReady: false };
   }
 }
 
@@ -67,7 +72,7 @@ export async function doctorCommand(base: CliBase, argv: string[]): Promise<void
 
   const checks: Check[] = [
     { name: 'node', ok: major >= 24, detail: `v${process.versions.node} (need >=24)` },
-    ...linkedin,
+    ...linkedin.checks,
     {
       name: 'config',
       ok: true,
@@ -98,10 +103,7 @@ export async function doctorCommand(base: CliBase, argv: string[]): Promise<void
   );
 
   if (!ok) {
-    const browserMissing = linkedin.some(
-      (check) => (check.name === 'chromium' || check.name === 'browser') && !check.ok,
-    );
-    const dependency = browserMissing || tectonic === null;
+    const dependency = !linkedin.browserReady || tectonic === null;
     throw new CliError(dependency ? 'DEPENDENCY' : 'AUTH_REQUIRED', 'doctor found problems', {
       silent: true,
     });

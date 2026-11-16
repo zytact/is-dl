@@ -16,18 +16,17 @@ const SIGNED_OUT_PATH = /^\/(login|authwall|checkpoint|uas\/login|signup)\b/;
 /** The guest search page's "Sign in" button. A signed-in page never links to the login form. */
 const SIGNED_OUT_SELECTOR = 'a[href^="https://www.linkedin.com/login"]';
 
-async function isSignedOut(page: Page): Promise<boolean> {
-  return (
+/** Fails with AUTH_REQUIRED when LinkedIn shows the page a signed-out visitor gets. */
+export async function assertSignedIn(page: Page): Promise<void> {
+  const signedOut =
     SIGNED_OUT_PATH.test(new URL(page.url()).pathname) ||
-    (await page.locator(SIGNED_OUT_SELECTOR).count()) > 0
-  );
-}
-
-function signedOut(): CliError {
-  return new CliError(
-    'AUTH_REQUIRED',
-    'LinkedIn showed its signed-out page, so the session is no longer valid. Sign in again: run is-dl login, or sign in to LinkedIn in the --cdp browser.',
-  );
+    (await page.locator(SIGNED_OUT_SELECTOR).count()) > 0;
+  if (signedOut) {
+    throw new CliError(
+      'AUTH_REQUIRED',
+      'LinkedIn showed its signed-out page, so the session is no longer valid. Sign in again: run is-dl login, or sign in to LinkedIn in the --cdp browser.',
+    );
+  }
 }
 
 const POLL_INTERVAL_MS = 100;
@@ -55,7 +54,7 @@ export async function getJobCards(page: Page, ctx: ScrapeContext): Promise<JobCa
       await debugShot(ctx, page, 'debug-search-page.png');
     }
 
-    if (await isSignedOut(page)) throw signedOut();
+    await assertSignedIn(page);
 
     // An empty search is a valid answer, so it settles the wait as well as a card
     // does. So does the guest page, which no wait would ever turn into a job list.
@@ -68,11 +67,11 @@ export async function getJobCards(page: Page, ctx: ScrapeContext): Promise<JobCa
       .catch(async (error: unknown) => {
         if (!(error instanceof errors.TimeoutError)) throw error;
         // A redirect to the login form shows no guest button, only its URL.
-        if (await isSignedOut(page)) throw signedOut();
+        await assertSignedIn(page);
         throw new CliError('ERROR', notShown('job list', JOB_CARD_SELECTOR, ctx.timeout));
       });
 
-    if (await isSignedOut(page)) throw signedOut();
+    await assertSignedIn(page);
 
     const jobCards = await page.$$(JOB_CARD_SELECTOR);
     const cards = await Promise.all(

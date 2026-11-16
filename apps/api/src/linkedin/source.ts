@@ -7,7 +7,7 @@ import type { JobListing, LinkedInOptions, SearchQuery } from '../types.ts';
 import { openBrowser } from './browser.ts';
 import type { ScrapeContext } from './context.ts';
 import { DESCRIPTION_SELECTOR, extractJobDetailsFromView } from './job.ts';
-import { clickJobCard, getJobCards, goToNextPage } from './search.ts';
+import { assertSignedIn, clickJobCard, getJobCards, goToNextPage } from './search.ts';
 import { buildSearchUrl } from './search-url.ts';
 
 /** A failing card no longer uses up the limit, so a DOM change needs its own bound. */
@@ -113,6 +113,8 @@ async function scrape(
           // Rate limiting: wait between requests
           await waitOrAbort(signal, 1000 + Math.random() * 2000);
         } catch (error) {
+          // A session revoked mid-run fails every later job too, so it ends the run.
+          await assertSignedIn(session.page);
           const errMsg = error instanceof Error ? error.message : String(error);
           onLog(`Error processing job ${i + 1}: ${errMsg}`);
           consecutiveFailures++;
