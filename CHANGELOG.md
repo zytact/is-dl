@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.0](https://github.com/zytact/is-dl/compare/v0.2.1...v0.3.0) (2026-11-16)
+
+
+### Features
+
+* **update:** install and update is-dl on Windows ([e0a8cf3](https://github.com/zytact/is-dl/commit/e0a8cf32e33cd1847c7f610ef8453269420de716))
+* **update:** install and update is-dl on Windows ([81286f8](https://github.com/zytact/is-dl/commit/81286f83216c8685addb56ad1f94b724aaf8f1b3))
+
+
+### Bug Fixes
+
+* **update:** harden the Windows installer from review ([aa78993](https://github.com/zytact/is-dl/commit/aa789934f791838b351e3db5af4cc9c0e82442bc))
+
 ## [0.2.1](https://github.com/zytact/is-dl/compare/v0.2.0...v0.2.1) (2026-11-16)
 
 
