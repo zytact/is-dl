@@ -6,7 +6,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const CHECK_TIMEOUT_MS = 1_500;
 const CLAIM_PREFIX = 'update-claim-';
 
-/** Where install.sh and the release tarball download from. `IS_DL_RELEASE_URL` overrides it. */
+/** Where the install scripts and the release tarball download from. `IS_DL_RELEASE_URL` overrides it. */
 export function releaseDownloadUrl(env: NodeJS.ProcessEnv): string {
   return env.IS_DL_RELEASE_URL || `${LATEST_RELEASE_URL}/download`;
 }

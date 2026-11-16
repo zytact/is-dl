@@ -11,7 +11,7 @@
 
 - release-please cuts releases from conventional PR titles (`feat`, `fix`, `perf`), so a squash-merged PR's title decides the next version and its changelog line.
 - Never edit `version` in `package.json`, `.release-please-manifest.json` or `CHANGELOG.md` by hand. The release PR owns them.
-- `install.sh` is what the release ships and what `is-dl update` runs. `apps/api/src/install.test.ts` covers it.
+- `install.sh` (Linux, macOS) and `install.ps1` (Windows) are what the release ships and what `is-dl update` runs. `apps/api/src/install.test.ts` covers the one for the platform it runs on, and CI runs it on both.
 
 ## Setup
 
