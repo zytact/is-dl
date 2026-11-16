@@ -82,11 +82,11 @@ function run(
   });
 }
 
-const bin = () => join(root, 'home/.local/bin');
-const cli = () => join(bin(), windows ? 'is-dl.cmd' : 'is-dl');
+const binDir = () => join(root, 'home/.local/bin');
+const cli = () => join(binDir(), windows ? 'is-dl.cmd' : 'is-dl');
 const runCli = () => (windows ? run('cmd.exe', ['/d', '/c', cli()]) : run(cli(), []));
 /** Runs is-dl as Git Bash finds it on PATH, where it skips is-dl.cmd. */
-const runGitBash = () => run('sh', ['-c', 'is-dl'], [bin()]);
+const runGitBash = () => run('sh', ['-c', 'is-dl'], [binDir()]);
 const dataDir = () => join(root, windows ? 'local/is-dl' : 'home/.local/share/is-dl');
 const install = (path: string[] = []) =>
   run(INSTALLER.command, [...INSTALLER.args, resolve(INSTALLER.name)], path);
@@ -182,7 +182,7 @@ describe(INSTALLER.name, { timeout: 60_000 }, () => {
   it.runIf(windows)('writes a Git Bash shim that stays the same across updates', async () => {
     await publish('1.0.0');
     await install();
-    const shim = join(bin(), 'is-dl');
+    const shim = join(binDir(), 'is-dl');
     const content = await readFile(shim, 'utf8');
     await rm(shim);
 
@@ -203,17 +203,18 @@ describe(INSTALLER.name, { timeout: 60_000 }, () => {
     const stale = join(root, 'stale');
     await mkdir(stale);
     await writeFile(join(stale, 'is-dl'), '#!/bin/sh\necho 0.2.0\n');
+    await writeFile(join(stale, 'is-dl.cmd'), '@echo 0.2.0\r\n');
     await publish('1.0.0');
     const warning = `Another is-dl in ${stale} may run instead`;
 
-    const before = await install([stale, bin()]);
-    const after = await install([bin(), stale]);
+    const before = await install([stale, binDir()]);
+    const after = await install([binDir(), stale]);
     const offPath = await install([stale]);
 
-    expect(before.output).toContain(warning);
+    expect(before.output.split(warning)).toHaveLength(2);
     expect(after.output).not.toContain('Another is-dl');
     expect(after.output).not.toContain('to PATH');
-    expect(offPath.output).toContain(`Add ${bin()} to PATH`);
+    expect(offPath.output).toContain(`Add ${binDir()} to PATH`);
     expect(offPath.output).toContain(warning);
   });
 });

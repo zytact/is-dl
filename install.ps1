@@ -78,8 +78,8 @@ function Install-IsDl {
   Write-PathAdvice $binDir
 }
 
-# Says how to put $binDir on PATH, or which directory ahead of it holds another is-dl. PowerShell
-# runs the first is-dl.cmd, .ps1 or .exe on PATH, and Git Bash the first is-dl or is-dl.exe.
+# Says how to put $binDir on PATH, and which directories ahead of it hold an is-dl, is-dl.cmd,
+# is-dl.ps1 or is-dl.exe that PowerShell or Git Bash could run instead.
 function Write-PathAdvice([string]$binDir) {
   $onPath = $false
   $ahead = foreach ($dir in $env:Path -split ';') {
