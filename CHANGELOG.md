@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.1](https://github.com/zytact/is-dl/compare/v0.3.0...v0.3.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* **install:** let Git Bash run is-dl on Windows ([5e6da5d](https://github.com/zytact/is-dl/commit/5e6da5d2123f642c554f8f4f2d20e738d96d28ce))
+* **install:** make is-dl run from Git Bash on Windows ([b47c6cc](https://github.com/zytact/is-dl/commit/b47c6cca48bed04eb70e65e9395dc408d1796ac9))
+* **install:** warn about a shadowing is-dl once per directory ([73efe28](https://github.com/zytact/is-dl/commit/73efe281481dae5412cf7a1506c95d405b03c605))
+
 ## [0.3.0](https://github.com/zytact/is-dl/compare/v0.2.1...v0.3.0) (2026-11-16)
 
 
