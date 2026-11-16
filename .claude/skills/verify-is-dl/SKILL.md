@@ -72,7 +72,7 @@ LinkedIn needs a stored session. It is a one-time human step, and it does not ne
 
 Run it in a TTY. With no session file, it opens Chromium for a person to sign in. The session lands in `.local/verify-is-dl-login/state/is-dl/storageState.json`, which every later `launch.sh` reuses.
 
-An existing session file makes login return without opening a browser. To replace expired cookies, run `login.sh logout`, then `login.sh` again in a TTY. Expired cookies can cause a search timeout rather than exit 3.
+A session file holding LinkedIn's `li_at` login cookie makes login return without opening a browser. LinkedIn deletes that cookie when it revokes a session, and the search that finds it revoked saves the file without it. From then on search and doctor exit 3 and `login.sh` in a TTY replaces the file, with no logout first.
 
 `scripts/login.sh logout` drops the stored session, and `IS_DL_VERIFY_LOGIN_DIR=<dir>` points at a different one, which is how you keep a second account. The launcher prints whether it found a session, and `doctor.sh` ends with the same note.
 

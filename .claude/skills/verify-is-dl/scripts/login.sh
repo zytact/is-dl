@@ -20,8 +20,10 @@ mkdir -p "$login/state" "$login/scratch/config" "$login/scratch/data" "$login/sc
 
 # Playwright resolves its browser registry through XDG_CACHE_HOME on Linux, so
 # the scratch cache below would hide the installed Chromium. Pin the registry to
-# the host's before the cache moves.
-export PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-${XDG_CACHE_HOME:-$HOME/.cache}/ms-playwright}"
+# the host's before the cache moves. Other systems ignore the cache root.
+if [[ "$(uname -s)" == Linux ]]; then
+  export PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-${XDG_CACHE_HOME:-$HOME/.cache}/ms-playwright}"
+fi
 
 # Only the state directory persists between runs, and only the session file
 # lives in it. Config, data and cache are scratch so this never reads or writes

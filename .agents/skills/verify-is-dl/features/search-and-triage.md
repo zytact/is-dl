@@ -6,6 +6,8 @@ Search LinkedIn, Unstop, Y Combinator, Wellfound, or any mix of them, normalize 
 
 - Source selection with `--source linkedin`, `--source unstop`, `--source ycombinator`, `--source wellfound`, or a comma-separated mix. All four are on by default.
 - Unstop opportunity and role selection.
+- LinkedIn in an already running browser with `--cdp <url|port>`, `IS_DL_CDP` or the `cdp` config key: a new tab in its signed-in profile, closed afterwards, with no session file. A `/api/scrape` body cannot set `cdp`.
+- LinkedIn's signed-out page, or a session without the `li_at` cookie, fails the source with exit 3.
 - LinkedIn filters for experience level, job type, posting age, location, and remote. Posting age is the `f_TPR` URL parameter. The rest are appended to the keywords as text, for example `software engineer intern, internship, remote, in India`, and LinkedIn interprets that text itself.
 - Local Unstop keyword, location, and remote filtering.
 - Y Combinator role pages with `--ycombinator-roles`, filtered on fields each listing publishes: `--job-type` against its type, `--remote-only` and `--location` against its location, `--ycombinator-max-experience` against its minimum experience, and `--ycombinator-skip-us-only` against its visa field. Keywords are not matched there.
@@ -18,7 +20,7 @@ Search LinkedIn, Unstop, Y Combinator, Wellfound, or any mix of them, normalize 
 
 ## How to get to it (user POV)
 
-Run `is-dl search` with keywords. Unstop, Y Combinator and Wellfound work without authentication. LinkedIn requires one interactive login, which the harness stores outside the run directory so it is reused by every later run.
+Run `is-dl search` with keywords. Unstop, Y Combinator and Wellfound work without authentication. LinkedIn requires one interactive login, which the harness stores outside the run directory so it is reused by every later run, or `--cdp` pointing at a browser that is signed in to LinkedIn.
 
 ## Driving it with the CLI harness
 
@@ -72,6 +74,34 @@ $D search -k "software engineer intern" --source linkedin -l India --remote-only
 printf '%s\n' "$?" >"$EV/linkedin.exit"
 ```
 
+The signed-out path needs no account. A session file whose `li_at` LinkedIn rejects gets its guest page, and a scratch login dir keeps the real one untouched. Every LinkedIn request then goes out signed out:
+
+```bash
+L=$PWD/.local/verify-fake-login; mkdir -p "$L/state/is-dl"
+printf '%s' '{"cookies":[{"name":"li_at","value":"rejected","domain":".www.linkedin.com","path":"/","expires":-1,"httpOnly":true,"secure":true,"sameSite":"None"}],"origins":[]}' >"$L/state/is-dl/storageState.json"
+IS_DL_VERIFY_LOGIN_DIR=$L .agents/skills/verify-is-dl/scripts/cli.sh search -k "software engineer intern"   --source linkedin --limit 1 --json >"$EV/signed-out.json" 2>"$EV/signed-out.stderr"
+printf '%s
+' "$?" >"$EV/signed-out.exit"
+IS_DL_VERIFY_LOGIN_DIR=$L .agents/skills/verify-is-dl/scripts/cli.sh doctor --json >"$EV/signed-out-doctor.json"
+```
+
+For `--cdp`, start a throwaway Chromium with a DevTools port in the background, never inside `$(...)`, which on Git Bash waits for the browser to exit. Then point is-dl at its port:
+
+```bash
+P=$PWD/.local/verify-cdp-profile; mkdir -p "$P"
+"$(node -p "require('playwright').chromium.executablePath()")" --user-data-dir="$P"   --remote-debugging-port=0 --headless=new --no-first-run about:blank >/dev/null 2>&1 &
+until [ -s "$P/DevToolsActivePort" ]; do sleep 0.25; done; PORT=$(head -1 "$P/DevToolsActivePort")
+D=.agents/skills/verify-is-dl/scripts/cli.sh
+$D doctor --cdp "$PORT" --json >"$EV/cdp-doctor.json"; printf '%s
+' "$?" >"$EV/cdp-doctor.exit"
+$D search -k intern --source linkedin --limit 1 --cdp "$PORT" --json >"$EV/cdp-search.json"
+printf '%s
+' "$?" >"$EV/cdp-search.exit"
+curl -s "http://127.0.0.1:$PORT/json/list" >"$EV/cdp-tabs.json"
+```
+
+Add a rejected `li_at` to that browser with Playwright's `connectOverCDP` and `addCookies` to reach LinkedIn's signed-out page through CDP. A real CDP search needs a browser signed in to LinkedIn, such as the job-apply skill's hidden Helium, whose port is the first line of its profile's `DevToolsActivePort`. It spends the account, so run one search at `--limit 1` and stop at the first exit 3. Close the throwaway browser through CDP `Browser.close` and delete `$P`.
+
 `--timeout <ms>` bounds the LinkedIn navigation and every wait after it: the job list, the detail pane, the description and the page turn. To prove a change to it, run the LinkedIn recipe once with `--limit 1 --timeout 60000 --debug --verbose`. A value that is not positive needs no network, so prove the rejection on Unstop:
 
 ```bash
@@ -103,6 +133,8 @@ For LinkedIn, run the LinkedIn recipe once with `--limit 5`, take `BLOCK` from t
 ### Proof
 
 Exit code is 0. `search.json` has `ok: true`, one saved `path`, and at least one job when the live corpus contains a match. The Unstop entry in `meta.sources[]` has `status: "ok"`, and every returned job has `source: "unstop"`. The file at `path` exists and contains the same run data.
+
+The signed-out run exits 3 within seconds with `LinkedIn showed its signed-out page`, not the job-list timeout, and the saved session no longer holds `li_at`, so `signed-out-doctor.json` fails the `session` check with exit 3. With no `li_at`, a search exits 3 before Chromium starts with `No LinkedIn login stored`. Against a browser with no `li_at`, `cdp-doctor` has `browser` ok, `session` failed and exit 3, and `cdp-search` exits 3 with `is not signed in to LinkedIn`. `cdp-tabs.json` lists the same pages as before the search, and the browser is still running. `doctor --cdp 1` exits 4 with `No browser answered at 1`.
 
 For the timeout run, stderr has `Waiting up to 60s for job list to load...`. Without `--timeout` it says `30s`. `timeout-zero.exit` is 2, and the JSON error says `--timeout must be a positive number, got "0".`
 
@@ -158,7 +190,9 @@ For multi-source behavior, prove each entry in `meta.sources[]`. Exit 0 alone is
 - LinkedIn reads a card's company from the card's second paragraph. If a blocked company shows up in the `Processing job` lines, that read has drifted, and the source drops the job after opening it instead.
 - `--out -` prints data but bypasses saved runs and the seen ledger.
 - A LinkedIn pay pill is an amount per period in any currency, such as `30K GBP/yr`. It classifies the listing as `paid` ahead of anything the description says, and the rupee token ceiling does not apply to it.
-- LinkedIn exit 3 means a session is required. Existing but expired cookies can instead cause a timeout. Replace them with `scripts/login.sh logout`, then `scripts/login.sh` in a TTY.
+- LinkedIn exit 3 means a session is required: no `li_at`, or LinkedIn served its signed-out page. Replace it with `scripts/login.sh` in a TTY, or sign in in the `--cdp` browser.
+- A rejected `li_at` passes doctor, since doctor only reads the cookie. The first search that meets the signed-out page makes LinkedIn delete it, and doctor fails after that.
+- Login and search run the full Chromium build in both modes and send its headed user agent. A run that differs between them, such as `HeadlessChrome` in one, is the identity drift that got sessions revoked.
 - LinkedIn ignores the `location`, `f_WT`, `f_E`, `f_JT` and `sortBy` URL parameters since its redesign. A search with no `-l` uses the LinkedIn account's last searched location, so results may not match the location you expect. A location such as "Worldwide" can resolve to a specific country.
 - A LinkedIn job list that never appears within `--timeout` fails the source with `LinkedIn's job list did not appear within 30s (selector: ...). LinkedIn is often just slow, so retry, or raise --timeout. If it keeps failing, LinkedIn may have changed its page layout.` A slow page is the usual cause, and `-l Europe` hits it most. Forcing one would mean looping live searches, so it has no live recipe. A missing job description logs a warning to stderr and keeps the job with a null `descriptionText`. When no job in the run has one, the source fails with `None of the <n> LinkedIn listings had a description (selector: ...)`, so a LinkedIn-only search exits 1 and a mixed search marks `linkedin` failed in `meta.sources[]`. The description hook reads the English "About the job" heading, so an account set to another language hits that failure. The description failures need LinkedIn to change, so they have no live recipe.
 - A LinkedIn detail pane that never shows its title leaves the job out of the run, with `Error processing job <n>: The detail pane for job <id> did not load` on stderr. The job is not marked seen, so a later search opens it again. Five in a row end the source. This needs LinkedIn to fail a load, so it has no live recipe.
