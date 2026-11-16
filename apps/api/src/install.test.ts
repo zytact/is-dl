@@ -58,7 +58,7 @@ function run(
 ): Promise<{ code: number | null; output: string }> {
   const home = join(root, 'home');
   // Windows names it Path or PATH, and a copy holding both leaves which one wins undefined.
-  const env = Object.fromEntries(
+  const inherited = Object.fromEntries(
     Object.entries(installerEnv(process.env)).filter(([name]) => name.toUpperCase() !== 'PATH'),
   );
   return new Promise((resolveRun, reject) => {
@@ -66,7 +66,7 @@ function run(
       cwd: root,
       env: windows
         ? {
-            ...env,
+            ...inherited,
             PATH: [...path, process.env.PATH].join(';'),
             USERPROFILE: home,
             LOCALAPPDATA: join(root, 'local'),
@@ -199,17 +199,21 @@ describe(INSTALLER.name, { timeout: 60_000 }, () => {
     );
   });
 
-  it.runIf(windows)('warns about an is-dl that comes before its own on PATH', async () => {
+  it.runIf(windows)('warns about an is-dl that can shadow its own on PATH', async () => {
     const stale = join(root, 'stale');
     await mkdir(stale);
     await writeFile(join(stale, 'is-dl'), '#!/bin/sh\necho 0.2.0\n');
     await publish('1.0.0');
+    const warning = `Another is-dl in ${stale} may run instead`;
 
     const before = await install([stale, bin()]);
     const after = await install([bin(), stale]);
+    const offPath = await install([stale]);
 
-    expect(before.output).toContain(`Another is-dl at ${join(stale, 'is-dl')} comes before`);
+    expect(before.output).toContain(warning);
     expect(after.output).not.toContain('Another is-dl');
     expect(after.output).not.toContain('to PATH');
+    expect(offPath.output).toContain(`Add ${bin()} to PATH`);
+    expect(offPath.output).toContain(warning);
   });
 });

@@ -47,6 +47,7 @@ function Install-IsDl {
     if ($previous -eq $version -and (Test-Path (Join-Path $current 'node_modules\.bin\is-dl.cmd'))) {
       Write-Shims $binDir $current
       Write-Output "is-dl $version is already up to date."
+      Write-PathAdvice $binDir
       return
     }
 
@@ -74,25 +75,25 @@ function Install-IsDl {
   }
 
   Write-Output "is-dl $version installed."
-  # PowerShell and cmd run the first is-dl.cmd, .ps1 or .exe on PATH, and Git Bash the first
-  # is-dl or is-dl.exe, so any of them in a directory before $binDir can shadow these shims.
+  Write-PathAdvice $binDir
+}
+
+# Says how to put $binDir on PATH, or which directory ahead of it holds another is-dl. PowerShell
+# runs the first is-dl.cmd, .ps1 or .exe on PATH, and Git Bash the first is-dl or is-dl.exe.
+function Write-PathAdvice([string]$binDir) {
   $onPath = $false
   $ahead = foreach ($dir in $env:Path -split ';') {
     $dir = $dir.Trim().Trim('"').TrimEnd('\')
     if ($dir -eq $binDir) { $onPath = $true; break }
-    if (-not $dir) { continue }
     # File.Exists returns false on a malformed PATH entry, where Test-Path in PowerShell 5.1 throws.
-    foreach ($name in 'is-dl', 'is-dl.cmd', 'is-dl.ps1', 'is-dl.exe') {
-      if ([IO.File]::Exists("$dir\$name")) { "$dir\$name" }
-    }
+    if ($dir -and ('is-dl', 'is-dl.cmd', 'is-dl.ps1', 'is-dl.exe' | Where-Object { [IO.File]::Exists("$dir\$_") })) { $dir }
   }
   if (-not $onPath) {
     Write-Output "Add $binDir to PATH to run is-dl. In PowerShell:"
     Write-Output "  [Environment]::SetEnvironmentVariable('Path', `"$binDir;`" + [Environment]::GetEnvironmentVariable('Path', 'User'), 'User')"
-  } else {
-    foreach ($other in $ahead) {
-      Write-Output "Another is-dl at $other comes before $binDir on PATH, so a shell may run it instead. Remove it with 'vp remove -g is-dl' or 'npm rm -g is-dl' if one of them installed it, or take its directory off PATH."
-    }
+  }
+  foreach ($dir in $ahead) {
+    Write-Output "Another is-dl in $dir may run instead of this one. Remove it with 'vp remove -g is-dl' or 'npm rm -g is-dl' if one of them installed it, or take $dir off PATH."
   }
 }
 
@@ -108,8 +109,8 @@ function Write-Shims([string]$binDir, [string]$current) {
   }
   foreach ($name in $shims.Keys) {
     $shim = Join-Path $binDir $name
-    if ((Test-Path $shim) -and (Get-Content -Raw $shim) -eq $shims[$name]) { continue }
-    # WriteAllText writes UTF-8 without a BOM, which sh would read as part of the #! line.
+    if ((Test-Path $shim) -and (Get-Content -Raw $shim) -ceq $shims[$name]) { continue }
+    # WriteAllText adds no BOM. sh would read one as part of the #! line.
     [IO.File]::WriteAllText($shim, $shims[$name])
   }
 }
