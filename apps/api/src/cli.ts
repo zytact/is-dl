@@ -232,10 +232,10 @@ Exit codes:
   0 ok   1 error   2 usage   3 auth required   4 dependency   5 aborted   6 config
 
 Updating:
-  is-dl update installs the latest release on Linux and macOS, the same way
-  the install script does. Once per UTC day, other commands check for a newer
-  release and mention it on stderr. --json, --quiet and a stderr that is not a
-  terminal never check.
+  is-dl update installs the latest release the same way the install script
+  does. Once per UTC day, other commands check for a newer release and
+  mention it on stderr. --json, --quiet and a stderr that is not a terminal
+  never check.
 
 Examples:
   is-dl login

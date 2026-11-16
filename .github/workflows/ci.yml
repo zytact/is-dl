@@ -25,3 +25,15 @@ jobs:
       - run: vp run check
       - run: vp run test
       - run: vp run build
+
+  # install.ps1 runs only on Windows, so its tests need a Windows runner.
+  windows-install:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: '24'
+          cache: true
+      - run: vp install
+      - run: vp test run apps/api/src/install.test.ts

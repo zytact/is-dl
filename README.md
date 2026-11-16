@@ -10,13 +10,19 @@ This is a monorepo built with [Vite+](https://viteplus.dev/). The root package i
 
 ## Installation
 
-Needs Node.js 24+ on Linux or macOS.
+Needs Node.js 24+. On Linux or macOS:
 
 ```bash
 curl -fsSL https://github.com/zytact/is-dl/releases/latest/download/install.sh | sh
 ```
 
-This installs the latest release into `~/.local/bin/is-dl`, along with the Chromium build it uses. Run it again, or run `is-dl update`, to move to a newer release. Once a day, is-dl tells you when one is out.
+On Windows, in PowerShell:
+
+```powershell
+irm https://github.com/zytact/is-dl/releases/latest/download/install.ps1 | iex
+```
+
+This installs the latest release into `~/.local/bin/is-dl` (`is-dl.cmd` on Windows), along with the Chromium build it uses. Run it again, or run `is-dl update`, to move to a newer release. Once a day, is-dl tells you when one is out.
 
 ### From a checkout
 
