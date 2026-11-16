@@ -9,8 +9,7 @@ const mocks = vi.hoisted(() => ({
   extractJobDetailsFromView: vi.fn(),
   goToNextPage: vi.fn(),
   getPaginationInfo: vi.fn(),
-  launchBrowser: vi.fn(),
-  closeBrowser: vi.fn(),
+  openBrowser: vi.fn(),
 }));
 
 vi.mock('./search.ts', () => ({
@@ -26,13 +25,12 @@ vi.mock('./job.ts', () => ({
 }));
 
 vi.mock('./browser.ts', () => ({
-  launchBrowser: mocks.launchBrowser,
-  closeBrowser: mocks.closeBrowser,
+  openBrowser: mocks.openBrowser,
 }));
 
 const options: LinkedInOptions = {
   timeout: 1000,
-  sessionFile: '/tmp/session.json',
+  browser: { kind: 'launch', sessionFile: '/tmp/session.json', headless: true },
   debugDir: '/tmp/debug',
 };
 
@@ -69,7 +67,10 @@ function detailsFrom(cardIds: (string | null)[]): void {
 
 /** `paneCompany` is for a card whose company read differs from the detail pane's. */
 function detailsFromCards(cards: JobCardFacts[], paneCompany?: string): void {
-  mocks.launchBrowser.mockResolvedValue({ page: { goto: vi.fn(), screenshot: vi.fn() } });
+  mocks.openBrowser.mockResolvedValue({
+    page: { goto: vi.fn(), screenshot: vi.fn() },
+    close: vi.fn(),
+  });
   mocks.getPaginationInfo.mockResolvedValue(null);
   mocks.goToNextPage.mockResolvedValue(false);
   mocks.getJobCards.mockResolvedValue(cards);

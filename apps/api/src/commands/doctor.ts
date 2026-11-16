@@ -1,8 +1,8 @@
-import { existsSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import { buildCtx, type CliBase } from '../cli-context.ts';
+import { resolveCdp } from '../config.ts';
 import { CliError } from '../errors.ts';
-import { chromiumExecutable } from '../linkedin/browser.ts';
+import { attachedLogin, chromiumExecutable, storedLogin } from '../linkedin/browser.ts';
 import { whichSync } from '../which.ts';
 import { GLOBAL_OPTIONS, usage } from './shared.ts';
 
@@ -12,28 +12,62 @@ interface Check {
   detail: string;
 }
 
+/**
+ * The browser LinkedIn runs in and whether it is signed in. A session counts
+ * only while it holds LinkedIn's login cookie, which LinkedIn deletes when it
+ * revokes the session. A file that merely exists proves nothing.
+ */
+async function linkedinChecks(cdp: string | undefined, sessionFile: string): Promise<Check[]> {
+  if (!cdp) {
+    const chromium = chromiumExecutable();
+    const session = await storedLogin(sessionFile);
+    return [
+      {
+        name: 'chromium',
+        ok: chromium !== null,
+        detail: chromium ?? 'missing, run: npx playwright install chromium',
+      },
+      {
+        name: 'session',
+        ok: session,
+        detail: session ? sessionFile : `no LinkedIn login in ${sessionFile}, run: is-dl login`,
+      },
+    ];
+  }
+
+  try {
+    const session = await attachedLogin(cdp);
+    return [
+      { name: 'browser', ok: true, detail: cdp },
+      {
+        name: 'session',
+        ok: session,
+        detail: session
+          ? `signed in to LinkedIn in the browser at ${cdp}`
+          : `not signed in to LinkedIn, sign in in the browser at ${cdp}`,
+      },
+    ];
+  } catch (error) {
+    if (!(error instanceof CliError)) throw error;
+    return [{ name: 'browser', ok: false, detail: error.message }];
+  }
+}
+
 export async function doctorCommand(base: CliBase, argv: string[]): Promise<void> {
-  const { values } = usage(() => parseArgs({ args: argv, options: GLOBAL_OPTIONS }));
+  const { values } = usage(() =>
+    parseArgs({ args: argv, options: { ...GLOBAL_OPTIONS, cdp: { type: 'string' } } }),
+  );
   const ctx = await buildCtx(base, values);
 
   const major = Number(process.versions.node.split('.')[0]);
-  const browser = chromiumExecutable();
-  const session = existsSync(ctx.paths.sessionFile);
+  const cdp = resolveCdp(ctx.config, ctx.env, values.cdp);
+  const linkedin = await linkedinChecks(cdp, ctx.paths.sessionFile);
   const tectonic = whichSync('tectonic');
   const pdftotext = whichSync('pdftotext');
 
   const checks: Check[] = [
     { name: 'node', ok: major >= 24, detail: `v${process.versions.node} (need >=24)` },
-    {
-      name: 'chromium',
-      ok: browser !== null,
-      detail: browser ?? 'missing, run: npx playwright install chromium',
-    },
-    {
-      name: 'session',
-      ok: session,
-      detail: session ? ctx.paths.sessionFile : 'none, run: is-dl login',
-    },
+    ...linkedin,
     {
       name: 'config',
       ok: true,
@@ -64,7 +98,10 @@ export async function doctorCommand(base: CliBase, argv: string[]): Promise<void
   );
 
   if (!ok) {
-    const dependency = browser === null || tectonic === null;
+    const browserMissing = linkedin.some(
+      (check) => (check.name === 'chromium' || check.name === 'browser') && !check.ok,
+    );
+    const dependency = browserMissing || tectonic === null;
     throw new CliError(dependency ? 'DEPENDENCY' : 'AUTH_REQUIRED', 'doctor found problems', {
       silent: true,
     });

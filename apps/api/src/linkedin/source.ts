@@ -4,7 +4,7 @@ import { ensureDir } from '../fs.ts';
 import { CliError } from '../errors.ts';
 import { checkAbort, type SourceContext, type SourceRunner, waitOrAbort } from '../sources.ts';
 import type { JobListing, LinkedInOptions, SearchQuery } from '../types.ts';
-import { closeBrowser, launchBrowser } from './browser.ts';
+import { openBrowser } from './browser.ts';
 import type { ScrapeContext } from './context.ts';
 import { DESCRIPTION_SELECTOR, extractJobDetailsFromView } from './job.ts';
 import { clickJobCard, getJobCards, goToNextPage } from './search.ts';
@@ -27,12 +27,10 @@ async function scrape(
 
   checkAbort(signal);
 
-  const session = await launchBrowser({
-    sessionFile: options.sessionFile,
-    headless: options.headless,
-    debug: options.debug,
-    onLog,
-  });
+  const session = await openBrowser(options.browser, onLog);
+  if (options.debug) {
+    session.page.on('console', (msg) => onLog(`[Browser] ${msg.text()}`));
+  }
 
   try {
     const searchUrl = buildSearchUrl(query, options);
@@ -154,7 +152,7 @@ async function scrape(
     if (blocked.length) onLog(blockedSummary(blocked));
     return jobs;
   } finally {
-    await closeBrowser(session, options.sessionFile, onLog);
+    await session.close();
   }
 }
 

@@ -26,10 +26,11 @@ const TRIAGE_KEYS = Object.keys(NO_TRIAGE) as (keyof Triage)[];
 
 /**
  * `out-dir` is the CLI's alone: the server always writes to the run store.
+ * `cdp` is the server's own setting, so a request cannot point it at another browser.
  * `debug` is a flag the config file does not take.
  */
 const BODY_FIELDS = [
-  ...Object.entries(SEARCH_FIELDS).filter(([key]) => key !== 'out-dir'),
+  ...Object.entries(SEARCH_FIELDS).filter(([key]) => key !== 'out-dir' && key !== 'cdp'),
   ['debug', 'boolean'],
 ] as const;
 
@@ -161,10 +162,11 @@ export async function search(
       },
       sources: settings.sources,
       linkedin: {
-        headless: settings.headless,
+        browser: settings.cdp
+          ? { kind: 'cdp', endpoint: settings.cdp }
+          : { kind: 'launch', sessionFile: paths.sessionFile, headless: settings.headless },
         debug: settings.debug,
         timeout: settings.timeout,
-        sessionFile: paths.sessionFile,
         debugDir: paths.cache,
         experienceLevel: settings.experienceLevel,
         jobType: settings.jobType,

@@ -10,6 +10,26 @@ const JOB_CARD_SELECTOR = `div[role="button"][componentkey^="${CARD_KEY_PREFIX}"
 
 const NEXT_PAGE_SELECTOR = '[data-testid="pagination-controls-next-button-visible"]';
 
+/** Where LinkedIn sends a visitor whose session it does not accept. */
+const SIGNED_OUT_PATH = /^\/(login|authwall|checkpoint|uas\/login|signup)\b/;
+
+/** The guest search page's "Sign in" button. A signed-in page never links to the login form. */
+const SIGNED_OUT_SELECTOR = 'a[href^="https://www.linkedin.com/login"]';
+
+async function isSignedOut(page: Page): Promise<boolean> {
+  return (
+    SIGNED_OUT_PATH.test(new URL(page.url()).pathname) ||
+    (await page.locator(SIGNED_OUT_SELECTOR).count()) > 0
+  );
+}
+
+function signedOut(): CliError {
+  return new CliError(
+    'AUTH_REQUIRED',
+    'LinkedIn showed its signed-out page, so the session is no longer valid. Sign in again: run is-dl login, or sign in to LinkedIn in the --cdp browser.',
+  );
+}
+
 const POLL_INTERVAL_MS = 100;
 
 /** What a card says about its job before it is opened. */
@@ -35,16 +55,24 @@ export async function getJobCards(page: Page, ctx: ScrapeContext): Promise<JobCa
       await debugShot(ctx, page, 'debug-search-page.png');
     }
 
-    // An empty search is a valid answer, so it settles the wait as well as a card does.
+    if (await isSignedOut(page)) throw signedOut();
+
+    // An empty search is a valid answer, so it settles the wait as well as a card
+    // does. So does the guest page, which no wait would ever turn into a job list.
     await page
       .locator(JOB_CARD_SELECTOR)
       .or(page.getByText('No results found'))
+      .or(page.locator(SIGNED_OUT_SELECTOR))
       .first()
       .waitFor({ timeout: ctx.timeout })
-      .catch((error: unknown) => {
+      .catch(async (error: unknown) => {
         if (!(error instanceof errors.TimeoutError)) throw error;
+        // A redirect to the login form shows no guest button, only its URL.
+        if (await isSignedOut(page)) throw signedOut();
         throw new CliError('ERROR', notShown('job list', JOB_CARD_SELECTOR, ctx.timeout));
       });
+
+    if (await isSignedOut(page)) throw signedOut();
 
     const jobCards = await page.$$(JOB_CARD_SELECTOR);
     const cards = await Promise.all(
