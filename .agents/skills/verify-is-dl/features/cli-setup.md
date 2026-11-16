@@ -9,7 +9,7 @@ Inspect the packed CLI, resolve configuration, check dependencies, and manage th
 - Resolve flags over environment, project config, user config, and defaults; select saved search profiles.
 - Check Node, Chromium, whether the session still holds LinkedIn's `li_at` login cookie, paths, Tectonic, and pdftotext with `doctor`. With `--cdp`, `IS_DL_CDP` or the `cdp` config key, doctor checks that browser and its cookie instead of Chromium and the session file.
 - Store a LinkedIn session through an interactive login, reuse an existing session, and remove it with logout.
-- Install a release with `install.sh`, move to a newer one with `update`, and see the once-a-day "Update available" notice on stderr.
+- Install a release with `install.sh`, or `install.ps1` on Windows, move to a newer one with `update`, and see the once-a-day "Update available" notice on stderr.
 
 ## How to get to it (user POV)
 
@@ -44,7 +44,7 @@ The version matches package.json. Config paths and the written TOML stay under t
 W=$PWD/.local/verify-is-dl-release; mkdir -p "$W/r1" "$W/home"
 vp pm pack --pack-destination "$W" && mv "$W"/is-dl-*.tgz "$W/r1/is-dl.tgz"
 cp install.sh "$W/r1/" && (cd "$W/r1" && sha256sum -- * >SHA256SUMS)
-(cd "$W" && python3 -u -m http.server 0 --bind 127.0.0.1 >server.log 2>&1 & echo $! >server.pid)
+(cd "$W" && { python3 -u -m http.server 0 --bind 127.0.0.1 >server.log 2>&1 & echo $! >server.pid; })
 until grep -q 'port [0-9]' "$W/server.log" 2>/dev/null; do sleep 0.2; done
 U=http://127.0.0.1:$(grep -o 'port [0-9]*' "$W/server.log" | cut -d' ' -f2)
 export PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/ms-playwright
@@ -53,9 +53,20 @@ HOME=$W/home IS_DL_RELEASE_URL=$U/r1 sh -c "curl -fsSL $U/r1/install.sh | sh"
 
 For an update, extract `r1/is-dl.tgz`, raise the version in `package/package.json`, re-tar it as `r2/is-dl.tgz` with the `package/` prefix, and copy `install.sh` and regenerate `SHA256SUMS` beside it. Then run `HOME=$W/home IS_DL_RELEASE_URL=$U/r2 $W/home/.local/bin/is-dl update`. For the notice, write `{"latest":"<newer>"}` to `$W/home/.cache/is-dl/update-check.json` with an empty `update-claim-<days since epoch>` beside it, so no request reaches GitHub, and run `HOME=$W/home $W/home/.local/bin/is-dl --version` under a pseudo-terminal. Stop the server with `kill "$(cat "$W/server.pid")"` and delete `$W` afterwards.
 
+### Windows
+
+`install.ps1` writes `%LOCALAPPDATA%\is-dl\versions`, a `current` junction beside it, and the shim `%USERPROFILE%\.local\bin\is-dl.cmd`. Drive it from a PowerShell child whose `USERPROFILE` and `LOCALAPPDATA` point at scratch directories, with `PLAYWRIGHT_BROWSERS_PATH` set to the real `%LOCALAPPDATA%\ms-playwright` before the override. Build `r1`, `r2` and the server as above, with `tar.exe` from `System32`, since Git's tar reads `C:` as a remote host. Write `SHA256SUMS` lines as `<lowercase hash>  <name>`. Then:
+
+```powershell
+$env:IS_DL_RELEASE_URL = "$U/r1"; pwsh -NoProfile -Command "irm $U/r1/install.ps1 | iex"
+$env:IS_DL_RELEASE_URL = "$U/r2"; cmd /d /c "$W\home\.local\bin\is-dl.cmd" update
+```
+
+Run the first install from both `pwsh` and `powershell -ExecutionPolicy Restricted`. Run `update` from `pwsh`, because then Windows PowerShell inherits PowerShell 7's `PSModulePath`, which the update must drop.
+
 ### Proof
 
-`~/.local/bin/is-dl` resolves through `current` to `versions/<v>/node_modules/is-dl/dist/cli.mjs`, and its Playwright is the version `package.json` pins. A rerun says "already up to date". After an update, `versions/` holds the new version and the one it replaced. A changed `SHA256SUMS` fails with "does not match the release checksum" and leaves `current` alone. The notice prints on a terminal and never with `--json` or a piped stderr.
+`~/.local/bin/is-dl` resolves through `current` to `versions/<v>/node_modules/is-dl/dist/cli.mjs`, and its Playwright is the version `package.json` pins. A rerun says "already up to date". After an update, `versions/` holds the new version and the one it replaced. A changed `SHA256SUMS` fails with "does not match the release checksum" and leaves `current` alone. The notice prints on a terminal and never with `--json` or a piped stderr. On Windows, `is-dl.cmd` holds `@node "%LOCALAPPDATA%\is-dl\current\node_modules\is-dl\dist\cli.mjs" %*` and stays the same across updates, and `current` is a junction to `versions\<v>`. A `.install.*` folder left by a killed install is gone after the next one.
 
 ## Gotchas
 
